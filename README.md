@@ -1,2 +1,2 @@
 # sayai
-# contributer davidyeonkr@gmail.com
+contributer davidyeonkr@gmail.com
