@@ -18,12 +18,19 @@ public class Hit {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "HIT_ID")
     private Long id;
-    @Column(name = "GAME_IDX")
-    private Long gameId;
 
     private Long gameSeq;
 
-    private Long playerId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "GAME_IDX")
+    private Game game;
+
+    @Column(name = "CLUB_IDX")
+    private Long clubId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "PLAYER_ID")
+    private Player player;
 
     private Long inning;
 

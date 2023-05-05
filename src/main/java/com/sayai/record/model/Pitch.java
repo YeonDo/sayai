@@ -17,12 +17,17 @@ public class Pitch {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "PITCH_ID")
     private Long id;
-    @Column(name = "GAME_IDX")
-    private Long gameId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "GAME_IDX")
+    private Game game;
+
     @Column(name = "CLUB_IDX")
     private Long clubId;
 
-    private Long playerId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "PLAYER_ID")
+    private Player player;
 
     private String result;
 

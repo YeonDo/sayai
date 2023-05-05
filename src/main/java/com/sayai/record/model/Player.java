@@ -4,6 +4,8 @@ package com.sayai.record.model;
 import lombok.*;
 
 import javax.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -28,4 +30,11 @@ public class Player {
     private String birth;
 
     private String finEdu;
+
+    @OneToMany(mappedBy = "player", fetch = FetchType.LAZY)
+    private List<Pitch> pitchList = new ArrayList<>();
+
+    @OneToMany(mappedBy = "player", fetch = FetchType.LAZY)
+    private List<Hit> hitList = new ArrayList<>();
+
 }
