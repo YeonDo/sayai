@@ -30,10 +30,11 @@ public class Player {
     private String birth;
 
     private String finEdu;
-
+    private String groupCode;
     @OneToMany(mappedBy = "player", fetch = FetchType.LAZY)
+    @Builder.Default
     private List<Pitch> pitchList = new ArrayList<>();
-
+    @Builder.Default
     @OneToMany(mappedBy = "player", fetch = FetchType.LAZY)
     private List<Hit> hitList = new ArrayList<>();
 

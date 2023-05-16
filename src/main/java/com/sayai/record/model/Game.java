@@ -38,11 +38,12 @@ public class Game {
 
     private LocalDate gameDate;
 
-    private Time gameTime;
-
+    private LocalTime gameTime;
+    private String opponent;
+    @Builder.Default
     @OneToMany(mappedBy = "game", fetch = FetchType.LAZY)
     private List<Pitch> pitchList = new ArrayList<>();
-
+    @Builder.Default
     @OneToMany(mappedBy = "game", fetch = FetchType.LAZY)
     private List<Hit> hitList = new ArrayList<>();
 }

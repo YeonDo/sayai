@@ -1,12 +1,15 @@
 package com.sayai.record.model;
 
 
+import lombok.Getter;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
+@Getter
 @Table(name = "LIG")
 public class Ligue {
 
@@ -23,6 +26,6 @@ public class Ligue {
     private Long jocode;
 
     private Long gameRule;
-
-    private String lig_name;
+    @Column(name = "LIG_NAME")
+    private String name;
 }
