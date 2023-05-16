@@ -30,7 +30,13 @@ import static org.junit.jupiter.api.Assertions.*;
 class CrawlingServiceTest {
     private String testurl = "http://www.gameone.kr/club/info/schedule/boxscore?club_idx=15387&game_idx=1516415";
     @Autowired
-    public CodeCache codeCache;
+    private CodeCache codeCache;
+    @Autowired
+    private CrawlingService crawlingService;
+    @Autowired
+    private HitService hitService;
+    @Autowired
+    private GameService gameService;
     @Test
     void crawlMatch(){
         Connection conn = Jsoup.connect(testurl);
@@ -156,5 +162,14 @@ class CrawlingServiceTest {
             System.out.println(player2[ii].substring(0,3));
         }
         System.out.println(table2[1][1].substring(2));
+    }
+
+    @Test
+    public void crawlTest2(){
+        crawlingService.crawl("http://www.gameone.kr/club/info/schedule/boxscore?club_idx=15387&game_idx=1516415");
+    }
+    @Test
+    public void updateOppo() throws IOException {
+        crawlingService.updateOp();
     }
 }

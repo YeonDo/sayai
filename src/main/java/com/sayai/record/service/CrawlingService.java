@@ -110,11 +110,15 @@ public class CrawlingService {
             Player player = playerService.getPlayerByName(name).get();
             for(int j=1; j<12; j++){
                 if(!hittable[i][j].isEmpty()){
-                    Hit hit = Hit.builder().gameSeq(gameseq).game(saveGame).player(player).inning((long)j)
-                            .hitNo((long)(i+1)).hitSeq((long)i).hitCd(dataset.get(hittable[i][j]).split(",")[0]).result(hittable[i][j])
-                            .build();
-                    hitList.add(hit);
-                    gameseq++;
+                    int cnt = hittable[i][j].split("/").length;
+                    for(int k=0; k<cnt; k++){
+                        String hc = hittable[i][j].split("/")[k].split(",")[0];
+                        Hit hit = Hit.builder().gameSeq(gameseq).game(saveGame).player(player).inning((long)j)
+                                .hitNo((long)(i+1)).hitSeq((long)i).hitCd(dataset.get(hc)).result(hc)
+                                .build();
+                        hitList.add(hit);
+                        gameseq++;
+                    }
                 }
             }
         }
@@ -151,11 +155,10 @@ public class CrawlingService {
             String innStr = hittable[i][2];
             Long inn;
             if(innStr.length()>=3){
-                long l = Long.parseLong(innStr.substring(0, 1)) * 3;
                 if(innStr.substring(2).equals("⅔")){
-                    inn = l +2;
+                    inn = Long.parseLong(innStr.substring(0,1))*3 +2;
                 }else if(innStr.substring(2).equals("⅓")){
-                    inn = l +1;
+                    inn = Long.parseLong(innStr.substring(0,1))*3 +1;
                 }
             }else{
                 inn = Long.parseLong(innStr)*3;
@@ -174,6 +177,26 @@ public class CrawlingService {
         }
         pitchService.saveAll(pitchList);
     }
-
+    public void updateOp() throws IOException {
+        List<Game> gameList = gameService.findAll();
+        String urlForm = "http://www.gameone.kr/club/info/schedule/boxscore?club_idx=15387&game_idx=";
+        for(Game game : gameList){
+            System.out.println("---------------------");
+            if(game.getOpponent() == null){
+                System.out.println(game.getId());
+                System.out.println(game.getGameDate());
+                Connection conn = Jsoup.connect(urlForm+game.getId());
+                Document document = conn.get();
+                Elements scorebox = document.getElementsByClass("section_score");
+                String fT = scorebox.get(0).child(0).select("dt").text();
+                String lT = scorebox.get(0).child(1).select("dt").text();
+                String opponent;
+                if(fT.equals("팀 사야이")) opponent=lT;
+                else opponent=fT;
+                System.out.println(opponent);
+                game.setOpponent(opponent);
+            }
+        }
+    }
 
 }

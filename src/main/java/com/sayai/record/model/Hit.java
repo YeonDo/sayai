@@ -25,9 +25,6 @@ public class Hit {
     @JoinColumn(name = "GAME_IDX")
     private Game game;
 
-    @Column(name = "CLUB_IDX")
-    private Long clubId;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "PLAYER_ID")
     private Player player;
