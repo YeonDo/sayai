@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest
 @Transactional
 class CrawlingServiceTest {
-    private String testurl = "http://www.gameone.kr/club/info/schedule/boxscore?club_idx=15387&game_idx=1516415";
+    private String testurl = "http://www.gameone.kr/club/info/schedule/boxscore?club_idx=15387&game_idx=1528629";
     @Autowired
     private CodeCache codeCache;
     @Autowired
@@ -52,7 +52,10 @@ class CrawlingServiceTest {
         //System.out.println(document.getElementsByClass("section_score"));
         List<String> list = new ArrayList<>();
         Elements scorebox = document.getElementsByClass("section_score");
+        //System.out.println(scorebox);
+        System.out.println("--------------------------------------");
         System.out.println(scorebox.get(0).child(0).select("dt").text());
+        System.out.println(scorebox.get(0).getElementsByClass("score").text());
         System.out.println(scorebox.get(0).getElementsByClass("score").text().split(" ")[1]);
         System.out.println("====================================");
         System.out.println(scorebox.get(0).child(1).select("dt").text());
@@ -123,8 +126,7 @@ class CrawlingServiceTest {
         for(int ii=0; ii<numRows; ii++){
                 System.out.println(player[ii].split(" ")[2].substring(0,3));
         }
-        System.out.println(table[0][2].isEmpty());
-        System.out.println(dataset.get("좌플"));
+
 
         // pitch record
 
@@ -161,7 +163,7 @@ class CrawlingServiceTest {
         for(int ii=0; ii<numRows2; ii++){
             System.out.println(player2[ii].substring(0,3));
         }
-        System.out.println(table2[1][1].substring(2));
+
     }
 
     @Test

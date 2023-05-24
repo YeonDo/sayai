@@ -47,7 +47,20 @@ public class CrawlingService {
         Elements scorebox = document.getElementsByClass("section_score");
         String fT = scorebox.get(0).child(0).select("dt").text();
         String lT = scorebox.get(0).child(1).select("dt").text();
+        String scores =scorebox.get(0).getElementsByClass("score").text();
+        Long homeScore = Long.parseLong(scores.split(" ")[0]);
+        Long awayScore = Long.parseLong(scores.split(" ")[1]);
         String opponent;
+        String result = "패";
+        if(homeScore > awayScore){
+            if(fT.equals("팀 사야이"))
+                result = "승";
+        }else if(homeScore < awayScore){
+            if(lT.equals("팀 사야이"))
+                result = "승";
+        }else{
+            result = "무";
+        }
         String ltp = scorebox.get(0).getElementsByClass("score_teble").select("caption").text();
         String league = ltp.split("/")[0].trim();
         String time = ltp.split("/")[1].trim();
@@ -63,7 +76,8 @@ public class CrawlingService {
         LocalTime gametime = LocalTime.of(time_hh,time_mm);
         Game game = Game.builder().id(gameId)
                 .clubId(15387L).fl(FirstLast.valueOf(fl)).stadium(place).gameDate(gamedate)
-                .gameTime(gametime).season((long) gamedate.getYear()).ligIdx(lig.getId()).opponent(opponent).build();
+                .gameTime(gametime).season((long) gamedate.getYear()).ligIdx(lig.getId()).opponent(opponent)
+                .homeScore(homeScore).awayScore(awayScore).result(result).build();
         Game saveGame = gameService.saveGame(game);
 
 
@@ -190,11 +204,27 @@ public class CrawlingService {
                 Elements scorebox = document.getElementsByClass("section_score");
                 String fT = scorebox.get(0).child(0).select("dt").text();
                 String lT = scorebox.get(0).child(1).select("dt").text();
+                String scores =scorebox.get(0).getElementsByClass("score").text();
+                Long homeScore = Long.parseLong(scores.split(" ")[0]);
+                Long awayScore = Long.parseLong(scores.split(" ")[1]);
                 String opponent;
+                String result = "패";
+                if(homeScore > awayScore){
+                    if(fT.equals("팀 사야이"))
+                        result = "승";
+                }else if(homeScore < awayScore){
+                    if(lT.equals("팀 사야이"))
+                        result = "승";
+                }else{
+                    result = "무";
+                }
                 if(fT.equals("팀 사야이")) opponent=lT;
                 else opponent=fT;
                 System.out.println(opponent);
                 game.setOpponent(opponent);
+                game.setHomeScore(homeScore);
+                game.setAwayScore(awayScore);
+                game.setResult(result);
             }
         }
     }

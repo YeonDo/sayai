@@ -1,6 +1,7 @@
 package com.sayai.record.model;
 
 
+import com.sayai.record.dto.PlayerDto;
 import lombok.*;
 
 import javax.persistence.*;
@@ -8,7 +9,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Getter
-@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
@@ -21,7 +21,7 @@ public class Player {
     @Column(name = "PLAYER_ID")
     private Long id;
 
-    private Long back_no;
+    private Long backNo;
 
     private Long clubId;
 
@@ -31,11 +31,16 @@ public class Player {
 
     private String finEdu;
     private String groupCode;
-    @OneToMany(mappedBy = "player", fetch = FetchType.LAZY)
     @Builder.Default
+    @OneToMany(mappedBy = "player", cascade = CascadeType.ALL)
     private List<Pitch> pitchList = new ArrayList<>();
     @Builder.Default
-    @OneToMany(mappedBy = "player", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "player", cascade = CascadeType.ALL)
     private List<Hit> hitList = new ArrayList<>();
 
+
+    public PlayerDto toDto(){
+        return PlayerDto.builder()
+                .id(this.id).backNo(this.backNo).name(this.name).build();
+    }
 }

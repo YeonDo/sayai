@@ -4,13 +4,14 @@ import com.sayai.record.model.Hit;
 import com.sayai.record.repository.HitRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import javax.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 @AllArgsConstructor
+@Transactional(readOnly = true)
 public class HitService {
     private final HitRepository hitRepository;
     @Transactional

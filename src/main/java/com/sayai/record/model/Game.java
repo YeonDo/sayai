@@ -14,7 +14,6 @@ import java.util.List;
 @Entity
 @Table(name = "GAME")
 @Getter
-@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
@@ -40,10 +39,29 @@ public class Game {
 
     private LocalTime gameTime;
     private String opponent;
+    private Long homeScore;
+    private Long awayScore;
+    private String result;
     @Builder.Default
-    @OneToMany(mappedBy = "game", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL)
     private List<Pitch> pitchList = new ArrayList<>();
     @Builder.Default
-    @OneToMany(mappedBy = "game", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL)
     private List<Hit> hitList = new ArrayList<>();
+
+    public void setOpponent(String opponent) {
+        this.opponent = opponent;
+    }
+
+    public void setHomeScore(Long homeScore) {
+        this.homeScore = homeScore;
+    }
+
+    public void setAwayScore(Long awayScore) {
+        this.awayScore = awayScore;
+    }
+
+    public void setResult(String result) {
+        this.result = result;
+    }
 }
