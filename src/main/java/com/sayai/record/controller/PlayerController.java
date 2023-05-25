@@ -33,7 +33,6 @@ public class PlayerController {
     @GetMapping("/all")
     @ResponseBody
     public List<PlayerDto> getAllPlayers(){
-        System.out.println("========================");
         List<Player> playerList = playerService.getPlayerList();
         List<PlayerDto> result = new ArrayList<>();
         for(Player p : playerList){
@@ -43,9 +42,8 @@ public class PlayerController {
     }
     @GetMapping("/hitter/all")
     @ResponseBody
-    public List<PlayerDto> getAllHitter(@RequestParam("start") LocalDate startDate, @RequestParam("end") LocalDate endDate){
-        List<PlayerDto> result = new ArrayList<>();
-        return result;
+    public List<PlayerDto> getAllHitter(@RequestParam("start") @DateTimeFormat(pattern="yyyy-MM-dd") LocalDate startDate, @RequestParam("end") @DateTimeFormat(pattern="yyyy-MM-dd") LocalDate endDate){
+        return hitService.findAllByPeriod(startDate,endDate);
     }
     @GetMapping("/pitcher/all")
     @ResponseBody
@@ -55,13 +53,13 @@ public class PlayerController {
     }
     @GetMapping("/hitter/{playerid}")
     @ResponseBody
-    public PlayerDto getHitter(@PathVariable Long playerid,@RequestParam("start") LocalDate startDate, @RequestParam("end") LocalDate endDate){
-        return PlayerDto.builder().build();
+    public PlayerDto getHitter(@PathVariable Long playerid,@RequestParam("start") @DateTimeFormat(pattern="yyyy-MM-dd") LocalDate startDate, @RequestParam("end") @DateTimeFormat(pattern="yyyy-MM-dd") LocalDate endDate){
+        return hitService.findOne(startDate,endDate,playerid);
     }
 
     @GetMapping("/pitcher/{playerid}")
     @ResponseBody
-    public PitcherDto getPitcher(@PathVariable Long playerid,@RequestParam("start") LocalDate startDate, @RequestParam("end") LocalDate endDate){
+    public PitcherDto getPitcher(@PathVariable Long playerid,@RequestParam("start") @DateTimeFormat(pattern="yyyy-MM-dd") LocalDate startDate, @RequestParam("end") @DateTimeFormat(pattern="yyyy-MM-dd") LocalDate endDate){
         return pitchService.selectOne(startDate,endDate,playerid);
     }
 }

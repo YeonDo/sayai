@@ -42,7 +42,14 @@ class PlayerControllerTest {
     }
 
     @Test
-    void getAllHitter() {
+    void getAllHitter() throws Exception{
+        mockMvc.perform(get("/apis/v1/player/hitter/all")
+                        .param("start", "2023-01-01")
+                        .param("end", "2023-08-01")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andDo(print());
     }
 
     @Test

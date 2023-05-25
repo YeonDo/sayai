@@ -1,7 +1,6 @@
 package com.sayai.record.service;
 
 import com.sayai.record.dto.PitcherDto;
-import com.sayai.record.dto.PitcherType;
 import com.sayai.record.model.Pitch;
 import com.sayai.record.repository.PitchRepository;
 import lombok.AllArgsConstructor;
@@ -10,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
