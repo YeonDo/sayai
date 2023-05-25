@@ -17,5 +17,3 @@ spring:
     init:
       encoding: utf-8
       mode: always
-mybatis:
-  mapper-locations: classpath:mybatis/mapper/**/**.xml

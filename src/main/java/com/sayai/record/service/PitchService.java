@@ -42,7 +42,6 @@ public class PitchService {
              p.setWhip(whip);
              p.setBattingAvg(battingAvg);
              p.setK9(k9);
-             System.out.println(p.toString());
          }
          return pitcherTypes;
     }

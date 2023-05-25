@@ -3,9 +3,10 @@ package com.sayai.record.repository;
 import com.sayai.record.dto.PlayerDto;
 import com.sayai.record.dto.PlayerInterface;
 import com.sayai.record.model.Hit;
-import org.apache.ibatis.annotations.Param;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -56,12 +57,12 @@ public interface HitRepository extends JpaRepository<Hit, Long> {
             "       WHEN R_HIT_CD IN ('5') THEN 'M' " +
             "       WHEN R_HIT_CD IN ('7') THEN 'B' end CD" +
             " , CASE WHEN R_HIT_CD IN ('1','2','3','4') THEN R_HIT_CD ELSE 0 END ON_BASE " +
-            " FROM HIT A, HIT_CD B " +
+            " FROM hit A, HIT_CD B " +
             " WHERE A.HIT_CD = B.HIT_CD " +
-            " AND GAME_IDX IN (SELECT GAME_IDX FROM GAME g WHERE GAME_DATE between :startDate AND :endDate) " +
+            " AND GAME_IDX IN (SELECT GAME_IDX FROM game WHERE GAME_DATE between :startDate AND :endDate) " +
             " ) A " +
             " GROUP BY PLAYER_ID " +
-            ") A, PLAYER B " +
+            ") A, player B " +
             "WHERE A.PLAYER_ID = B.PLAYER_ID " +
             "ORDER BY 7 DESC", nativeQuery = true)
     List<PlayerInterface> getPlayerByPeriod(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
@@ -107,13 +108,13 @@ public interface HitRepository extends JpaRepository<Hit, Long> {
             "       WHEN R_HIT_CD IN ('5') THEN 'M' " +
             "       WHEN R_HIT_CD IN ('7') THEN 'B' end CD" +
             " , CASE WHEN R_HIT_CD IN ('1','2','3','4') THEN R_HIT_CD ELSE 0 END ON_BASE " +
-            " FROM HIT A, HIT_CD B " +
+            " FROM hit A, HIT_CD B " +
             " WHERE A.HIT_CD = B.HIT_CD " +
-            " AND GAME_IDX IN (SELECT GAME_IDX FROM GAME g WHERE GAME_DATE between :startDate AND :endDate) " +
+            " AND GAME_IDX IN (SELECT GAME_IDX FROM game WHERE GAME_DATE between :startDate AND :endDate) " +
             " ) A " +
             " GROUP BY PLAYER_ID " +
-            ") A, PLAYER B " +
+            ") A, player B " +
             "WHERE A.PLAYER_ID = B.PLAYER_ID and A.PLAYER_ID = :id " +
             "ORDER BY 7 DESC", nativeQuery = true)
-    Optional<PlayerInterface> getPlayerByPeriodAndId(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate, @Param("id") Long id);
+    Optional<PlayerInterface> getPlayerByPeriodAndId(@Param("startDate") LocalDate startDate, @Param("endDate")LocalDate endDate, @Param("id") Long id);
 }

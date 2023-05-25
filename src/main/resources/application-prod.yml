@@ -1,0 +1,16 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://ec2-13-209-99-207.ap-northeast-2.compute.amazonaws.com:3306/SAYAI?characterEncoding=UTF-8&serverTimezone=UTC
+    username: admin
+    password: qwer1234
+  jpa:
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        format_sql: true
+        show_sql: true

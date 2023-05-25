@@ -7,6 +7,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -43,9 +45,11 @@ class PlayerControllerTest {
 
     @Test
     void getAllHitter() throws Exception{
+        MultiValueMap<String, String> info = new LinkedMultiValueMap<>();
+        info.add("start", "2023-01-01");
+        info.add("end", "2023-08-01");
         mockMvc.perform(get("/apis/v1/player/hitter/all")
-                        .param("start", "2023-01-01")
-                        .param("end", "2023-08-01")
+                        .params(info)
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -64,7 +68,14 @@ class PlayerControllerTest {
     }
 
     @Test
-    void getHitter() {
+    void getHitter() throws Exception {
+        mockMvc.perform(get("/apis/v1/player/hitter/4")
+                        .param("start", "2022-01-01")
+                        .param("end", "2022-12-31")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andDo(print());
     }
 
     @Test

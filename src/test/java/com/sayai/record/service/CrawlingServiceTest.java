@@ -168,10 +168,10 @@ class CrawlingServiceTest {
 
     @Test
     public void crawlTest2(){
-        crawlingService.crawl("http://www.gameone.kr/club/info/schedule/boxscore?club_idx=15387&game_idx=1516415");
+        //crawlingService.crawl("http://www.gameone.kr/club/info/schedule/boxscore?club_idx=15387&game_idx=1516415");
     }
     @Test
     public void updateOppo() throws IOException {
-        crawlingService.updateOp();
+        //crawlingService.updateOp();
     }
 }
