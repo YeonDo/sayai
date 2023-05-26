@@ -72,7 +72,8 @@ public class CrawlingService {
         String place = ltp.split("/")[2].trim();
         if(fT.equals("팀 사야이")){ fl = "F"; opponent = lT;}
         else {fl = "L"; opponent=fT;}
-        Ligue lig = ligueService.findByName(league).get();
+        Optional<Ligue> byName = ligueService.findByName(league);
+        Long ligId = byName.map(Ligue::getId).orElseGet(()->2L);
         int time_MM = Integer.parseInt(time.substring(0,2));
         int time_dd = Integer.parseInt(time.substring(3,5));
         int time_hh = Integer.parseInt(time.substring(6,8));
@@ -81,7 +82,7 @@ public class CrawlingService {
         LocalTime gametime = LocalTime.of(time_hh,time_mm);
         Game game = Game.builder().id(gameId)
                 .clubId(15387L).fl(FirstLast.valueOf(fl)).stadium(place).gameDate(gamedate)
-                .gameTime(gametime).season((long) gamedate.getYear()).ligIdx(lig.getId()).opponent(opponent)
+                .gameTime(gametime).season((long) gamedate.getYear()).ligIdx(ligId).opponent(opponent)
                 .homeScore(homeScore).awayScore(awayScore).result(result).build();
         Game saveGame = gameService.saveGame(game);
 
