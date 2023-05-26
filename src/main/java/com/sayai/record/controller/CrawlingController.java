@@ -22,7 +22,7 @@ public class CrawlingController {
         return ResponseDto.builder().resultMsg("Success").build();
     }
 
-    @PostMapping
+    @PutMapping("/opponent")
     @ResponseBody
     public ResponseDto updateOpponent() throws IOException {
         crawlingService.updateOp();

@@ -241,6 +241,12 @@ public class CodeCache {
         dataset.put("4구", "41,7,7");
         dataset.put("타격방해", "51,7,7");
         dataset.put("승부주자", "77,7,7");
+
+    }
+    public String getData(String key){
+        if(dataset.containsKey(key))
+            return dataset.get(key);
+        else return null;
     }
     public Map<String, String> getDataset(){
         return dataset;

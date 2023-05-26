@@ -11,6 +11,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -20,6 +21,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @AllArgsConstructor
@@ -33,7 +35,7 @@ public class CrawlingService {
     public void crawl(String url){
         Connection conn = Jsoup.connect(url);
         Document document = null;
-        Map<String,String> dataset = codeCache.getDataset();
+
         try {
             document = conn.get();
             //url의 내용을 HTML Document 객체로 가져온다.
@@ -42,8 +44,11 @@ public class CrawlingService {
             e.printStackTrace();
         }
         Long gameId = Long.parseLong(url.split("&")[1].split("=")[1]);
-        List<String> list = new ArrayList<>();
-        String fl = null;
+        Optional<Game> gameSearched = gameService.findGame(gameId);
+        gameSearched.ifPresent(game -> {
+            throw new RuntimeException("Game Already Exists");
+        });
+        String fl;
         Elements scorebox = document.getElementsByClass("section_score");
         String fT = scorebox.get(0).child(0).select("dt").text();
         String lT = scorebox.get(0).child(1).select("dt").text();
@@ -101,7 +106,7 @@ public class CrawlingService {
         String[] player1= new String[numRows1];
         int kk = 0;
         for(Element ele : players1){
-            player1[kk++] = ele.text().split(" ")[2].substring(0,3);
+            player1[kk++] = ele.text().split(" ")[0]+ " "+ele.text().split(" ")[2].substring(0,3);
         }
         int ii = 0, jj = 0;
         for (Element cell : cells1) {
@@ -120,17 +125,23 @@ public class CrawlingService {
         }
         long gameseq = 1L;
         for(int i=0; i<numRows1; i++){
-            String name = hittable[i][0];
+            String name = hittable[i][0].split(" ")[1];
             Player player = playerService.getPlayerByName(name).get();
+            Long hitseq = 1L;
             for(int j=1; j<12; j++){
                 if(!hittable[i][j].isEmpty()){
                     int cnt = hittable[i][j].split("/").length;
                     for(int k=0; k<cnt; k++){
                         String hc = hittable[i][j].split("/")[k].split(",")[0];
+                        if(codeCache.getData(hc) == null)
+                            continue;
                         Hit hit = Hit.builder().gameSeq(gameseq).game(saveGame).player(player).inning((long)j)
-                                .hitNo((long)(i+1)).hitSeq((long)i).hitCd(dataset.get(hc)).result(hc)
+                                .hitNo(Long.parseLong(hittable[i][0].split(" ")[0]))
+                                .hitSeq(hitseq).hitCd(codeCache.getData(hc).split(",")[0])
+                                .result(hc)
                                 .build();
                         hitList.add(hit);
+                        hitseq++;
                         gameseq++;
                     }
                 }
@@ -166,8 +177,8 @@ public class CrawlingService {
         }
         for(int i=0; i<numRows2; i++){
             String name = pitchtable[i][0];
-            String innStr = hittable[i][2];
-            Long inn;
+            String innStr = pitchtable[i][2];
+            Long inn = 0L;
             if(innStr.length()>=3){
                 if(innStr.substring(2).equals("⅔")){
                     inn = Long.parseLong(innStr.substring(0,1))*3 +2;
@@ -179,7 +190,7 @@ public class CrawlingService {
             }
             Player player = playerService.getPlayerByName(name).get();
             Pitch pitch = (Pitch.builder().game(saveGame).clubId(15387L).player(player).result(pitchtable[i][1])
-                    .inning(0L).batter(Long.parseLong(pitchtable[i][3])).hitter(Long.parseLong(pitchtable[i][4]))
+                    .inning(inn).batter(Long.parseLong(pitchtable[i][3])).hitter(Long.parseLong(pitchtable[i][4]))
                     .pHit(Long.parseLong(pitchtable[i][5]))).pHomerun(Long.parseLong(pitchtable[i][6]))
                     .sacrifice(Long.parseLong(pitchtable[i][7]))
                     .sacFly(Long.parseLong(pitchtable[i][8])).baseOnBall(Long.parseLong(pitchtable[i][9]))
@@ -191,6 +202,7 @@ public class CrawlingService {
         }
         pitchService.saveAll(pitchList);
     }
+    @Transactional
     public void updateOp() throws IOException {
         List<Game> gameList = gameService.findAll();
         String urlForm = "http://www.gameone.kr/club/info/schedule/boxscore?club_idx=15387&game_idx=";
