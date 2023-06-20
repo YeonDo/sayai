@@ -63,7 +63,7 @@ public interface HitRepository extends JpaRepository<Hit, Long> {
             " ) A " +
             " GROUP BY PLAYER_ID " +
             ") A, player B " +
-            "WHERE A.PLAYER_ID = B.PLAYER_ID " +
+            "WHERE A.PLAYER_ID = B.PLAYER_ID and B.sleep_yn = 'N' " +
             "ORDER BY 7 DESC", nativeQuery = true)
     List<PlayerInterface> getPlayerByPeriod(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
     @Query(value = "SELECT " +
@@ -114,7 +114,7 @@ public interface HitRepository extends JpaRepository<Hit, Long> {
             " ) A " +
             " GROUP BY PLAYER_ID " +
             ") A, player B " +
-            "WHERE A.PLAYER_ID = B.PLAYER_ID and A.PLAYER_ID = :id " +
+            "WHERE A.PLAYER_ID = B.PLAYER_ID and A.PLAYER_ID = :id and B.sleep_yn = 'N' " +
             "ORDER BY 7 DESC", nativeQuery = true)
     Optional<PlayerInterface> getPlayerByPeriodAndId(@Param("startDate") LocalDate startDate, @Param("endDate")LocalDate endDate, @Param("id") Long id);
 }

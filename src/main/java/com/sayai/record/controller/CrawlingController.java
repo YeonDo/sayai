@@ -28,4 +28,11 @@ public class CrawlingController {
         crawlingService.updateOp();
         return ResponseDto.builder().resultMsg("Every Process Success").build();
     }
+
+    @PutMapping("/history")
+    @ResponseBody
+    public String updateSince(@RequestParam Integer year, @RequestParam Integer page){
+        crawlingService.updateSince(year, page);
+        return "OK";
+    }
 }

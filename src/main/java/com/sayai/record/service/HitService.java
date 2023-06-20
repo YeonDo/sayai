@@ -35,16 +35,20 @@ public class HitService {
     }
 
     public PlayerDto findOne(LocalDate startDate, LocalDate endDate, Long id){
-        PlayerInterface dto = hitRepository.getPlayerByPeriodAndId(startDate, endDate, id).get();
-        return PlayerDto.builder()
-                .id(dto.getId()).name(dto.getName()).backNo(dto.getBackNo())
-                .avgPa(dto.getAvgpa()).battingAvg(dto.getBattingavg())
-                .atBat(dto.getAtbat()).doubles(dto.getDoubles())
-                .homeruns(dto.getHomeruns()).onBasePer(dto.getOnbaseper())
-                .slugPer(dto.getSlugper()).totalHits(dto.getTotalhits())
-                .singles(dto.getSingles())
-                .triples(dto.getTriples()).playerAppearance(dto.getPlayerappearance())
-                .totalGames(dto.getTotalgames()).build();
+        try {
+            PlayerInterface dto = hitRepository.getPlayerByPeriodAndId(startDate, endDate, id).orElseThrow(NoSuchFieldError::new);
+            return PlayerDto.builder()
+                    .id(dto.getId()).name(dto.getName()).backNo(dto.getBackNo())
+                    .avgPa(dto.getAvgpa()).battingAvg(dto.getBattingavg())
+                    .atBat(dto.getAtbat()).doubles(dto.getDoubles())
+                    .homeruns(dto.getHomeruns()).onBasePer(dto.getOnbaseper())
+                    .slugPer(dto.getSlugper()).totalHits(dto.getTotalhits())
+                    .singles(dto.getSingles())
+                    .triples(dto.getTriples()).playerAppearance(dto.getPlayerappearance())
+                    .totalGames(dto.getTotalgames()).build();
+        }catch (NoSuchFieldError e){
+            return null;
+        }
     }
     public List<PlayerDto> findAllByPeriod(LocalDate startDate, LocalDate endDate){
         List<PlayerDto> result = new ArrayList<>();

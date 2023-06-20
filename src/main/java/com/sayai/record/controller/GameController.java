@@ -15,6 +15,7 @@ import java.util.Optional;
 @AllArgsConstructor
 @RestController
 @RequestMapping("/apis/v1/game")
+@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class GameController {
     private final GameService gameService;
 

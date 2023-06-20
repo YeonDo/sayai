@@ -26,7 +26,7 @@ public interface PitchRepository extends JpaRepository<Pitch, Long> {
             "SUM(p.stOut) , SUM(p.fallingBall) , "+
             "SUM(p.balk) , SUM(p.lossScore) , SUM(p.selfLossScore)) " +
             "FROM Pitch p join p.game g join p.player pl " +
-            "WHERE g.gameDate BETWEEN :startDate AND :endDate " +
+            "WHERE g.gameDate BETWEEN :startDate AND :endDate and pl.sleepYn = 'N' " +
             "GROUP BY p.player")
     List<PitcherDto> getStatsByPeriod(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
     @Query("SELECT new com.sayai.record.dto.PitcherDto(" +
@@ -42,7 +42,7 @@ public interface PitchRepository extends JpaRepository<Pitch, Long> {
             "SUM(p.balk) , SUM(p.lossScore) , SUM(p.selfLossScore)) " +
             "FROM Pitch p join p.game g join p.player pl " +
             "WHERE g.gameDate BETWEEN :startDate AND :endDate " +
-            "and pl.id = :id " +
+            "and pl.id = :id and pl.sleepYn = 'N' " +
             "GROUP BY p.player")
     Optional<PitcherDto> getStats(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate, @Param("id") Long id);
 

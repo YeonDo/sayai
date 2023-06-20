@@ -6,7 +6,6 @@ import lombok.*;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 @ToString
 public class PitcherDto {
     private Long id;
@@ -33,7 +32,7 @@ public class PitcherDto {
     private Double whip;
     private Double battingAvg;
     private Double k9;
-
+    @Builder
     public PitcherDto(Long id, Long backNo, String name, Long wins, Long loses, Long saves, Long innings, Long batter, Long hitter, Long pHit, Long pHomerun, Long sacrifice, Long sacFly, Long baseOnBall, Long hitByBall, Long stOut, Long fallingBall, Long balk, Long lossScore, Long selfLossScore) {
         this.id = id;
         this.backNo = backNo;

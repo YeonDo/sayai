@@ -27,7 +27,7 @@ public class PlayerService {
     }
 
     public Optional<Player> getPlayerByName(String name){
-        return playerRepository.findPlayerByName(name);
+        return playerRepository.findPlayerByNameAndSleepYn(name , "N");
     }
 
 

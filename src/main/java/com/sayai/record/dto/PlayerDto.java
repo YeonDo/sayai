@@ -6,9 +6,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class PlayerDto {
     private Long id;
     private Long backNo;
@@ -25,6 +22,24 @@ public class PlayerDto {
     private Long doubles;
     private Long triples;
     private Long homeruns;
+    @Builder
+    public PlayerDto(Long id, Long backNo, String name, Long totalGames, Double battingAvg, Long playerAppearance, Double avgPa, Long atBat, Double onBasePer, Double slugPer, Long totalHits, Long singles, Long doubles, Long triples, Long homeruns) {
+        this.id = id;
+        this.backNo = backNo;
+        this.name = name;
+        this.totalGames = totalGames;
+        this.battingAvg = battingAvg ==null? 0:battingAvg;
+        this.playerAppearance = playerAppearance;
+        this.avgPa = avgPa == null?0: avgPa;
+        this.atBat = atBat;
+        this.onBasePer = onBasePer == null ? 0: onBasePer;
+        this.slugPer = slugPer== null ? 0: slugPer;
+        this.totalHits = totalHits;
+        this.singles = singles;
+        this.doubles = doubles;
+        this.triples = triples;
+        this.homeruns = homeruns;
+    }
 
 
     @Override

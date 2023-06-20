@@ -18,7 +18,11 @@ class PlayerServiceTest {
         Optional<Player> player = playerService.getPlayer(24L);
         System.out.println(player.get().getName());
     }
-
+    @Test
+    void getPlayerByName(){
+        Player player = playerService.getPlayerByName("이종화").orElseThrow();
+        System.out.println(player.getBackNo());
+    }
 
     @Test
     void getAll(){

@@ -82,5 +82,15 @@ class PlayerControllerTest {
     void getPitcher() {
     }
 
+    @Test
+    void getHitPeriod() throws Exception{
+        mockMvc.perform(get("/apis/v1/player/hitter/2/period")
+                        .param("list", "total,2022,202201,20220112")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andDo(print());
+    }
+
 
 }

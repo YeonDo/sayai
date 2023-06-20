@@ -19,6 +19,7 @@ import java.util.List;
 
 @AllArgsConstructor
 @RestController
+@CrossOrigin(origins = "*", allowedHeaders = "*")
 @RequestMapping("/apis/v1/player")
 public class PlayerController {
     private final PlayerService playerService;
@@ -61,5 +62,33 @@ public class PlayerController {
     @ResponseBody
     public PitcherDto getPitcher(@PathVariable Long playerid,@RequestParam("start") @DateTimeFormat(pattern="yyyy-MM-dd") LocalDate startDate, @RequestParam("end") @DateTimeFormat(pattern="yyyy-MM-dd") LocalDate endDate){
         return pitchService.selectOne(startDate,endDate,playerid);
+    }
+
+    @GetMapping("/hitter/{playerId}/period")
+    @ResponseBody
+    public List<PlayerDto> getHitPeriod(@PathVariable Long playerId,@RequestParam("list") String[] periodList){
+        List result = new ArrayList();
+        for(String s : periodList){
+            System.out.println(s);
+            if(s.equals("total"))
+                result.add(hitService.findOne(LocalDate.of(2012,1,1),LocalDate.now(),playerId));
+            else if(s.length()==4){
+                int year = Integer.parseInt(s);
+                result.add(hitService.findOne(LocalDate.of(year,1,1),LocalDate.of(year+1,1,1),playerId));
+            }else{
+                if(s.length()!=6)
+                    continue;
+                int year = Integer.parseInt(s.substring(0,4));
+                int month = Integer.parseInt(s.substring(4,6));
+                int yearnext = year;
+                int monthnext = month+1;
+                if(month == 12) {
+                    yearnext = year + 1;
+                    monthnext = 1;
+                }
+                result.add(hitService.findOne(LocalDate.of(year,month,1),LocalDate.of(yearnext,monthnext,1),playerId));
+            }
+        }
+        return result;
     }
 }

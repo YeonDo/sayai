@@ -31,6 +31,7 @@ public class Player {
 
     private String finEdu;
     private String groupCode;
+    private String sleepYn;
     @Builder.Default
     @OneToMany(mappedBy = "player", cascade = CascadeType.ALL)
     private List<Pitch> pitchList = new ArrayList<>();

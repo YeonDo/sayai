@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest
 @Transactional
 class CrawlingServiceTest {
-    private String testurl = "http://www.gameone.kr/club/info/schedule/boxscore?club_idx=15387&game_idx=1528629";
+    private String testurl = "http://www.gameone.kr/club/info/schedule/boxscore?club_idx=15387&game_idx=223903";
     @Autowired
     private CodeCache codeCache;
     @Autowired
@@ -173,5 +173,35 @@ class CrawlingServiceTest {
     @Test
     public void updateOppo() throws IOException {
         //crawlingService.updateOp();
+    }
+
+    @Test
+    public void updateGame2012() throws IOException{
+        String url = "http://www.gameone.kr/club/info/schedule/table?club_idx=15387&season=2012&game_type=0&lig_idx=0&month=0&page=1";
+        Connection conn = Jsoup.connect(url);
+        Document document = null;
+        try {
+            document = conn.get();
+            //url의 내용을 HTML Document 객체로 가져온다.
+            //https://jsoup.org/apidocs/org/jsoup/nodes/Document.html 참고
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Elements scorebox = document.getElementsByClass("game_table");
+        //System.out.println(scorebox);
+        Elements aHref = scorebox.select("table tbody tr td a");
+        System.out.println(aHref.get(1));
+        Element s = aHref.get(0);
+        //System.out.println(s.hasClass("simbtn boxscore"));
+        //System.out.println(aHref.get(1).hasClass("simbtn boxscore"));
+        for(Element ele : aHref){
+            if(ele.hasClass("simbtn boxscore")){
+                System.out.println(ele.toString().split(" ")[1].split(";game_idx=")[1].substring(0,6));
+            }
+        }
+    }
+    @Test
+    public void updateSinceTest() throws Exception{
+        crawlingService.updateSince(2013,2);
     }
 }

@@ -5,6 +5,7 @@ import com.sayai.record.model.enums.FirstLast;
 import com.sayai.record.repository.*;
 import com.sayai.record.util.CodeCache;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -18,13 +19,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class CrawlingService {
     private final PlayerService playerService;
     private final LigueService ligueService;
@@ -35,7 +33,7 @@ public class CrawlingService {
     public void crawl(String url){
         Connection conn = Jsoup.connect(url);
         Document document = null;
-
+        System.out.println(url);
         try {
             document = conn.get();
             //url의 내용을 HTML Document 객체로 가져온다.
@@ -127,6 +125,7 @@ public class CrawlingService {
         long gameseq = 1L;
         for(int i=0; i<numRows1; i++){
             String name = hittable[i][0].split(" ")[1];
+            System.out.println(name);
             Player player = playerService.getPlayerByName(name).get();
             Long hitseq = 1L;
             for(int j=1; j<12; j++){
@@ -154,8 +153,8 @@ public class CrawlingService {
         Elements players2 = pitchcells.select("table tbody tr th");
         int numRows2 = pitchcells.select("table tbody tr").size();
         int numCols2 = pitchcells.select("table tbody tr:first-child td").size();
-        String[][] table2 = new String[numRows1][numCols1];
-        String[] player2= new String[numRows1];
+        String[][] table2 = new String[numRows2][numCols2];
+        String[] player2= new String[numRows2];
         kk = 0;
         for(Element ele : players2){
             player2[kk++] = ele.text().substring(0,3);
@@ -189,6 +188,7 @@ public class CrawlingService {
             }else{
                 inn = Long.parseLong(innStr)*3;
             }
+            System.out.println(name);
             Player player = playerService.getPlayerByName(name).get();
             Pitch pitch = (Pitch.builder().game(saveGame).clubId(15387L).player(player).result(pitchtable[i][1])
                     .inning(inn).batter(Long.parseLong(pitchtable[i][3])).hitter(Long.parseLong(pitchtable[i][4]))
@@ -238,6 +238,30 @@ public class CrawlingService {
                 game.setHomeScore(homeScore);
                 game.setAwayScore(awayScore);
                 game.setResult(result);
+            }
+        }
+    }
+    @Transactional
+    public void updateSince(int year, int page){
+        String url = String.format("http://www.gameone.kr/club/info/schedule/table?club_idx=15387&season=%s&game_type=0&lig_idx=0&month=0&page=%s", year,page);
+        Connection conn = Jsoup.connect(url);
+        Document document = null;
+        try {
+            document = conn.get();
+            //url의 내용을 HTML Document 객체로 가져온다.
+            //https://jsoup.org/apidocs/org/jsoup/nodes/Document.html 참고
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Elements scorebox = document.getElementsByClass("game_table");
+        Elements aHref = scorebox.select("table tbody tr td a");
+        HashSet<Long> set = new HashSet<>();
+        String urlForm ="http://www.gameone.kr/club/info/schedule/boxscore?club_idx=15387&game_idx=";
+        for(Element ele : aHref){
+            if(ele.hasClass("simbtn boxscore")){
+                Long gameId = Long.parseLong(ele.toString().split(" ")[1].split(";game_idx=")[1].substring(0, 6));
+                System.out.println("gameId : " + gameId);
+                this.crawl(urlForm+gameId);
             }
         }
     }
