@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -30,7 +31,11 @@ public class CrawlingService {
     private final PitchService pitchService;
     private final GameService gameService;
     private final CodeCache codeCache;
+
     public void crawl(String url){
+        this.crawl(url,LocalDate.now().getYear());
+    }
+    public void crawl(String url, int year){
         Connection conn = Jsoup.connect(url);
         Document document = null;
         System.out.println(url);
@@ -68,6 +73,13 @@ public class CrawlingService {
         String league = ltp.split("/")[0].trim();
         String time = ltp.split("/")[1].trim();
         String place = ltp.split("/")[2].trim();
+        if(ltp.split("/").length>3){
+            int len = ltp.split("/").length;
+            time = ltp.split("/")[len-2].trim();
+            place = ltp.split("/")[len-1].trim();
+            league = Arrays.stream(ltp.split("/"),0,len-2)
+                    .collect(Collectors.joining("/"));
+        }
         if(fT.equals("팀 사야이")){ fl = "F"; opponent = lT;}
         else {fl = "L"; opponent=fT;}
         Optional<Ligue> byName = ligueService.findByName(league);
@@ -76,7 +88,7 @@ public class CrawlingService {
         int time_dd = Integer.parseInt(time.substring(3,5));
         int time_hh = Integer.parseInt(time.substring(6,8));
         int time_mm = Integer.parseInt(time.substring(9,11));
-        LocalDate gamedate = LocalDate.of(2023,time_MM,time_dd);
+        LocalDate gamedate = LocalDate.of(year,time_MM,time_dd);
         LocalTime gametime = LocalTime.of(time_hh,time_mm);
         Game game = Game.builder().id(gameId)
                 .clubId(15387L).fl(FirstLast.valueOf(fl)).stadium(place).gameDate(gamedate)
@@ -261,7 +273,7 @@ public class CrawlingService {
             if(ele.hasClass("simbtn boxscore")){
                 Long gameId = Long.parseLong(ele.toString().split(" ")[1].split(";game_idx=")[1].substring(0, 6));
                 System.out.println("gameId : " + gameId);
-                this.crawl(urlForm+gameId);
+                this.crawl(urlForm+gameId,year);
             }
         }
     }

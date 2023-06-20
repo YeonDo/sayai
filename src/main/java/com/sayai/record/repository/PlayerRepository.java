@@ -11,7 +11,7 @@ import java.util.Optional;
 
 @Repository
 public interface PlayerRepository extends JpaRepository<Player, Long> {
-    Optional<Player> findPlayerByNameAndSleepYn(String name, String sleepYn);
+    Optional<Player> findPlayerByName(String name);
 
 
 }

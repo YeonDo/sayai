@@ -31,7 +31,7 @@ public class CrawlingController {
 
     @PutMapping("/history")
     @ResponseBody
-    public String updateSince(@RequestParam Integer year, @RequestParam Integer page){
+    public String updateSince(@RequestParam("year") Integer year, @RequestParam("page") Integer page){
         crawlingService.updateSince(year, page);
         return "OK";
     }

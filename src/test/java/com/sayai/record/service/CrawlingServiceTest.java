@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest
 @Transactional
 class CrawlingServiceTest {
-    private String testurl = "http://www.gameone.kr/club/info/schedule/boxscore?club_idx=15387&game_idx=223903";
+    private String testurl = "http://www.gameone.kr/club/info/schedule/boxscore?club_idx=15387&game_idx=1000308";
     @Autowired
     private CodeCache codeCache;
     @Autowired
@@ -168,7 +168,7 @@ class CrawlingServiceTest {
 
     @Test
     public void crawlTest2(){
-        //crawlingService.crawl("http://www.gameone.kr/club/info/schedule/boxscore?club_idx=15387&game_idx=1516415");
+        crawlingService.crawl("http://www.gameone.kr/club/info/schedule/boxscore?club_idx=15387&game_idx=331776");
     }
     @Test
     public void updateOppo() throws IOException {
