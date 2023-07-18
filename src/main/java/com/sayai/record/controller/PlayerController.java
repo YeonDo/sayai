@@ -2,6 +2,7 @@ package com.sayai.record.controller;
 
 import com.sayai.record.dto.PitcherDto;
 import com.sayai.record.dto.PlayerDto;
+import com.sayai.record.dto.PlayerRecord;
 import com.sayai.record.dto.ResponseDto;
 import com.sayai.record.model.Player;
 import com.sayai.record.service.GameService;
@@ -27,19 +28,14 @@ public class PlayerController {
     private final HitService hitService;
     @GetMapping("/{id}")
     @ResponseBody
-    public PlayerDto getPlayer(@PathVariable Long id){
+    public PlayerRecord getPlayer(@PathVariable Long id){
         System.out.println("========================");
-        return playerService.getPlayer(id).get().toDto();
+        return playerService.getPlayer(id);
     }
     @GetMapping("/all")
     @ResponseBody
-    public List<PlayerDto> getAllPlayers(){
-        List<Player> playerList = playerService.getPlayerList();
-        List<PlayerDto> result = new ArrayList<>();
-        for(Player p : playerList){
-            result.add(p.toDto());
-        }
-        return result;
+    public List<PlayerRecord> getAllPlayers(){
+        return playerService.getPlayerList();
     }
     @GetMapping("/hitter/all")
     @ResponseBody

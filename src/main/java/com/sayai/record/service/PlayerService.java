@@ -1,6 +1,7 @@
 package com.sayai.record.service;
 
 import com.sayai.record.dto.PitcherDto;
+import com.sayai.record.dto.PlayerRecord;
 import com.sayai.record.model.Player;
 import com.sayai.record.repository.PlayerRepository;
 import lombok.AllArgsConstructor;
@@ -10,7 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -18,12 +21,12 @@ import java.util.Optional;
 public class PlayerService {
 
     private final PlayerRepository playerRepository;
-    public List<Player> getPlayerList(){
-        return playerRepository.findAll();
+    public List<PlayerRecord> getPlayerList(){
+        return playerRepository.findAll().stream().map(this::toRecord).collect(Collectors.toList());
     }
 
-    public Optional<Player> getPlayer(Long id){
-        return playerRepository.findById(id);
+    public PlayerRecord getPlayer(Long id){
+        return toRecord(playerRepository.findById(id).orElseThrow());
     }
 
     public Optional<Player> getPlayerByName(String name){
@@ -36,5 +39,7 @@ public class PlayerService {
         return result;
     }
 
-
+    public PlayerRecord toRecord(Player player){
+        return new PlayerRecord(player.getId(), player.getBackNo(),player.getName());
+    }
 }

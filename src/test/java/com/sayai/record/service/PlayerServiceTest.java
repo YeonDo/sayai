@@ -1,5 +1,6 @@
 package com.sayai.record.service;
 
+import com.sayai.record.dto.PlayerRecord;
 import com.sayai.record.model.Player;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,8 +16,8 @@ class PlayerServiceTest {
     private PlayerService playerService;
     @Test
     void getPlayer() {
-        Optional<Player> player = playerService.getPlayer(24L);
-        System.out.println(player.get().getName());
+        PlayerRecord player = playerService.getPlayer(24L);
+        System.out.println(player.name());
     }
     @Test
     void getPlayerByName(){
@@ -26,6 +27,6 @@ class PlayerServiceTest {
 
     @Test
     void getAll(){
-        List<Player> playerList = playerService.getPlayerList();
+        List<PlayerRecord> playerList = playerService.getPlayerList();
     }
 }

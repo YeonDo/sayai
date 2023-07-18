@@ -2,6 +2,7 @@ package com.sayai.record.model;
 
 
 import com.sayai.record.dto.PlayerDto;
+import com.sayai.record.dto.PlayerRecord;
 import lombok.*;
 
 import javax.persistence.*;
@@ -44,4 +45,5 @@ public class Player {
         return PlayerDto.builder()
                 .id(this.id).backNo(this.backNo).name(this.name).build();
     }
+
 }
