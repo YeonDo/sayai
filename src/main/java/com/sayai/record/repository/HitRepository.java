@@ -34,16 +34,16 @@ public interface HitRepository extends JpaRepository<Hit, Long> {
             "( " +
             " SELECT " +
             " PLAYER_ID " +
-            " , SUM(CASE WHEN CD = 'H' THEN 1 END) AS HIT_CNT " +
-            " , SUM(CASE WHEN CD = 'O' THEN 1 END) AS OUT_CNT " +
-            " , SUM(CASE WHEN CD = 'S' THEN 1 END) AS SAC_CNT " +
-            " , SUM(CASE WHEN CD = 'M' THEN 1 END) AS MIS_CNT " +
-            " , SUM(CASE WHEN CD = 'B' THEN 1 END) AS OB_CNT " +
-            " , SUM(CASE WHEN ON_BASE = 1 THEN 1 ELSE 0 END) AS HIT_1 " +
-            " , SUM(CASE WHEN ON_BASE = 2 THEN 1 ELSE 0 END) AS HIT_2 " +
-            " , SUM(CASE WHEN ON_BASE = 3 THEN 1 ELSE 0 END) AS HIT_3 " +
-            " , SUM(CASE WHEN ON_BASE = 4 THEN 1 ELSE 0 END) AS HIT_4 " +
-            " , SUM(ON_BASE) AS ONBASE " +
+            " , IFNULL(SUM(CASE WHEN CD = 'H' THEN 1 END),0) AS HIT_CNT " +
+            " , IFNULL(SUM(CASE WHEN CD = 'O' THEN 1 END),0) AS OUT_CNT " +
+            " , IFNULL(SUM(CASE WHEN CD = 'S' THEN 1 END),0) AS SAC_CNT " +
+            " , IFNULL(SUM(CASE WHEN CD = 'M' THEN 1 END),0) AS MIS_CNT " +
+            " , IFNULL(SUM(CASE WHEN CD = 'B' THEN 1 END),0) AS OB_CNT " +
+            " , IFNULL(SUM(CASE WHEN ON_BASE = 1 THEN 1 ELSE 0 END),0) AS HIT_1 " +
+            " , IFNULL(SUM(CASE WHEN ON_BASE = 2 THEN 1 ELSE 0 END),0) AS HIT_2 " +
+            " , IFNULL(SUM(CASE WHEN ON_BASE = 3 THEN 1 ELSE 0 END),0) AS HIT_3 " +
+            " , IFNULL(SUM(CASE WHEN ON_BASE = 4 THEN 1 ELSE 0 END),0) AS HIT_4 " +
+            " , IFNULL(SUM(ON_BASE),0) AS ONBASE " +
             " , COUNT(DISTINCT GAME_IDX) AS GAME_CNT " +
             " , COUNT(*) as BATER_CNT " +
             " FROM  " +
@@ -85,16 +85,16 @@ public interface HitRepository extends JpaRepository<Hit, Long> {
             "( " +
             " SELECT " +
             " PLAYER_ID " +
-            " , SUM(CASE WHEN CD = 'H' THEN 1 END) AS HIT_CNT " +
-            " , SUM(CASE WHEN CD = 'O' THEN 1 END) AS OUT_CNT " +
-            " , SUM(CASE WHEN CD = 'S' THEN 1 END) AS SAC_CNT " +
-            " , SUM(CASE WHEN CD = 'M' THEN 1 END) AS MIS_CNT " +
-            " , SUM(CASE WHEN CD = 'B' THEN 1 END) AS OB_CNT " +
-            " , SUM(CASE WHEN ON_BASE = 1 THEN 1 ELSE 0 END) AS HIT_1 " +
-            " , SUM(CASE WHEN ON_BASE = 2 THEN 1 ELSE 0 END) AS HIT_2 " +
-            " , SUM(CASE WHEN ON_BASE = 3 THEN 1 ELSE 0 END) AS HIT_3 " +
-            " , SUM(CASE WHEN ON_BASE = 4 THEN 1 ELSE 0 END) AS HIT_4 " +
-            " , SUM(ON_BASE) AS ONBASE " +
+            " , IFNULL(SUM(CASE WHEN CD = 'H' THEN 1 END),0) AS HIT_CNT " +
+            " , IFNULL(SUM(CASE WHEN CD = 'O' THEN 1 END),0) AS OUT_CNT " +
+            " , IFNULL(SUM(CASE WHEN CD = 'S' THEN 1 END),0) AS SAC_CNT " +
+            " , IFNULL(SUM(CASE WHEN CD = 'M' THEN 1 END),0) AS MIS_CNT " +
+            " , IFNULL(SUM(CASE WHEN CD = 'B' THEN 1 END),0) AS OB_CNT " +
+            " , IFNULL(SUM(CASE WHEN ON_BASE = 1 THEN 1 ELSE 0 END),0) AS HIT_1 " +
+            " , IFNULL(SUM(CASE WHEN ON_BASE = 2 THEN 1 ELSE 0 END),0) AS HIT_2 " +
+            " , IFNULL(SUM(CASE WHEN ON_BASE = 3 THEN 1 ELSE 0 END),0) AS HIT_3 " +
+            " , IFNULL(SUM(CASE WHEN ON_BASE = 4 THEN 1 ELSE 0 END),0) AS HIT_4 " +
+            " , IFNULL(SUM(ON_BASE),0) AS ONBASE " +
             " , COUNT(DISTINCT GAME_IDX) AS GAME_CNT " +
             " , COUNT(*) as BATER_CNT " +
             " FROM  " +

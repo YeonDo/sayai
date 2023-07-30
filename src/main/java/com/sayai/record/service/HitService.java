@@ -47,7 +47,7 @@ public class HitService {
                     .triples(dto.getTriples()).playerAppearance(dto.getPlayerappearance())
                     .totalGames(dto.getTotalgames()).build();
         }catch (NoSuchFieldError e){
-            return null;
+            return PlayerDto.builder().build();
         }
     }
     public List<PlayerDto> findAllByPeriod(LocalDate startDate, LocalDate endDate){
