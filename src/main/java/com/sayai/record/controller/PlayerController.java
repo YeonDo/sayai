@@ -9,6 +9,7 @@ import com.sayai.record.service.GameService;
 import com.sayai.record.service.HitService;
 import com.sayai.record.service.PitchService;
 import com.sayai.record.service.PlayerService;
+import com.sayai.record.util.Utils;
 import lombok.AllArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
@@ -64,27 +65,25 @@ public class PlayerController {
     @ResponseBody
     public List<PlayerDto> getHitPeriod(@PathVariable Long playerId,@RequestParam("list") String[] periodList){
         List result = new ArrayList();
+        Utils utils = new Utils();
         for(String s : periodList){
             System.out.println(s);
             if(s.equals("total"))
                 result.add(hitService.findOne(LocalDate.of(2012,1,1),LocalDate.now(),playerId));
             else if(s.length()==4){
                 int year = Integer.parseInt(s);
-                result.add(hitService.findOne(LocalDate.of(year,1,1),LocalDate.of(year+1,1,1),playerId));
+                result.add(hitService.findOne(LocalDate.of(year,1,1),LocalDate.of(year,12,31),playerId));
             }else{
                 if(s.length()!=6)
                     continue;
                 int year = Integer.parseInt(s.substring(0,4));
                 int month = Integer.parseInt(s.substring(4,6));
-                int yearnext = year;
-                int monthnext = month+1;
-                if(month == 12) {
-                    yearnext = year + 1;
-                    monthnext = 1;
-                }
-                result.add(hitService.findOne(LocalDate.of(year,month,1),LocalDate.of(yearnext,monthnext,1),playerId));
+                int lastDayOfMonth = utils.getLastDayOfMonth(year, month);
+                result.add(hitService.findOne(LocalDate.of(year,month,1),LocalDate.of(year,month,lastDayOfMonth),playerId));
             }
         }
         return result;
     }
+
+
 }
