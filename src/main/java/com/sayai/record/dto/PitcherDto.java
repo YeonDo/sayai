@@ -2,6 +2,8 @@ package com.sayai.record.dto;
 
 import lombok.*;
 
+import java.util.zip.DeflaterOutputStream;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -14,7 +16,8 @@ public class PitcherDto {
     private Long wins;
     private Long loses;
     private Long saves;
-    private Long innings;
+    private Long inn;
+    private Double innings;
     private Long batter;
     private Long hitter;
     private Long pHit;
@@ -33,14 +36,14 @@ public class PitcherDto {
     private Double battingAvg;
     private Double k9;
     @Builder
-    public PitcherDto(Long id, Long backNo, String name, Long wins, Long loses, Long saves, Long innings, Long batter, Long hitter, Long pHit, Long pHomerun, Long sacrifice, Long sacFly, Long baseOnBall, Long hitByBall, Long stOut, Long fallingBall, Long balk, Long lossScore, Long selfLossScore) {
+    public PitcherDto(Long id, Long backNo, String name, Long wins, Long loses, Long saves, Long inn, Long batter, Long hitter, Long pHit, Long pHomerun, Long sacrifice, Long sacFly, Long baseOnBall, Long hitByBall, Long stOut, Long fallingBall, Long balk, Long lossScore, Long selfLossScore) {
         this.id = id;
         this.backNo = backNo;
         this.name = name;
         this.wins = wins;
         this.loses = loses;
         this.saves = saves;
-        this.innings = innings;
+        this.inn = inn;
         this.batter = batter;
         this.hitter = hitter;
         this.pHit = pHit;
