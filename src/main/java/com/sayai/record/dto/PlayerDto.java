@@ -22,8 +22,15 @@ public class PlayerDto {
     private Long doubles;
     private Long triples;
     private Long homeruns;
+    private Long baseOnBall;
+    private Long hitByPitch;
+    private Long strikeOut;
+    private Long ibb;
+    private Long dp;
+    private Long sacrifice;
+    private Long sacFly;
     @Builder
-    public PlayerDto(Long id, Long backNo, String name, Long totalGames, Double battingAvg, Long playerAppearance, Double avgPa, Long atBat, Double onBasePer, Double slugPer, Long totalHits, Long singles, Long doubles, Long triples, Long homeruns) {
+    public PlayerDto(Long id, Long backNo, String name, Long totalGames, Double battingAvg, Long playerAppearance, Double avgPa, Long atBat, Double onBasePer, Double slugPer, Long totalHits, Long singles, Long doubles, Long triples, Long homeruns,Long baseOnBall, Long hitByPitch, Long strikeOut, Long ibb, Long dp, Long sacrifice, Long sacFly) {
         this.id = id;
         this.backNo = backNo;
         this.name = name;
@@ -39,6 +46,13 @@ public class PlayerDto {
         this.doubles = doubles;
         this.triples = triples;
         this.homeruns = homeruns;
+        this.baseOnBall = baseOnBall;
+        this.hitByPitch = hitByPitch;
+        this.strikeOut = strikeOut;
+        this.ibb = ibb;
+        this.dp = dp;
+        this.sacrifice =sacrifice;
+        this.sacFly = sacFly;
     }
 
 
@@ -60,6 +74,13 @@ public class PlayerDto {
                 ", doubles=" + doubles +
                 ", triples=" + triples +
                 ", homeruns=" + homeruns +
+                ", baseOnBall=" + baseOnBall +
+                ", hitByPitch=" + hitByPitch +
+                ", strikeOut=" + strikeOut +
+                ", ibb=" + ibb +
+                ", dp=" + dp +
+                ", sacrifice=" + sacrifice +
+                ", sacFly=" + sacFly +
                 '}';
     }
 }

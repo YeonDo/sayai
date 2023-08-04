@@ -67,7 +67,6 @@ public class PlayerController {
         List result = new ArrayList();
         Utils utils = new Utils();
         for(String s : periodList){
-            System.out.println(s);
             if(s.equals("total"))
                 result.add(hitService.findOne(LocalDate.of(2012,1,1),LocalDate.now(),playerId));
             else if(s.length()==4){

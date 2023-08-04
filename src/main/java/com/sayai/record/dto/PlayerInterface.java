@@ -16,5 +16,11 @@ public interface PlayerInterface {
     Long getDoubles();
     Long getTriples();
     Long getHomeruns();
-
+    Long getBaseOnBall();
+    Long getHitByPitch();
+    Long getStrikeOut();
+    Long getIbb();
+    Long getDp();
+    Long getSacrifice();
+    Long getSacFly();
 }

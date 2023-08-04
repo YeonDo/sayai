@@ -30,22 +30,14 @@ public class HitService {
         return hitRepository.findById(id);
     }
 
-    public List<Hit> findAllHit(Long playerid){
+    public List<Hit> findAllHit(){
         return hitRepository.findAll();
     }
 
     public PlayerDto findOne(LocalDate startDate, LocalDate endDate, Long id){
         try {
             PlayerInterface dto = hitRepository.getPlayerByPeriodAndId(startDate, endDate, id).orElseThrow(NoSuchFieldError::new);
-            return PlayerDto.builder()
-                    .id(dto.getId()).name(dto.getName()).backNo(dto.getBackNo())
-                    .avgPa(dto.getAvgpa()).battingAvg(dto.getBattingavg())
-                    .atBat(dto.getAtbat()).doubles(dto.getDoubles())
-                    .homeruns(dto.getHomeruns()).onBasePer(dto.getOnbaseper())
-                    .slugPer(dto.getSlugper()).totalHits(dto.getTotalhits())
-                    .singles(dto.getSingles())
-                    .triples(dto.getTriples()).playerAppearance(dto.getPlayerappearance())
-                    .totalGames(dto.getTotalgames()).build();
+            return interfaceToDto(dto);
         }catch (NoSuchFieldError e){
             return PlayerDto.builder().build();
         }
@@ -54,16 +46,27 @@ public class HitService {
         List<PlayerDto> result = new ArrayList<>();
         List<PlayerInterface> dtos = hitRepository.getPlayerByPeriod(startDate, endDate);
         for(PlayerInterface dto : dtos){
-            result.add(PlayerDto.builder()
-                    .id(dto.getId()).name(dto.getName()).backNo(dto.getBackNo())
-                    .avgPa(dto.getAvgpa()).battingAvg(dto.getBattingavg())
-                    .atBat(dto.getAtbat()).doubles(dto.getDoubles())
-                    .homeruns(dto.getHomeruns()).onBasePer(dto.getOnbaseper())
-                    .slugPer(dto.getSlugper()).totalHits(dto.getTotalhits())
-                    .singles(dto.getSingles())
-                    .triples(dto.getTriples()).playerAppearance(dto.getPlayerappearance())
-                    .totalGames(dto.getTotalgames()).build());
+            result.add(interfaceToDto(dto));
         }
         return result;
+    }
+    private PlayerDto interfaceToDto(PlayerInterface dto){
+        return PlayerDto.builder()
+                .id(dto.getId()).name(dto.getName()).backNo(dto.getBackNo())
+                .avgPa(dto.getAvgpa()).battingAvg(dto.getBattingavg())
+                .atBat(dto.getAtbat()).doubles(dto.getDoubles())
+                .homeruns(dto.getHomeruns()).onBasePer(dto.getOnbaseper())
+                .slugPer(dto.getSlugper()).totalHits(dto.getTotalhits())
+                .singles(dto.getSingles())
+                .triples(dto.getTriples()).playerAppearance(dto.getPlayerappearance())
+                .baseOnBall(dto.getBaseOnBall())
+                .hitByPitch(dto.getHitByPitch())
+                .strikeOut(dto.getStrikeOut())
+                .ibb(dto.getIbb())
+                .dp(dto.getDp())
+                .sacrifice(dto.getSacrifice())
+                .sacFly(dto.getSacFly())
+                .totalGames(dto.getTotalgames())
+                .build();
     }
 }

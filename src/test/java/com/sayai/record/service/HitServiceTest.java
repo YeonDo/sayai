@@ -17,7 +17,7 @@ class HitServiceTest {
     @Test
     void findOne() {
         PlayerDto one = hitService.findOne(LocalDate.of(2023, 01, 01), LocalDate.of(2023, 06, 01), 2L);
-
+        System.out.println(one.toString());
     }
 
     @Test
@@ -27,4 +27,5 @@ class HitServiceTest {
             System.out.println(dto.toString());
         }
     }
+
 }

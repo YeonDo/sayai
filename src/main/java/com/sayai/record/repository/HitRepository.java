@@ -30,6 +30,13 @@ public interface HitRepository extends JpaRepository<Hit, Long> {
             " , HIT_2 as doubles" +
             " , HIT_3 as triples" +
             " , HIT_4 as homeruns " +
+            " , BB as baseOnBall" +
+            " , HBP as hitByPitch " +
+            " , SO as strikeOut " +
+            " , IBB as ibb " +
+            " , DP as dp " +
+            " , SAC as sacrifice " +
+            " , SAP_F as sacFly " +
             "FROM  " +
             "( " +
             " SELECT " +
@@ -44,6 +51,13 @@ public interface HitRepository extends JpaRepository<Hit, Long> {
             " , IFNULL(SUM(CASE WHEN ON_BASE = 3 THEN 1 ELSE 0 END),0) AS HIT_3 " +
             " , IFNULL(SUM(CASE WHEN ON_BASE = 4 THEN 1 ELSE 0 END),0) AS HIT_4 " +
             " , IFNULL(SUM(ON_BASE),0) AS ONBASE " +
+            " , IFNULL(SUM(SO), 0) AS SO " +
+            " , IFNULL(SUM(BB), 0) AS BB " +
+            " , IFNULL(SUM(HBP), 0) AS HBP " +
+            " , IFNULL(SUM(IBB), 0) AS IBB " +
+            " , IFNULL(SUM(DP), 0) AS DP " +
+            " , IFNULL(SUM(SAC), 0) AS SAC " +
+            " , IFNULL(SUM(SAP_F), 0) AS SAP_F " +
             " , COUNT(DISTINCT GAME_IDX) AS GAME_CNT " +
             " , COUNT(*) as BATER_CNT " +
             " FROM  " +
@@ -57,6 +71,13 @@ public interface HitRepository extends JpaRepository<Hit, Long> {
             "       WHEN R_HIT_CD IN ('5') THEN 'M' " +
             "       WHEN R_HIT_CD IN ('7') THEN 'B' end CD" +
             " , CASE WHEN R_HIT_CD IN ('1','2','3','4') THEN R_HIT_CD ELSE 0 END ON_BASE " +
+            " , CASE WHEN A.HIT_CD IN ('10', '20', '21' ,'30') THEN 1 END AS SO " +
+            " , CASE WHEN A.HIT_CD = '41' THEN 1 END AS BB" +
+            " , CASE WHEN A.HIT_CD = '22' THEN 1 END AS HBP " +
+            " , CASE WHEN A.HIT_CD = '31' THEN 1 END AS IBB " +
+            " , CASE WHEN B.HIT_CD = '00' OR B.P_HIT_CD = '00' THEN 1 END AS DP " +
+            " , CASE WHEN R_HIT_CD = '8' THEN 1 END AS SAC " +
+            " , CASE WHEN P_HIT_CD IN ('8', '38', '38F', '87') THEN 1 END AS SAP_F "+
             " FROM hit A, HIT_CD B " +
             " WHERE A.HIT_CD = B.HIT_CD " +
             " AND GAME_IDX IN (SELECT GAME_IDX FROM game WHERE GAME_DATE between :startDate AND :endDate) " +
@@ -81,6 +102,13 @@ public interface HitRepository extends JpaRepository<Hit, Long> {
             " , HIT_2 as doubles" +
             " , HIT_3 as triples" +
             " , HIT_4 as homeruns " +
+            " , BB as baseOnBall" +
+            " , HBP as hitByPitch " +
+            " , SO as strikeOut " +
+            " , IBB as ibb " +
+            " , DP as dp " +
+            " , SAC as sacrifice " +
+            " , SAP_F as sacFly " +
             "FROM  " +
             "( " +
             " SELECT " +
@@ -95,6 +123,13 @@ public interface HitRepository extends JpaRepository<Hit, Long> {
             " , IFNULL(SUM(CASE WHEN ON_BASE = 3 THEN 1 ELSE 0 END),0) AS HIT_3 " +
             " , IFNULL(SUM(CASE WHEN ON_BASE = 4 THEN 1 ELSE 0 END),0) AS HIT_4 " +
             " , IFNULL(SUM(ON_BASE),0) AS ONBASE " +
+            " , IFNULL(SUM(SO), 0) AS SO " +
+            " , IFNULL(SUM(BB), 0) AS BB " +
+            " , IFNULL(SUM(HBP), 0) AS HBP " +
+            " , IFNULL(SUM(IBB), 0) AS IBB " +
+            " , IFNULL(SUM(DP), 0) AS DP " +
+            " , IFNULL(SUM(SAC), 0) AS SAC " +
+            " , IFNULL(SUM(SAP_F), 0) AS SAP_F " +
             " , COUNT(DISTINCT GAME_IDX) AS GAME_CNT " +
             " , COUNT(*) as BATER_CNT " +
             " FROM  " +
@@ -108,6 +143,13 @@ public interface HitRepository extends JpaRepository<Hit, Long> {
             "       WHEN R_HIT_CD IN ('5') THEN 'M' " +
             "       WHEN R_HIT_CD IN ('7') THEN 'B' end CD" +
             " , CASE WHEN R_HIT_CD IN ('1','2','3','4') THEN R_HIT_CD ELSE 0 END ON_BASE " +
+            " , CASE WHEN A.HIT_CD IN ('10', '20', '21' ,'30') THEN 1 END AS SO" +
+            " , CASE WHEN A.HIT_CD = '41' THEN 1 END AS BB" +
+            " , CASE WHEN A.HIT_CD = '22' THEN 1 END AS HBP " +
+            " , CASE WHEN A.HIT_CD = '31' THEN 1 END AS IBB " +
+            " , CASE WHEN B.HIT_CD = '00' OR B.P_HIT_CD = '00' THEN 1 END AS DP " +
+            " , CASE WHEN R_HIT_CD = '8' THEN 1 END AS SAC " +
+            " , CASE WHEN P_HIT_CD IN ('8', '38', '38F', '87') THEN 1 END AS SAP_F "+
             " FROM hit A, HIT_CD B " +
             " WHERE A.HIT_CD = B.HIT_CD " +
             " AND GAME_IDX IN (SELECT GAME_IDX FROM game WHERE GAME_DATE between :startDate AND :endDate) " +
