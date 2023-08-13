@@ -67,18 +67,25 @@ public class PlayerController {
         List result = new ArrayList();
         Utils utils = new Utils();
         for(String s : periodList){
-            if(s.equals("total"))
-                result.add(hitService.findOne(LocalDate.of(2012,1,1),LocalDate.now(),playerId));
+            if(s.equals("total")) {
+                PlayerDto dto = hitService.findOne(LocalDate.of(2012, 1, 1), LocalDate.now(), playerId);
+                dto.setSeason("total");
+                result.add(dto);
+            }
             else if(s.length()==4){
                 int year = Integer.parseInt(s);
-                result.add(hitService.findOne(LocalDate.of(year,1,1),LocalDate.of(year,12,31),playerId));
+                PlayerDto dto = hitService.findOne(LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31), playerId);
+                dto.setSeason(s);
+                result.add(dto);
             }else{
                 if(s.length()!=6)
                     continue;
                 int year = Integer.parseInt(s.substring(0,4));
                 int month = Integer.parseInt(s.substring(4,6));
                 int lastDayOfMonth = utils.getLastDayOfMonth(year, month);
-                result.add(hitService.findOne(LocalDate.of(year,month,1),LocalDate.of(year,month,lastDayOfMonth),playerId));
+                PlayerDto dto = hitService.findOne(LocalDate.of(year, month, 1), LocalDate.of(year, month, lastDayOfMonth), playerId);
+                dto.setSeason(s);
+                result.add(dto);
             }
         }
         return result;
