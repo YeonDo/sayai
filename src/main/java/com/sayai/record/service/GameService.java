@@ -54,7 +54,7 @@ public class GameService {
     public Game findRecent(){return gameRepository.findFirstByOrderByGameDateDesc().get();}
 
     public List<GameDto> findOpponent(String opponent){
-        List<Game> gameList = gameRepository.findByOpponentContainingOrderByGameDateAsc(opponent);
+        List<Game> gameList = gameRepository.findAllByOpponentMatchAgainst(opponent);
         List<GameDto> result = new ArrayList<>();
         for(Game g : gameList){
             FirstLast fl = g.getFl();
