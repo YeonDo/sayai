@@ -78,7 +78,7 @@ class CrawlingServiceTest {
         LocalTime gametime = LocalTime.of(time_hh,time_mm);
         Game game = Game.builder()
                 .clubId(15387L).fl(FirstLast.valueOf(fl)).stadium(place).gameDate(gamedate)
-                .gameTime(gametime).season((long) gamedate.getYear()).ligIdx(1L).opponent(opponent).build();
+                .gameTime(gametime).season((long) gamedate.getYear()).leagueId(1L).opponent(opponent).build();
 
         Elements record = document.getElementsByClass("record_table inc_round");
         //System.out.println(record.get(1));
@@ -203,5 +203,10 @@ class CrawlingServiceTest {
     @Test
     public void updateSinceTest() throws Exception{
         //crawlingService.updateSince(2013,2);
+    }
+
+    @Test
+    void updateAllLeagueInfo() {
+        crawlingService.updateAllLeagueInfo();
     }
 }

@@ -11,4 +11,5 @@ import lombok.NoArgsConstructor;
 @Builder
 public class ResponseDto {
     private String resultMsg;
+    private int resultCode;
 }

@@ -25,7 +25,7 @@ public class Game {
 
     private Long season;
 
-    private Long ligIdx;
+    private Long leagueId;
 
     private Long clubId;
 
@@ -63,5 +63,9 @@ public class Game {
 
     public void setResult(String result) {
         this.result = result;
+    }
+
+    public void updateLeague(Long leagueId){
+        this.leagueId = leagueId;
     }
 }

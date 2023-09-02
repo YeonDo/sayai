@@ -16,10 +16,10 @@ public class CrawlingController {
 
     @GetMapping
     @ResponseBody
-    public ResponseDto crawling(@RequestParam(value = "url") String url){
+    public ResponseDto crawling(@RequestParam(value = "url") String url, @RequestParam(value="season", required = false) Long season){
         String urlForm ="http://www.gameone.kr/club/info/schedule/boxscore?club_idx=15387&game_idx=";
-        crawlingService.crawl(urlForm+url);
-        return ResponseDto.builder().resultMsg("Success").build();
+        return crawlingService.crawl(urlForm+url,season);
+
     }
 
     @PutMapping("/opponent")
@@ -34,5 +34,13 @@ public class CrawlingController {
     public String updateSince(@RequestParam("year") Integer year, @RequestParam("page") Integer page){
         crawlingService.updateSince(year, page);
         return "OK";
+    }
+    @PutMapping("/league")
+    @ResponseBody
+    public ResponseDto updateLeagueInfo(){
+        ResponseDto responseDto = crawlingService.updateAllLeagueInfo();
+        if(responseDto.getResultCode()>0)
+            throw new RuntimeException();
+        return responseDto;
     }
 }

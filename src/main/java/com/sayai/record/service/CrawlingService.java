@@ -1,5 +1,6 @@
 package com.sayai.record.service;
 
+import com.sayai.record.dto.ResponseDto;
 import com.sayai.record.model.*;
 import com.sayai.record.model.enums.FirstLast;
 import com.sayai.record.repository.*;
@@ -32,10 +33,12 @@ public class CrawlingService {
     private final GameService gameService;
     private final CodeCache codeCache;
 
-    public void crawl(String url){
-        this.crawl(url,LocalDate.now().getYear());
+    public ResponseDto crawl(String url){
+        return this.crawl(url, Long.valueOf(LocalDate.now().getYear()));
     }
-    public void crawl(String url, int year){
+    public ResponseDto crawl(String url, Long season){
+        if (season==null)
+            season = Long.valueOf(season);
         Connection conn = Jsoup.connect(url);
         Document document = null;
         System.out.println(url);
@@ -48,9 +51,8 @@ public class CrawlingService {
         }
         Long gameId = Long.parseLong(url.split("&")[1].split("=")[1]);
         Optional<Game> gameSearched = gameService.findGame(gameId);
-        gameSearched.ifPresent(game -> {
-            throw new RuntimeException("Game Already Exists");
-        });
+        if(gameSearched.isPresent())
+            return new ResponseDto().builder().resultMsg("Game Already Exists").resultCode(20001).build();
         String fl;
         Elements scorebox = document.getElementsByClass("section_score");
         String fT = scorebox.get(0).child(0).select("dt").text();
@@ -82,17 +84,19 @@ public class CrawlingService {
         }
         if(fT.equals("팀 사야이")){ fl = "F"; opponent = lT;}
         else {fl = "L"; opponent=fT;}
-        Optional<Ligue> byName = ligueService.findByName(league);
-        Long ligId = byName.map(Ligue::getId).orElseGet(()->2L);
+        Optional<Ligue> byName = ligueService.findByName(league, season);
+        Long ligId = ligueService.findByName(league, season)
+                .orElse(ligueService.findByName("원외리그", season).orElseThrow(NoSuchElementException::new))
+                .getId();
         int time_MM = Integer.parseInt(time.substring(0,2));
         int time_dd = Integer.parseInt(time.substring(3,5));
         int time_hh = Integer.parseInt(time.substring(6,8));
         int time_mm = Integer.parseInt(time.substring(9,11));
-        LocalDate gamedate = LocalDate.of(year,time_MM,time_dd);
+        LocalDate gamedate = LocalDate.of(season.intValue(),time_MM,time_dd);
         LocalTime gametime = LocalTime.of(time_hh,time_mm);
         Game game = Game.builder().id(gameId)
                 .clubId(15387L).fl(FirstLast.valueOf(fl)).stadium(place).gameDate(gamedate)
-                .gameTime(gametime).season((long) gamedate.getYear()).ligIdx(ligId).opponent(opponent)
+                .gameTime(gametime).season((long) gamedate.getYear()).leagueId(ligId).opponent(opponent)
                 .homeScore(homeScore).awayScore(awayScore).result(result).build();
         Game saveGame = gameService.saveGame(game);
 
@@ -214,6 +218,7 @@ public class CrawlingService {
             pitchList.add(pitch);
         }
         pitchService.saveAll(pitchList);
+        return new ResponseDto("Success", 0);
     }
     @Transactional
     public void updateOp() throws IOException {
@@ -273,9 +278,42 @@ public class CrawlingService {
             if(ele.hasClass("simbtn boxscore")){
                 Long gameId = Long.parseLong(ele.toString().split(" ")[1].split(";game_idx=")[1].substring(0, 6));
                 System.out.println("gameId : " + gameId);
-                this.crawl(urlForm+gameId,year);
+                this.crawl(urlForm+gameId, Long.valueOf(year));
             }
         }
     }
+    @Transactional
+    public ResponseDto updateAllLeagueInfo(){
+        String urlForm ="http://www.gameone.kr/club/info/schedule/boxscore?club_idx=15387&game_idx=";
+        List<Game> gameList = gameService.findAll();
+        for(Game g : gameList){
+            Long season = g.getSeason();
+            Long id = g.getId();
+            String url = urlForm+id;
+            Connection conn = Jsoup.connect(url);
+            Document document = null;
+            System.out.println(id);
+            try {
+                document = conn.get();
+                //url의 내용을 HTML Document 객체로 가져온다.
+                //https://jsoup.org/apidocs/org/jsoup/nodes/Document.html 참고
+            } catch (IOException e) {
+                return new ResponseDto("Jsoup Connection Error",10404);
+            }
+            Elements scorebox = document.getElementsByClass("section_score");
+            String ltp = scorebox.get(0).getElementsByClass("score_teble").select("caption").text();
+            String league = ltp.split("/")[0].trim();
+            if(ltp.split("/").length>3){
+                int len = ltp.split("/").length;
+                league = Arrays.stream(ltp.split("/"),0,len-2)
+                        .collect(Collectors.joining("/"));
+            }
 
+            Ligue ligue = ligueService.findByName(league, season)
+                    .orElse(ligueService.findByName("원외리그", season).orElseThrow(NoSuchElementException::new));
+            g.updateLeague(ligue.getId());
+        }
+        return ResponseDto.builder()
+                .resultCode(0).resultMsg("Success").build();
+    }
 }
