@@ -38,7 +38,7 @@ public class CrawlingService {
     }
     public ResponseDto crawl(String url, Long season){
         if (season==null)
-            season = Long.valueOf(season);
+            season = Long.valueOf(LocalDateTime.now().getYear());
         Connection conn = Jsoup.connect(url);
         Document document = null;
         System.out.println(url);
