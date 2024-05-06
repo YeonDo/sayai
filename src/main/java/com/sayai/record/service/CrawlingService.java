@@ -84,6 +84,7 @@ public class CrawlingService {
         }
         if(fT.equals("팀 사야이")){ fl = "F"; opponent = lT;}
         else {fl = "L"; opponent=fT;}
+        System.out.println("======================= "+league);
         Optional<Ligue> byName = ligueService.findByName(league, season);
         Long ligId = ligueService.findByName(league, season)
                 .orElse(ligueService.findByName("원외리그", season).orElseThrow(NoSuchElementException::new))
@@ -276,7 +277,7 @@ public class CrawlingService {
         String urlForm ="http://www.gameone.kr/club/info/schedule/boxscore?club_idx=15387&game_idx=";
         for(Element ele : aHref){
             if(ele.hasClass("simbtn boxscore")){
-                Long gameId = Long.parseLong(ele.toString().split(" ")[1].split(";game_idx=")[1].substring(0, 6));
+                Long gameId = Long.parseLong(ele.toString().split(" ")[1].split(";game_idx=")[1].substring(0, 7));
                 System.out.println("gameId : " + gameId);
                 this.crawl(urlForm+gameId, Long.valueOf(year));
             }

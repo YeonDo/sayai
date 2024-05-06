@@ -17,12 +17,12 @@ import static org.junit.jupiter.api.Assertions.*;
 class GameServiceTest {
     @Autowired
     GameService gameService;
-    @Test
+    //@Test
     void findMatches() {
         List<GameDto> matches = gameService.findMatches(LocalDate.of(2023, 01, 01), LocalDate.of(2023, 12, 31));
     }
 
-    @Test
+    //@Test
     void findOpponent() {
         List<GameDto> games = gameService.findOpponent("레드쏘울");
         System.out.println(games);

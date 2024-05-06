@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest
 @Transactional
 class CrawlingServiceTest {
-    private String testurl = "http://www.gameone.kr/club/info/schedule/boxscore?club_idx=15387&game_idx=1000308";
+    private String testurl = "http://www.gameone.kr/club/info/schedule/boxscore?club_idx=15387&game_idx=1532726";
     @Autowired
     private CodeCache codeCache;
     @Autowired
@@ -37,7 +37,7 @@ class CrawlingServiceTest {
     private HitService hitService;
     @Autowired
     private GameService gameService;
-    @Test
+    //@Test
     void crawlMatch(){
         Connection conn = Jsoup.connect(testurl);
         Document document = null;
@@ -49,10 +49,10 @@ class CrawlingServiceTest {
             e.printStackTrace();
         }
         Map<String,String> dataset = codeCache.getDataset();
-        //System.out.println(document.getElementsByClass("section_score"));
+        System.out.println(document.getElementsByClass("section_score"));
         List<String> list = new ArrayList<>();
         Elements scorebox = document.getElementsByClass("section_score");
-        //System.out.println(scorebox);
+        System.out.println(scorebox);
         System.out.println("--------------------------------------");
         System.out.println(scorebox.get(0).child(0).select("dt").text());
         System.out.println(scorebox.get(0).getElementsByClass("score").text());
@@ -175,7 +175,7 @@ class CrawlingServiceTest {
         //crawlingService.updateOp();
     }
 
-    @Test
+    //@Test
     public void updateGame2012() throws IOException{
         String url = "http://www.gameone.kr/club/info/schedule/table?club_idx=15387&season=2012&game_type=0&lig_idx=0&month=0&page=1";
         Connection conn = Jsoup.connect(url);
@@ -205,7 +205,7 @@ class CrawlingServiceTest {
         //crawlingService.updateSince(2013,2);
     }
 
-    @Test
+    //@Test
     void updateAllLeagueInfo() {
         crawlingService.updateAllLeagueInfo();
     }

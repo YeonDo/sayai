@@ -1,17 +1,21 @@
 spring:
+  profiles:
+    active: local
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://ls-799180ebe7f716980f3210df0796359d9be013e7.c3s4uu2w8zlp.ap-northeast-2.rds.amazonaws.com:3306/sayai?characterEncoding=UTF-8&serverTimezone=UTC
-    username: admin
+    url: jdbc:mysql://localhost:3306/dev?characterEncoding=UTF-8&serverTimezone=UTC
+    username: root
     password: qwer1234
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
     properties:
       hibernate:
         format_sql: true
         show_sql: true
-  profiles:
-    active: prod
+  sql:
+    init:
+      encoding: utf-8
+      mode: always
   config:
     use-legacy-processing: true
