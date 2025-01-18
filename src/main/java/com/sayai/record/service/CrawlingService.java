@@ -41,7 +41,6 @@ public class CrawlingService {
             season = Long.valueOf(LocalDateTime.now().getYear());
         Connection conn = Jsoup.connect(url);
         Document document = null;
-        System.out.println(url);
         try {
             document = conn.get();
             //url의 내용을 HTML Document 객체로 가져온다.
@@ -84,7 +83,7 @@ public class CrawlingService {
         }
         if(fT.equals("팀 사야이")){ fl = "F"; opponent = lT;}
         else {fl = "L"; opponent=fT;}
-        System.out.println("======================= "+league);
+
         Optional<Ligue> byName = ligueService.findByName(league, season);
         Long ligId = ligueService.findByName(league, season)
                 .orElse(ligueService.findByName("원외리그", season).orElseThrow(NoSuchElementException::new))
@@ -142,7 +141,6 @@ public class CrawlingService {
         long gameseq = 1L;
         for(int i=0; i<numRows1; i++){
             String name = hittable[i][0].split(" ")[1];
-            System.out.println(name);
             Player player = playerService.getPlayerByName(name).get();
             Long hitseq = 1L;
             for(int j=1; j<12; j++){
@@ -205,7 +203,6 @@ public class CrawlingService {
             }else{
                 inn = Long.parseLong(innStr)*3;
             }
-            System.out.println(name);
             Player player = playerService.getPlayerByName(name).get();
             Pitch pitch = (Pitch.builder().game(saveGame).clubId(15387L).player(player).result(pitchtable[i][1])
                     .inning(inn).batter(Long.parseLong(pitchtable[i][3])).hitter(Long.parseLong(pitchtable[i][4]))
@@ -226,10 +223,8 @@ public class CrawlingService {
         List<Game> gameList = gameService.findAll();
         String urlForm = "http://www.gameone.kr/club/info/schedule/boxscore?club_idx=15387&game_idx=";
         for(Game game : gameList){
-            System.out.println("---------------------");
+
             if(game.getOpponent() == null){
-                System.out.println(game.getId());
-                System.out.println(game.getGameDate());
                 Connection conn = Jsoup.connect(urlForm+game.getId());
                 Document document = conn.get();
                 Elements scorebox = document.getElementsByClass("section_score");
@@ -251,7 +246,7 @@ public class CrawlingService {
                 }
                 if(fT.equals("팀 사야이")) opponent=lT;
                 else opponent=fT;
-                System.out.println(opponent);
+
                 game.setOpponent(opponent);
                 game.setHomeScore(homeScore);
                 game.setAwayScore(awayScore);
@@ -278,7 +273,7 @@ public class CrawlingService {
         for(Element ele : aHref){
             if(ele.hasClass("simbtn boxscore")){
                 Long gameId = Long.parseLong(ele.toString().split(" ")[1].split(";game_idx=")[1].substring(0, 7));
-                System.out.println("gameId : " + gameId);
+
                 this.crawl(urlForm+gameId, Long.valueOf(year));
             }
         }
@@ -293,7 +288,7 @@ public class CrawlingService {
             String url = urlForm+id;
             Connection conn = Jsoup.connect(url);
             Document document = null;
-            System.out.println(id);
+
             try {
                 document = conn.get();
                 //url의 내용을 HTML Document 객체로 가져온다.

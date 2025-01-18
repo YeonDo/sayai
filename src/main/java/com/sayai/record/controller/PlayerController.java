@@ -30,7 +30,6 @@ public class PlayerController {
     @GetMapping("/{id}")
     @ResponseBody
     public PlayerRecord getPlayer(@PathVariable Long id){
-        System.out.println("========================");
         return playerService.getPlayer(id);
     }
     @GetMapping("/all")
