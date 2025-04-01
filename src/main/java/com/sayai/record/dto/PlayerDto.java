@@ -30,9 +30,12 @@ public class PlayerDto {
     private Long dp;
     private Long sacrifice;
     private Long sacFly;
+    private Integer rbi;
+    private Integer runs;
+    private Integer sb;
 
     @Builder
-    public PlayerDto(Long id, Long backNo, String name, Long totalGames, Double battingAvg, Long playerAppearance, Double avgPa, Long atBat, Double onBasePer, Double slugPer, Long totalHits, Long singles, Long doubles, Long triples, Long homeruns,Long baseOnBall, Long hitByPitch, Long strikeOut, Long ibb, Long dp, Long sacrifice, Long sacFly) {
+    public PlayerDto(Long id, Long backNo, String name, Long totalGames, Double battingAvg, Long playerAppearance, Double avgPa, Long atBat, Double onBasePer, Double slugPer, Long totalHits, Long singles, Long doubles, Long triples, Long homeruns,Long baseOnBall, Long hitByPitch, Long strikeOut, Long ibb, Long dp, Long sacrifice, Long sacFly, Integer rbi, Integer runs, Integer sb) {
         this.id = id;
         this.backNo = backNo;
         this.name = name;
@@ -55,6 +58,9 @@ public class PlayerDto {
         this.dp = dp;
         this.sacrifice =sacrifice;
         this.sacFly = sacFly;
+        this.rbi = rbi;
+        this.runs = runs;
+        this.sb = sb;
     }
 
 

@@ -35,6 +35,12 @@ public class CrawlingController {
         crawlingService.updateSince(year, page);
         return "OK";
     }
+    @PutMapping("/history/pages")
+    @ResponseBody
+    public String updateSince(@RequestParam("year") Integer year){
+        crawlingService.updateSince(year);
+        return "OK";
+    }
     @PutMapping("/league")
     @ResponseBody
     public ResponseDto updateLeagueInfo(){

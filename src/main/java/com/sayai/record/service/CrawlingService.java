@@ -5,8 +5,10 @@ import com.sayai.record.model.*;
 import com.sayai.record.model.enums.FirstLast;
 import com.sayai.record.repository.*;
 import com.sayai.record.util.CodeCache;
+import com.sayai.record.util.ExpandArrayList;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -25,6 +27,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CrawlingService {
     private final PlayerService playerService;
     private final LigueService ligueService;
@@ -32,10 +35,13 @@ public class CrawlingService {
     private final PitchService pitchService;
     private final GameService gameService;
     private final CodeCache codeCache;
+    private final HitterBoardService hitterBoardService;
+    private final PitcherBoardService pitcherBoardService;
 
     public ResponseDto crawl(String url){
         return this.crawl(url, Long.valueOf(LocalDate.now().getYear()));
     }
+    @Transactional
     public ResponseDto crawl(String url, Long season){
         if (season==null)
             season = Long.valueOf(LocalDateTime.now().getYear());
@@ -49,6 +55,7 @@ public class CrawlingService {
             e.printStackTrace();
         }
         Long gameId = Long.parseLong(url.split("&")[1].split("=")[1]);
+        log.info("GAMEID {}", gameId);
         Optional<Game> gameSearched = gameService.findGame(gameId);
         if(gameSearched.isPresent())
             return new ResponseDto().builder().resultMsg("Game Already Exists").resultCode(20001).build();
@@ -103,13 +110,18 @@ public class CrawlingService {
 
         List<Hit> hitList = new ArrayList<>();
         List<Pitch> pitchList = new ArrayList<>();
+        List<HitterBoard> hitterBoardList = new ArrayList<>();
+        List<PitcherBoard> pitcherBoardList = new ExpandArrayList<>();
         Elements record = document.getElementsByClass("record_table");
         Element hitcells;
         Element pitchcells;
+        Element pitchboardcells;
         if(fl.equals("F")){
             hitcells = record.get(0);
+            pitchboardcells = record.get(1);
             pitchcells = record.get(2);
         }else{
+            pitchboardcells = record.get(0);
             hitcells = record.get(1);
             pitchcells = record.get(3);
         }
@@ -147,12 +159,12 @@ public class CrawlingService {
                 if(!hittable[i][j].isEmpty()){
                     int cnt = hittable[i][j].split("/").length;
                     for(int k=0; k<cnt; k++){
-                        String hc = hittable[i][j].split("/")[k].split(",")[0];
+                        String hc = hittable[i][j].split("/")[k];
                         if(codeCache.getData(hc) == null)
                             continue;
                         Hit hit = Hit.builder().gameSeq(gameseq).game(saveGame).player(player).inning((long)j)
                                 .hitNo(Long.parseLong(hittable[i][0].split(" ")[0]))
-                                .hitSeq(hitseq).hitCd(codeCache.getData(hc).split(",")[0])
+                                .hitSeq(hitseq).hitCd(codeCache.getData(hc))
                                 .result(hc)
                                 .build();
                         hitList.add(hit);
@@ -161,8 +173,18 @@ public class CrawlingService {
                     }
                 }
             }
+            HitterBoard hitterBoard = HitterBoard.builder()
+                    .player(player).game(saveGame)
+                    .hitNo(Long.parseLong(hittable[i][0].split(" ")[0]))
+                    .playerApp(Integer.parseInt(hittable[i][13]))
+                    .hits(Integer.parseInt(hittable[i][14]))
+                    .rbi(Integer.parseInt(hittable[i][15]))
+                    .runs(Integer.parseInt(hittable[i][16]))
+                    .sb(Integer.parseInt(hittable[i][17])).build();
+            hitterBoardList.add(hitterBoard);
         }
         hitService.saveAll(hitList);
+        hitterBoardService.saveAll(hitterBoardList);
 
         Elements cells2= pitchcells.select("table tbody tr td");
         Elements players2 = pitchcells.select("table tbody tr th");
@@ -216,6 +238,96 @@ public class CrawlingService {
             pitchList.add(pitch);
         }
         pitchService.saveAll(pitchList);
+
+        Elements cells3= pitchboardcells.select("table tbody tr td");
+        Elements players3 = pitchboardcells.select("table tbody tr th");
+        int numRows3 = pitchboardcells.select("table tbody tr").size();
+        int numCols3 = pitchboardcells.select("table tbody tr:first-child td").size();
+        String[][] table3 = new String[numRows3][numCols3];
+        int iii = 0, jjj = 0;
+        for (Element cell : cells3) {
+            table3[iii][jjj++] = cell.text();
+            if (jjj == numCols3) {
+                iii++;
+                jjj = 0;
+            }
+        }
+        String[][] hittable3 = new String[numRows3][numCols3+1];
+        for(int i=0; i<numRows3; i++){
+            for(int j=1; j<numCols3; j++){
+                hittable3[i][j] = table3[i][j-1];
+            }
+        }
+
+        if(numRows3 < 9 || hittable3[0][1].isEmpty())
+            return new ResponseDto("Success", 0);
+        gameseq = 1L;
+        pitcherBoardList.add(PitcherBoard.builder().build());
+        int hitNo = 0;
+        for(int j=1; j<12; j++){
+            Queue<String> hitNoQ = new LinkedList<>();
+            for(int i=0; i<numRows3; i++){
+                if(!hittable3[hitNo][j].isEmpty()){
+                    int cnt = hittable3[hitNo][j].split("/").length;
+                    String hc = hittable3[hitNo][j].split("/")[0];
+                    if(codeCache.getData(hc) == null)
+                        continue;
+                    PitcherBoard pitcherBoard = PitcherBoard.builder()
+                            .game(saveGame).gameSeq(gameseq)
+                            .hitCd(codeCache.getData(hc))
+                            .hitNo((long) hitNo+1)
+                            .inning((long) j)
+                            .result(hc).build();
+                    pitcherBoardList.set(Math.toIntExact(pitcherBoard.getGameSeq()), pitcherBoard);
+                    if(cnt>1){
+                        hitNoQ.add(hittable3[hitNo][j].split("/")[1]);
+                    }
+                    gameseq++;
+                    hitNo++;
+                    if(hitNo == 9)
+                        hitNo = 0;
+                }
+            }
+            while(!hitNoQ.isEmpty()){
+                String hc = hitNoQ.poll();
+                if(codeCache.getData(hc) == null)
+                    continue;
+                PitcherBoard pitcherBoard = PitcherBoard.builder()
+                        .game(saveGame).gameSeq(gameseq)
+                        .hitCd(codeCache.getData(hc))
+                        .hitNo((long) hitNo+1)
+                        .inning((long) j)
+                        .result(hc).build();
+                pitcherBoardList.set(Math.toIntExact(pitcherBoard.getGameSeq()), pitcherBoard);
+                gameseq++;
+                hitNo++;
+                if(hitNo == 9)
+                    hitNo = 0;
+            }
+        }
+
+        int pitcherIdx = 0;
+        int pitchStack = 0;
+        if(pitchList.size() ==0)
+            return new ResponseDto("Success", 0);
+        Pitch pitch = pitchList.get(0);
+        int pitcherSize = pitchList.size();
+        for(int i=1; i<pitcherBoardList.size(); i++){
+            if(pitchStack == 0){
+                if(pitcherIdx >= pitcherSize) {
+                    Player randomPlayer = playerService.getPlayerByName("강은비").get();
+                    pitch = Pitch.builder().player(randomPlayer).batter(100L).build();
+                }else
+                    pitch = pitchList.get(pitcherIdx);
+                pitchStack = Math.toIntExact(pitch.getBatter());
+                pitcherIdx++;
+            }
+            pitcherBoardList.get(i).setPlayer(pitch.getPlayer());
+            pitchStack--;
+        }
+        pitcherBoardList = new ArrayList<>(pitcherBoardList.subList(1, pitcherBoardList.size()));
+        pitcherBoardService.saveAll(pitcherBoardList);
+
         return new ResponseDto("Success", 0);
     }
     @Transactional
@@ -255,6 +367,12 @@ public class CrawlingService {
         }
     }
     @Transactional
+    public void updateSince(int year){
+        for(int i=1; i<getPages(year)+1; i++){
+            updateSince(year, i);
+        }
+    }
+    @Transactional
     public void updateSince(int year, int page){
         String url = String.format("http://www.gameone.kr/club/info/schedule/table?club_idx=15387&season=%s&game_type=0&lig_idx=0&month=0&page=%s", year,page);
         Connection conn = Jsoup.connect(url);
@@ -272,7 +390,9 @@ public class CrawlingService {
         String urlForm ="http://www.gameone.kr/club/info/schedule/boxscore?club_idx=15387&game_idx=";
         for(Element ele : aHref){
             if(ele.hasClass("simbtn boxscore")){
-                Long gameId = Long.parseLong(ele.toString().split(" ")[1].split(";game_idx=")[1].substring(0, 7));
+                log.info("URL {}" , ele);
+                String gameIdSplit = ele.toString().split(" ")[1].split(";game_idx=")[1];
+                Long gameId = Long.parseLong(gameIdSplit.substring(0,gameIdSplit.length()-1));
 
                 this.crawl(urlForm+gameId, Long.valueOf(year));
             }
@@ -311,5 +431,22 @@ public class CrawlingService {
         }
         return ResponseDto.builder()
                 .resultCode(0).resultMsg("Success").build();
+    }
+    private int getPages(int year){
+        Map<Integer, Integer> pagelist = new HashMap<>();
+        pagelist.put(2012, 1);
+        pagelist.put(2013, 3);
+        pagelist.put(2014, 2);
+        pagelist.put(2015, 2);
+        pagelist.put(2016, 3);
+        pagelist.put(2017, 4);
+        pagelist.put(2018, 4);
+        pagelist.put(2019, 6);
+        pagelist.put(2020, 8);
+        pagelist.put(2021, 6);
+        pagelist.put(2022, 6);
+        pagelist.put(2023, 5);
+        pagelist.put(2024, 5);
+        return pagelist.get(year);
     }
 }

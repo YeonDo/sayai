@@ -30,6 +30,8 @@ public class PlayerService {
     }
 
     public Optional<Player> getPlayerByName(String name){
+        if("임환용".equals(name))
+            name = "임강록";
         return playerRepository.findPlayerByName(name);
     }
 

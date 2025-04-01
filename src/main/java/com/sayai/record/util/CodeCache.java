@@ -37,6 +37,7 @@ public class CodeCache {
         dataset.put("포땅R", "210R,10H,0");
         dataset.put("1땅R", "310R,10H,0");
         dataset.put("2땅R", "410R,10H,0");
+        dataset.put("2직R", "420R,10H,0");
         dataset.put("3땅R", "510R,10H,0");
         dataset.put("유땅R", "610R,10H,0");
         dataset.put("좌땅R", "710R,10H,0");
@@ -74,7 +75,7 @@ public class CodeCache {
         dataset.put("유인플", "630I,30I,0");
 
         dataset.put("파플", "30F,0,0");
-        dataset.put("투타플", "130F,30F,0");
+        dataset.put("투파플", "130F,30F,0");
         dataset.put("포파플", "230F,30F,0");
         dataset.put("1파플", "330F,30F,0");
         dataset.put("2파플", "430F,30F,0");
@@ -147,12 +148,16 @@ public class CodeCache {
         dataset.put("좌안", "751,1,1");
         dataset.put("좌중안", "781,1,1");
         dataset.put("좌전안", "751A,1,1");
+        dataset.put("좌선안", "751B,1,1");
+        dataset.put("좌월안", "751C,1,1");
         dataset.put("중안", "851,1,1");
         dataset.put("중전안", "851A,1,1");
+        dataset.put("중월안", "851B,1,1");
         dataset.put("우중안", "891,1,1");
         dataset.put("우안", "951,1,1");
         dataset.put("우전안", "951A,1,1");
         dataset.put("우선안", "951B,1,1");
+        dataset.put("우월안", "951C,1,1");
         dataset.put("번안", "1B,1,1");
         dataset.put("투번안", "151B,1,1");
         dataset.put("포번안", "251B,1,1");
@@ -162,16 +167,18 @@ public class CodeCache {
         dataset.put("유번안", "651B,1,1");
 
         dataset.put("2루타", "2,null,2");
+        dataset.put("유내안2", "652,2,2");
         dataset.put("좌선2", "772,2,2");
         dataset.put("좌전2", "722,2,2");
         dataset.put("좌월2", "782,2,2");
-        dataset.put("좌안2", "782A,2,2");
+        dataset.put("좌안2", "712,2,2");
         dataset.put("좌중2", "872,2,2");
         dataset.put("중전2", "822,2,2");
         dataset.put("중월2", "882,2,2");
         dataset.put("중안2", "882A,2,2");
         dataset.put("우중2", "892,2,2");
         dataset.put("우전2", "922,2,2");
+        dataset.put("우안2", "912,2,2");
         dataset.put("우월2", "982,2,2");
         dataset.put("우선2", "992,2,2");
         dataset.put("인정2", "2A,2,2");
@@ -183,6 +190,7 @@ public class CodeCache {
         dataset.put("인우선2", "992A,2A,2");
 
         dataset.put("3루타", "3,null,3");
+        dataset.put("좌안3", "713,3,3");
         dataset.put("좌선3", "773,3,3");
         dataset.put("좌전3", "723,3,3");
         dataset.put("좌월3", "783,3,3");
@@ -192,6 +200,7 @@ public class CodeCache {
         dataset.put("중안3", "883A,3,3");
         dataset.put("중전3", "883B,3,3");
         dataset.put("우중3", "893,3,3");
+        dataset.put("우안3", "913,3,3");
         dataset.put("우전3", "923,3,3");
         dataset.put("우월3", "983,3,3");
         dataset.put("우선3", "993,3,3");
@@ -215,17 +224,26 @@ public class CodeCache {
 
         dataset.put("실책", "5,null,5");
         dataset.put("투실", "155,5,5");
+        dataset.put("투플실", "155A,5,5");
         dataset.put("포실", "255,5,5");
         dataset.put("1실", "355,5,5");
+        dataset.put("1플실", "355A,5,5");
         dataset.put("2실", "455,5,5");
+        dataset.put("2땅실", "455A,5,5");
+        dataset.put("2플실", "455B,5,5");
         dataset.put("3실", "555,5,5");
         dataset.put("3땅실", "555A,5,5");
+        dataset.put("3플실", "555B,5,5");
         dataset.put("유실", "655,5,5");
         dataset.put("유땅실", "655A,5,5");
         dataset.put("유직실", "655B,5,5");
+        dataset.put("유플실", "655C,5,5");
         dataset.put("좌실", "755,5,5");
         dataset.put("중실", "855,5,5");
         dataset.put("우실", "955,5,5");
+        dataset.put("좌플실", "755A,5,5");
+        dataset.put("중플실", "855A,5,5");
+        dataset.put("우플실", "955A,5,5");
 
         dataset.put("야선", "6,6,5");
         dataset.put("투야선", "156,6,5");
@@ -244,11 +262,27 @@ public class CodeCache {
 
     }
     public String getData(String key){
-        if(dataset.containsKey(key))
-            return dataset.get(key);
-        else return null;
+        String[] hcSplit = key.split(",");
+        int size = hcSplit.length;
+        for(int i=0; i<size; i++){
+            String hc = cleanString(hcSplit[i]);
+            if(dataset.containsKey(hc))
+                return dataset.get(hc).split(",")[0];
+            if(hc.equals("대주자") || hc.equals("대수비") || hc.equals("대타")){
+                return null;
+            }
+        }
+        return "check";
     }
     public Map<String, String> getDataset(){
         return dataset;
+    }
+    public static String cleanString(String input){
+        if(input == null)
+            return null;
+
+        String noBracket = input.replaceAll("\\s*\\[.*?\\]", "");
+        String noSpaces = noBracket.replaceAll("\\s+","");
+        return noSpaces;
     }
 }
