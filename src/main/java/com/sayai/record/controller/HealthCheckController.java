@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @CrossOrigin(origins = "*", allowedHeaders = "*")
 public class HealthCheckController {
-    @GetMapping("/")
+    @GetMapping("/health")
     public String healthcheck(){
         return "OK";
     }
