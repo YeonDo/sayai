@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Sayai Main</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 600px; margin: 0 auto; text-align: center; }
+        .nav-links { margin-top: 20px; }
+        .nav-links a { display: block; margin: 10px; padding: 10px; background-color: #f0f0f0; text-decoration: none; color: #333; border-radius: 5px; }
+        .nav-links a:hover { background-color: #ddd; }
+        .login-box { border: 1px solid #ccc; padding: 20px; border-radius: 5px; margin-bottom: 20px; }
+        .login-box input { margin: 5px; padding: 5px; width: 80%; }
+        .login-box button { padding: 5px 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to Sayai</h1>
+
+        <div class="login-box">
+            <h2>Login</h2>
+            <form action="/login" method="post">
+                <input type="text" name="username" placeholder="Username" required>
+                <input type="password" name="password" placeholder="Password" required>
+                <button type="submit">Login</button>
+            </form>
+        </div>
+
+        <div class="nav-links">
+            <a href="/record">Amateur Baseball Record Inquiry</a>
+            <a href="/fantasy">KBO Fantasy League</a>
+        </div>
+    </div>
+</body>
+</html>
