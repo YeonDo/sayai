@@ -278,11 +278,11 @@
             data.forEach(game => {
                 const tr = document.createElement('tr');
 
-                if (game.result === '승리') {
+                if (game.result === '승') {
                     tr.classList.add('row-win');
-                } else if (game.result === '무승부') {
+                } else if (game.result === '무') {
                     tr.classList.add('row-draw');
-                } else if (game.result === '패배') {
+                } else if (game.result === '패') {
                     tr.classList.add('row-loss');
                 }
 
