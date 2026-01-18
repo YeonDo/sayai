@@ -162,11 +162,12 @@ public class CrawlingService {
                     int cnt = hittable[i][j].split("/").length;
                     for(int k=0; k<cnt; k++){
                         String hc = hittable[i][j].split("/")[k];
-                        if(codeCache.getData(hc) == null)
+                        String hitCd = codeCache.getData(hc);
+                        if(hitCd == null)
                             continue;
                         Hit hit = Hit.builder().gameSeq(gameseq).game(saveGame).player(player).inning((long)j)
                                 .hitNo(Long.parseLong(hittable[i][0].split(" ")[0]))
-                                .hitSeq(hitseq).hitCd(codeCache.getData(hc))
+                                .hitSeq(hitseq).hitCd(hitCd)
                                 .result(hc)
                                 .build();
                         hitList.add(hit);
@@ -272,11 +273,12 @@ public class CrawlingService {
                 if(!hittable3[hitNo][j].isEmpty()){
                     int cnt = hittable3[hitNo][j].split("/").length;
                     String hc = hittable3[hitNo][j].split("/")[0];
-                    if(codeCache.getData(hc) == null)
+                    String hitCd = codeCache.getData(hc);
+                    if(hitCd == null)
                         continue;
                     PitcherBoard pitcherBoard = PitcherBoard.builder()
                             .game(saveGame).gameSeq(gameseq)
-                            .hitCd(codeCache.getData(hc))
+                            .hitCd(hitCd)
                             .hitNo((long) hitNo+1)
                             .inning((long) j)
                             .result(hc).build();
@@ -292,11 +294,12 @@ public class CrawlingService {
             }
             while(!hitNoQ.isEmpty()){
                 String hc = hitNoQ.poll();
-                if(codeCache.getData(hc) == null)
+                String hitCd = codeCache.getData(hc);
+                if(hitCd == null)
                     continue;
                 PitcherBoard pitcherBoard = PitcherBoard.builder()
                         .game(saveGame).gameSeq(gameseq)
-                        .hitCd(codeCache.getData(hc))
+                        .hitCd(hitCd)
                         .hitNo((long) hitNo+1)
                         .inning((long) j)
                         .result(hc).build();
