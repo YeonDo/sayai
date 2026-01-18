@@ -281,9 +281,6 @@ public class CodeCache {
     public Map<String, String> getDataset(){
         return dataset;
     }
-    private static final java.util.regex.Pattern BRACKET_PATTERN = java.util.regex.Pattern.compile("\\s*\\[.*?\\]");
-    private static final java.util.regex.Pattern WHITESPACE_PATTERN = java.util.regex.Pattern.compile("\\s+");
-
     public static String cleanString(String input){
         if(input == null)
             return null;
