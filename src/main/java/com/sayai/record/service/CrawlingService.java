@@ -133,7 +133,9 @@ public class CrawlingService {
         String[] player1= new String[numRows1];
         int kk = 0;
         for(Element ele : players1){
-            player1[kk++] = ele.text().split(" ")[0]+ " "+ele.text().split(" ")[2].substring(0,3);
+            String text = ele.text();
+            String[] parts = text.split(" ");
+            player1[kk++] = parts[0] + " " + parts[2].substring(0, 3);
         }
         int ii = 0, jj = 0;
         for (Element cell : cells1) {
