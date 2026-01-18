@@ -391,7 +391,6 @@ public class CrawlingService {
         }
         Elements scorebox = document.getElementsByClass("game_table");
         Elements aHref = scorebox.select("table tbody tr td a");
-        HashSet<Long> set = new HashSet<>();
         String urlForm ="http://www.gameone.kr/club/info/schedule/boxscore?club_idx=15387&game_idx=";
         for(Element ele : aHref){
             if(ele.hasClass("simbtn boxscore")){
