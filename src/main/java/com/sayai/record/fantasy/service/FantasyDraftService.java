@@ -4,9 +4,11 @@ import com.sayai.record.fantasy.dto.DraftRequest;
 import com.sayai.record.fantasy.dto.FantasyPlayerDto;
 import com.sayai.record.fantasy.entity.DraftPick;
 import com.sayai.record.fantasy.entity.FantasyGame;
+import com.sayai.record.fantasy.entity.FantasyParticipant;
 import com.sayai.record.fantasy.entity.FantasyPlayer;
 import com.sayai.record.fantasy.repository.DraftPickRepository;
 import com.sayai.record.fantasy.repository.FantasyGameRepository;
+import com.sayai.record.fantasy.repository.FantasyParticipantRepository;
 import com.sayai.record.fantasy.repository.FantasyPlayerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -23,6 +25,31 @@ public class FantasyDraftService {
     private final FantasyPlayerRepository fantasyPlayerRepository;
     private final DraftPickRepository draftPickRepository;
     private final FantasyGameRepository fantasyGameRepository;
+    private final FantasyParticipantRepository fantasyParticipantRepository;
+    private final DraftValidator draftValidator;
+
+    @Transactional
+    public void joinGame(Long gameSeq, Long playerId, String preferredTeam) {
+        FantasyGame game = fantasyGameRepository.findById(gameSeq)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid Game Seq"));
+
+        if (game.getStatus() != FantasyGame.GameStatus.WAITING) {
+            throw new IllegalStateException("Cannot join game. Status is " + game.getStatus());
+        }
+
+        // Check if already joined
+        if (fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(gameSeq, playerId).isPresent()) {
+            throw new IllegalStateException("Player already joined this game");
+        }
+
+        FantasyParticipant participant = FantasyParticipant.builder()
+                .fantasyGameSeq(gameSeq)
+                .playerId(playerId)
+                .preferredTeam(preferredTeam)
+                .build();
+
+        fantasyParticipantRepository.save(participant);
+    }
 
     @Transactional(readOnly = true)
     public List<FantasyPlayerDto> getAvailablePlayers(Long gameSeq) {
@@ -60,7 +87,28 @@ public class FantasyDraftService {
             throw new IllegalStateException("Player already picked");
         }
 
-        // 3. Save Pick
+        // 3. Validate Rules
+        FantasyPlayer targetPlayer = fantasyPlayerRepository.findById(request.getFantasyPlayerSeq())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid Player Seq"));
+
+        // Get Current Picks for this user
+        List<DraftPick> userPicks = draftPickRepository.findByFantasyGameSeqAndPlayerId(
+                request.getFantasyGameSeq(), request.getPlayerId());
+
+        Set<Long> pickedSeqs = userPicks.stream()
+                .map(DraftPick::getFantasyPlayerSeq)
+                .collect(Collectors.toSet());
+        List<FantasyPlayer> currentTeam = fantasyPlayerRepository.findAllById(pickedSeqs);
+
+        // Get Participant Info (needed for Rule 2)
+        FantasyParticipant participant = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(
+                request.getFantasyGameSeq(), request.getPlayerId())
+                .orElse(null); // Might be null if user didn't join explicitly (Rule 1 usually allows ad-hoc?)
+                                // Actually better to require join for consistent logic, but let's handle null gracefully for Rule 1.
+
+        draftValidator.validate(game, targetPlayer, currentTeam, participant);
+
+        // 4. Save Pick
         DraftPick pick = DraftPick.builder()
                 .fantasyGameSeq(request.getFantasyGameSeq())
                 .playerId(request.getPlayerId())

@@ -3,6 +3,8 @@ package com.sayai.record.fantasy.controller;
 import com.sayai.record.fantasy.dto.DraftRequest;
 import com.sayai.record.fantasy.dto.FantasyPlayerDto;
 import com.sayai.record.fantasy.service.FantasyDraftService;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +23,16 @@ public class FantasyDraftController {
         return ResponseEntity.ok(fantasyDraftService.getAvailablePlayers(gameSeq));
     }
 
+    @PostMapping("/games/{gameSeq}/join")
+    public ResponseEntity<String> joinGame(@PathVariable Long gameSeq, @RequestBody JoinRequest request) {
+        try {
+            fantasyDraftService.joinGame(gameSeq, request.getPlayerId(), request.getPreferredTeam());
+            return ResponseEntity.ok("Joined successfully");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     @PostMapping("/draft")
     public ResponseEntity<String> draftPlayer(@RequestBody DraftRequest request) {
         try {
@@ -29,7 +41,7 @@ public class FantasyDraftController {
         } catch (IllegalArgumentException | IllegalStateException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Draft failed");
+            return ResponseEntity.internalServerError().body("Draft failed: " + e.getMessage());
         }
     }
 
@@ -38,5 +50,12 @@ public class FantasyDraftController {
             @PathVariable Long gameSeq,
             @PathVariable Long playerId) {
         return ResponseEntity.ok(fantasyDraftService.getPickedPlayers(gameSeq, playerId));
+    }
+
+    @Getter
+    @NoArgsConstructor
+    public static class JoinRequest {
+        private Long playerId;
+        private String preferredTeam;
     }
 }

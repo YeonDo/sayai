@@ -22,6 +22,9 @@ public class FantasyGame {
     @Enumerated(EnumType.STRING)
     private GameStatus status;
 
+    @Enumerated(EnumType.STRING)
+    private RuleType ruleType;
+
     private LocalDateTime createdAt;
 
     @PrePersist
@@ -30,6 +33,9 @@ public class FantasyGame {
         if (this.status == null) {
             this.status = GameStatus.WAITING;
         }
+        if (this.ruleType == null) {
+            this.ruleType = RuleType.RULE_1;
+        }
     }
 
     public enum GameStatus {
@@ -37,5 +43,10 @@ public class FantasyGame {
         DRAFTING,
         ONGOING,
         FINISHED
+    }
+
+    public enum RuleType {
+        RULE_1,
+        RULE_2
     }
 }
