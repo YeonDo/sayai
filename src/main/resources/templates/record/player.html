@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Sayai - Player Record</title>
+    <style>
+        body { margin: 0; font-family: Arial, sans-serif; background-color: #f4f4f4; }
+        .gnb {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #333;
+            padding: 15px 30px;
+            color: white;
+        }
+        .gnb-left {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        .gnb a {
+            color: white;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .gnb a:hover {
+            color: #ddd;
+        }
+        .gnb-right button {
+            padding: 8px 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 30px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .sub-gnb {
+            display: flex;
+            border-bottom: 2px solid #ddd;
+            margin-bottom: 20px;
+        }
+        .sub-gnb a {
+            padding: 10px 20px;
+            text-decoration: none;
+            color: #555;
+            font-weight: bold;
+            border-bottom: 3px solid transparent;
+        }
+        .sub-gnb a.active {
+            color: #007bff;
+            border-bottom: 3px solid #007bff;
+        }
+        .sub-gnb a:hover {
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="gnb">
+        <div class="gnb-left">
+            <a href="/record">기록 조회</a>
+            <a href="/fantasy">판타지 리그</a>
+            <a href="/episodes/1">사야이 뷰어</a>
+        </div>
+        <div class="gnb-right">
+            <button type="button">로그인</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="sub-gnb">
+            <a href="/record/game">경기 조회</a>
+            <a href="/record/player" class="active">선수 조회</a>
+        </div>
+        <div>
+            <h2>Player Lookup</h2>
+            <p>Coming soon...</p>
+        </div>
+    </div>
+</body>
+</html>
