@@ -18,6 +18,16 @@ public class ViewController {
 
     @GetMapping("/record")
     public String record() {
-        return "record";
+        return "redirect:/record/game";
+    }
+
+    @GetMapping("/record/game")
+    public String recordGame() {
+        return "record/game";
+    }
+
+    @GetMapping("/record/player")
+    public String recordPlayer() {
+        return "record/player";
     }
 }
