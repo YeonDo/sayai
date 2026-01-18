@@ -8,4 +8,6 @@ import java.util.List;
 public interface DraftPickRepository extends JpaRepository<DraftPick, Long> {
     List<DraftPick> findByFantasyGameSeq(Long fantasyGameSeq);
     List<DraftPick> findByPlayerId(Long playerId);
+    List<DraftPick> findByFantasyGameSeqAndPlayerId(Long fantasyGameSeq, Long playerId);
+    boolean existsByFantasyGameSeqAndFantasyPlayerSeq(Long fantasyGameSeq, Long fantasyPlayerSeq);
 }

@@ -35,6 +35,7 @@ public class FantasyGame {
     public enum GameStatus {
         WAITING,
         DRAFTING,
+        ONGOING,
         FINISHED
     }
 }
