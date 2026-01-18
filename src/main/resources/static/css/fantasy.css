@@ -1,0 +1,163 @@
+:root {
+    --kbo-blue: #002561;
+    --kbo-red: #D60C0C;
+    --kbo-white: #FFFFFF;
+    --kbo-gray: #F0F2F5;
+    --text-primary: #333333;
+    --text-secondary: #666666;
+}
+
+body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background-color: var(--kbo-gray);
+    color: var(--text-primary);
+}
+
+/* Fantasy Layout */
+.fantasy-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.fantasy-header {
+    background-color: var(--kbo-blue);
+    color: var(--kbo-white);
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.fantasy-nav {
+    display: flex;
+    gap: 15px;
+    background-color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    overflow-x: auto;
+}
+
+.fantasy-nav a {
+    text-decoration: none;
+    color: var(--text-primary);
+    font-weight: 500;
+    padding: 5px 10px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.fantasy-nav a:hover, .fantasy-nav a.active {
+    background-color: var(--kbo-blue);
+    color: white;
+}
+
+/* Cards */
+.fantasy-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.card-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+    border-bottom: 2px solid var(--kbo-red);
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+    color: var(--kbo-blue);
+}
+
+/* Tables */
+.fantasy-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.fantasy-table th {
+    background-color: var(--kbo-gray);
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.fantasy-table td {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.fantasy-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Draft Specific */
+.draft-container {
+    display: grid;
+    grid-template-columns: 3fr 1fr;
+    gap: 20px;
+}
+
+@media (max-width: 768px) {
+    .draft-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+.position-badge {
+    background-color: #eee;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.team-badge {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.btn-primary {
+    background-color: var(--kbo-blue);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn-primary:hover {
+    background-color: #001a4d;
+}
+
+.btn-draft {
+    background-color: var(--kbo-red);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    color: white;
+}
+.status-WAITING { background-color: #f1c40f; }
+.status-DRAFTING { background-color: var(--kbo-red); animation: pulse 2s infinite; }
+.status-FINISHED { background-color: var(--kbo-blue); }
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}

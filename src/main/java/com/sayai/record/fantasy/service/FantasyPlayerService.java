@@ -1,5 +1,6 @@
 package com.sayai.record.fantasy.service;
 
+import com.sayai.record.fantasy.dto.FantasyPlayerDto;
 import com.sayai.record.fantasy.entity.FantasyPlayer;
 import com.sayai.record.fantasy.repository.FantasyPlayerRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,22 @@ import java.util.List;
 public class FantasyPlayerService {
 
     private final FantasyPlayerRepository fantasyPlayerRepository;
+
+    @Transactional
+    public void updatePlayer(Long seq, FantasyPlayerDto dto) {
+        FantasyPlayer player = fantasyPlayerRepository.findById(seq)
+                .orElseThrow(() -> new IllegalArgumentException("Player not found with seq: " + seq));
+
+        FantasyPlayer updated = FantasyPlayer.builder()
+                .seq(player.getSeq())
+                .name(dto.getName() != null ? dto.getName() : player.getName())
+                .position(dto.getPosition() != null ? dto.getPosition() : player.getPosition())
+                .team(dto.getTeam() != null ? dto.getTeam() : player.getTeam())
+                .stats(dto.getStats() != null ? dto.getStats() : player.getStats())
+                .build();
+
+        fantasyPlayerRepository.save(updated);
+    }
 
     @Transactional
     public void importPlayers(MultipartFile file) {

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fantasy League - My Team</title>
+    <link rel="stylesheet" th:href="@{/css/fantasy.css}">
+</head>
+<body>
+    <div class="fantasy-container">
+        <header class="fantasy-header">
+            <h1>My Team Roster</h1>
+        </header>
+
+        <nav class="fantasy-nav">
+            <a th:href="@{/fantasy}">Dashboard</a>
+            <a th:href="@{/fantasy/my-team}" class="active">My Team</a>
+            <a th:href="@{/fantasy/draft/1}">Draft Room</a>
+            <a th:href="@{/fantasy/players}">Players</a>
+            <a th:href="@{/fantasy/trade}">Trade</a>
+            <a th:href="@{/fantasy/settings}">Settings</a>
+        </nav>
+
+        <div class="fantasy-card">
+            <h2 class="card-title">Starting Lineup</h2>
+            <table class="fantasy-table">
+                <thead>
+                    <tr>
+                        <th>Pos</th>
+                        <th>Player</th>
+                        <th>Team</th>
+                        <th>Stats</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="roster-body">
+                    <!-- Populated by JS -->
+                    <tr>
+                        <td colspan="5" style="text-align:center">Loading roster...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Placeholder for future implementation using /apis/v1/fantasy/games/{seq}/players/{id}/picks
+        // For now, static or simple fetch if gameSeq is known.
+    </script>
+</body>
+</html>

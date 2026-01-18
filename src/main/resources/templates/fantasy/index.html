@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fantasy League - Dashboard</title>
+    <link rel="stylesheet" th:href="@{/css/fantasy.css}">
+</head>
+<body>
+    <div class="fantasy-container">
+        <header class="fantasy-header">
+            <h1>KBO Fantasy League</h1>
+            <div>
+                <span>Welcome, Manager</span>
+            </div>
+        </header>
+
+        <nav class="fantasy-nav">
+            <a th:href="@{/fantasy}" class="active">Dashboard</a>
+            <a th:href="@{/fantasy/my-team}">My Team</a>
+            <a th:href="@{/fantasy/draft/1}">Draft Room</a>
+            <a th:href="@{/fantasy/players}">Players</a>
+            <a th:href="@{/fantasy/trade}">Trade</a>
+            <a th:href="@{/fantasy/settings}">Settings</a>
+        </nav>
+
+        <div class="fantasy-card">
+            <h2 class="card-title">League Standings</h2>
+            <table class="fantasy-table">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Team</th>
+                        <th>W-L-T</th>
+                        <th>Points</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td>Bears Fantasy</td>
+                        <td>10-2-0</td>
+                        <td>1200</td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td>Giants Power</td>
+                        <td>9-3-0</td>
+                        <td>1150</td>
+                    </tr>
+                    <!-- Placeholder Data -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="fantasy-card">
+            <h2 class="card-title">This Week's Matchup</h2>
+            <p style="text-align: center; font-size: 1.2rem; padding: 20px;">
+                <strong>My Team</strong> vs <strong>Eagles Wings</strong>
+            </p>
+        </div>
+    </div>
+</body>
+</html>
