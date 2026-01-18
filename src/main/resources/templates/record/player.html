@@ -36,14 +36,20 @@
             border-radius: 4px;
             font-size: 14px;
         }
+        .gnb-right button:hover {
+            background-color: #0056b3;
+        }
+
         .container {
-            max-width: 1000px;
+            max-width: 1200px;
             margin: 30px auto;
             background: white;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
+
+        /* Sub GNB */
         .sub-gnb {
             display: flex;
             border-bottom: 2px solid #ddd;
@@ -63,9 +69,115 @@
         .sub-gnb a:hover {
             color: #007bff;
         }
+
+        /* Search Section */
+        .search-section {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .search-box {
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+        .search-box h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 16px;
+            color: #333;
+        }
+        .search-content {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        /* Specific widths for split */
+        .search-box.player-search {
+            flex: 1;
+            min-width: 200px;
+        }
+        .search-box.date-search {
+            flex: 2;
+            min-width: 400px;
+        }
+
+        input[type="text"], input[type="date"] {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button.btn-search {
+            padding: 8px 16px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button.btn-search:hover {
+            background-color: #218838;
+        }
+
+        .shortcut-btns button {
+            padding: 6px 12px;
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+        .shortcut-btns button:hover {
+            background-color: #5a6268;
+        }
+
+        /* Results Table */
+        .table-responsive {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 14px;
+            min-width: 1000px; /* Ensure table doesn't squash too much */
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+            color: #333;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .no-results {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+            display: none;
+            font-size: 16px;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
     </style>
 </head>
 <body>
+    <!-- Main GNB -->
     <div class="gnb">
         <div class="gnb-left">
             <a href="/record">기록 조회</a>
@@ -78,14 +190,276 @@
     </div>
 
     <div class="container">
+        <!-- Sub GNB -->
         <div class="sub-gnb">
             <a href="/record/game">경기 조회</a>
             <a href="/record/player" class="active">선수 조회</a>
         </div>
-        <div>
-            <h2>Player Lookup</h2>
-            <p>Coming soon...</p>
+
+        <!-- Search Area -->
+        <div class="search-section">
+            <!-- Left: Player Search -->
+            <div class="search-box player-search">
+                <h3>선수 선택</h3>
+                <div class="search-content">
+                    <input type="text" id="playerInput" list="playerList" placeholder="선수명 검색 (비워두면 전체)">
+                    <datalist id="playerList">
+                        <!-- Options will be populated by JS -->
+                    </datalist>
+                </div>
+            </div>
+
+            <!-- Right: Date Range -->
+            <div class="search-box date-search">
+                <h3>기간 설정</h3>
+                <div class="search-content">
+                    <input type="date" id="startDate">
+                    <span>~</span>
+                    <input type="date" id="endDate">
+
+                    <div class="shortcut-btns">
+                        <button onclick="setYear2026()">올해(2026)</button>
+                        <button onclick="setThisMonth()">이번달</button>
+                    </div>
+
+                    <button class="btn-search" onclick="searchRecords()" style="margin-left: auto;">조회</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Result Area -->
+        <div id="loading" class="loading">데이터를 불러오는 중...</div>
+        <div id="resultArea">
+            <div class="table-responsive">
+                <table id="resultTable">
+                    <thead>
+                        <tr>
+                            <th>순위</th>
+                            <th>이름</th>
+                            <th>타율</th>
+                            <th>경기</th>
+                            <th>타석</th>
+                            <th>타수</th>
+                            <th>안타</th>
+                            <th>2루타</th>
+                            <th>3루타</th>
+                            <th>홈런</th>
+                            <th>타점</th>
+                            <th>득점</th>
+                            <th>도루</th>
+                            <th>볼넷</th>
+                            <th>삼진</th>
+                            <th>출루율</th>
+                            <th>장타율</th>
+                            <th>OPS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Results will be injected here -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="noResults" class="no-results">검색 결과가 없습니다.</div>
         </div>
     </div>
+
+    <script>
+        // Local Cache for Players: {id, name}
+        let playerCache = [];
+
+        // Initialization
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Set default date range (2026 Full Year)
+            setYear2026();
+
+            // Load Players for the dropdown
+            await fetchPlayers();
+
+            // Load Initial Records (All Players, Default Date)
+            await searchRecords();
+        });
+
+        // --- Date Helpers ---
+        function setYear2026() {
+            document.getElementById('startDate').value = '2026-01-01';
+            document.getElementById('endDate').value = '2026-12-31';
+        }
+
+        function setThisMonth() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+
+            // Last day of current month
+            const lastDay = new Date(year, now.getMonth() + 1, 0).getDate();
+
+            document.getElementById('startDate').value = `${year}-${month}-01`;
+            document.getElementById('endDate').value = `${year}-${month}-${lastDay}`;
+        }
+
+        // --- API Calls ---
+
+        // 1. Fetch All Players
+        async function fetchPlayers() {
+            try {
+                const response = await fetch('/apis/v1/player/all');
+                if (!response.ok) throw new Error('Failed to fetch players');
+                const players = await response.json();
+
+                // Store in cache
+                playerCache = players.map(p => ({
+                    id: p.id,
+                    name: p.name
+                }));
+
+                // Sort by Player ID as requested
+                playerCache.sort((a, b) => a.id - b.id);
+
+                // Populate Datalist
+                const dataList = document.getElementById('playerList');
+                dataList.innerHTML = '';
+                playerCache.forEach(p => {
+                    const option = document.createElement('option');
+                    option.value = p.name; // Value shown in input
+                    option.dataset.id = p.id; // Store ID (though datalist doesn't send this automatically)
+                    // We can append ID to value if we want uniqueness: `${p.name} (${p.id})`
+                    // But usually name is preferred. If duplicates exist, we might need a better UI.
+                    // For now, assume unique names or user picks by name.
+                    dataList.appendChild(option);
+                });
+
+            } catch (error) {
+                console.error('Error fetching players:', error);
+            }
+        }
+
+        // 2. Search Records
+        async function searchRecords() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const playerNameInput = document.getElementById('playerInput').value.trim();
+
+            if (!startDate || !endDate) {
+                alert('기간을 설정해주세요.');
+                return;
+            }
+
+            // Find Player ID from Cache if a name is entered
+            let selectedPlayerId = null;
+            if (playerNameInput) {
+                const found = playerCache.find(p => p.name === playerNameInput);
+                if (found) {
+                    selectedPlayerId = found.id;
+                } else {
+                    // Name entered but not in list?
+                    // Option A: Alert user.
+                    // Option B: Search backend by name?
+                    // The prompt said: "Select from player list... call /apis/v1/player/hitter/{playerId}"
+                    // So we must resolve to an ID.
+                    alert('선수 목록에 없는 이름입니다. 정확한 이름을 입력하거나 목록에서 선택해주세요.');
+                    return;
+                }
+            }
+
+            showLoading(true);
+
+            try {
+                let url = '';
+                if (selectedPlayerId) {
+                    // Single Player
+                    url = `/apis/v1/player/hitter/${selectedPlayerId}?start=${startDate}&end=${endDate}`;
+                } else {
+                    // All Players
+                    url = `/apis/v1/player/hitter/all?start=${startDate}&end=${endDate}`;
+                }
+
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Failed to fetch records');
+
+                let data = await response.json();
+
+                // If single object returned (specific player), wrap in array
+                if (selectedPlayerId && !Array.isArray(data)) {
+                    data = [data];
+                }
+
+                renderTable(data);
+
+            } catch (error) {
+                console.error('Error searching records:', error);
+                alert('기록을 불러오는 중 오류가 발생했습니다.');
+                renderTable([]);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // --- Rendering ---
+        function renderTable(data) {
+            const tbody = document.querySelector('#resultTable tbody');
+            const noResults = document.getElementById('noResults');
+            const table = document.getElementById('resultTable');
+
+            tbody.innerHTML = '';
+
+            if (!data || data.length === 0) {
+                table.style.display = 'none';
+                noResults.style.display = 'block';
+                return;
+            }
+
+            table.style.display = 'table';
+            noResults.style.display = 'none';
+
+            // Sort data? Usually batting average or name.
+            // For now, let's sort by Batting Average DESC by default
+            data.sort((a, b) => (b.battingAvg || 0) - (a.battingAvg || 0));
+
+            data.forEach((p, index) => {
+                const tr = document.createElement('tr');
+
+                // Calculations
+                const ops = ((p.onBasePer || 0) + (p.slugPer || 0)).toFixed(3);
+                const avg = (p.battingAvg || 0).toFixed(3);
+
+                // Safe access helpers
+                const val = (v) => v !== undefined && v !== null ? v : 0;
+
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${p.name}</td>
+                    <td>${avg}</td>
+                    <td>${val(p.totalGames)}</td>
+                    <td>${val(p.playerAppearance)}</td>
+                    <td>${val(p.atBat)}</td>
+                    <td>${val(p.totalHits)}</td>
+                    <td>${val(p.doubles)}</td>
+                    <td>${val(p.triples)}</td>
+                    <td>${val(p.homeruns)}</td>
+                    <td>${val(p.rbi)}</td>
+                    <td>${val(p.runs)}</td>
+                    <td>${val(p.sb)}</td>
+                    <td>${val(p.baseOnBall)}</td>
+                    <td>${val(p.strikeOut)}</td>
+                    <td>${(p.onBasePer || 0).toFixed(3)}</td>
+                    <td>${(p.slugPer || 0).toFixed(3)}</td>
+                    <td>${ops}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function showLoading(isLoading) {
+            const loading = document.getElementById('loading');
+            const resultArea = document.getElementById('resultArea');
+            if (isLoading) {
+                loading.style.display = 'block';
+                resultArea.style.display = 'none';
+            } else {
+                loading.style.display = 'none';
+                resultArea.style.display = 'block';
+            }
+        }
+    </script>
 </body>
 </html>
