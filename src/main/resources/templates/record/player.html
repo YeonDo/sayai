@@ -362,12 +362,14 @@
                 if (selectedPlayerId) {
                     // Exact ID match
                     url = `/apis/v1/player/hitter/${selectedPlayerId}?start=${startDate}&end=${endDate}`;
+                } else if (playerNameInput) {
+                     // Name entered but not resolved to ID
+                     alert('선수 목록에 없는 이름입니다. 정확한 이름을 입력하거나 목록에서 선택해주세요.');
+                     showLoading(false);
+                     return;
                 } else {
-                    // All Players OR Name Search
+                    // All Players (No name input)
                     url = `/apis/v1/player/hitter/all?start=${startDate}&end=${endDate}`;
-                    if (playerNameInput) {
-                        url += `&name=${encodeURIComponent(playerNameInput)}`;
-                    }
                 }
 
                 const response = await fetch(url);
