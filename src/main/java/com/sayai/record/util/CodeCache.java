@@ -4,9 +4,13 @@ import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
+
 @Component
 public class CodeCache {
     private Map<String, String> dataset;
+    private static final Pattern BRACKET_PATTERN = Pattern.compile("\\s*\\[.*?\\]");
+    private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");
     public CodeCache(){
         dataset = new HashMap<>();
         dataset.put("아웃", "0,0,0");
