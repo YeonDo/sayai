@@ -189,8 +189,7 @@
             <table id="resultTable">
                 <thead>
                     <tr>
-                        <th>날짜</th>
-                        <th>시간</th>
+                        <th>경기 일시</th>
                         <th>구장</th>
                         <th>상대팀</th>
                         <th>결과</th>
@@ -287,10 +286,9 @@
                     tr.classList.add('row-loss');
                 }
 
-                // Fields: Date, Time, Stadium, Opponent, Result, Score, Gameone Link
+                // Fields: Date + Time, Stadium, Opponent, Result, Score, Gameone Link
                 tr.innerHTML = `
-                    <td>${formatDate(game.gameDate)}</td>
-                    <td>${formatTime(game.gameTime)}</td>
+                    <td>${formatDate(game.gameDate)} ${formatTime(game.gameTime)}</td>
                     <td>${game.stadium || '-'}</td>
                     <td>${game.opponent}</td>
                     <td>${game.result || '-'}</td>
