@@ -1,4 +1,4 @@
-FROM openjdk:17-jdk-slim
+FROM amazoncorretto:17-al2023-jdk
 # The application's jar file
 ARG JAR_FILE=target/record-0.0.1-SNAPSHOT.jar
 
