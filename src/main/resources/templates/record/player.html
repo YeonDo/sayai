@@ -158,7 +158,21 @@
             background-color: #f2f2f2;
             color: #333;
             font-weight: bold;
+            cursor: pointer; /* Clickable headers */
+            user-select: none;
         }
+        th:hover {
+            background-color: #e2e2e2;
+        }
+        th.sorted-asc::after {
+            content: " ▲";
+            font-size: 0.8em;
+        }
+        th.sorted-desc::after {
+            content: " ▼";
+            font-size: 0.8em;
+        }
+
         tr:nth-child(even) {
             background-color: #f9f9f9;
         }
@@ -234,24 +248,25 @@
                 <table id="resultTable">
                     <thead>
                         <tr>
+                            <!-- Rank isn't usually sortable as it's computed, but let's keep it static -->
                             <th>순위</th>
-                            <th>이름</th>
-                            <th>타율</th>
-                            <th>경기</th>
-                            <th>타석</th>
-                            <th>타수</th>
-                            <th>안타</th>
-                            <th>2루타</th>
-                            <th>3루타</th>
-                            <th>홈런</th>
-                            <th>타점</th>
-                            <th>득점</th>
-                            <th>도루</th>
-                            <th>볼넷</th>
-                            <th>삼진</th>
-                            <th>출루율</th>
-                            <th>장타율</th>
-                            <th>OPS</th>
+                            <th onclick="sortBy('name')" data-key="name">이름</th>
+                            <th onclick="sortBy('battingAvg')" data-key="battingAvg">타율</th>
+                            <th onclick="sortBy('totalGames')" data-key="totalGames">경기</th>
+                            <th onclick="sortBy('playerAppearance')" data-key="playerAppearance">타석</th>
+                            <th onclick="sortBy('atBat')" data-key="atBat">타수</th>
+                            <th onclick="sortBy('totalHits')" data-key="totalHits">안타</th>
+                            <th onclick="sortBy('doubles')" data-key="doubles">2루타</th>
+                            <th onclick="sortBy('triples')" data-key="triples">3루타</th>
+                            <th onclick="sortBy('homeruns')" data-key="homeruns">홈런</th>
+                            <th onclick="sortBy('rbi')" data-key="rbi">타점</th>
+                            <th onclick="sortBy('runs')" data-key="runs">득점</th>
+                            <th onclick="sortBy('sb')" data-key="sb">도루</th>
+                            <th onclick="sortBy('baseOnBall')" data-key="baseOnBall">볼넷</th>
+                            <th onclick="sortBy('strikeOut')" data-key="strikeOut">삼진</th>
+                            <th onclick="sortBy('onBasePer')" data-key="onBasePer">출루율</th>
+                            <th onclick="sortBy('slugPer')" data-key="slugPer">장타율</th>
+                            <th onclick="sortBy('ops')" data-key="ops">OPS</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -266,6 +281,8 @@
     <script>
         // Local Cache for Players: {id, name}
         let playerCache = [];
+        let currentData = [];
+        let sortState = { key: 'battingAvg', dir: 'desc' };
 
         // Initialization
         document.addEventListener('DOMContentLoaded', async () => {
@@ -289,10 +306,7 @@
             const now = new Date();
             const year = now.getFullYear();
             const month = String(now.getMonth() + 1).padStart(2, '0');
-
-            // Last day of current month
             const lastDay = new Date(year, now.getMonth() + 1, 0).getDate();
-
             document.getElementById('startDate').value = `${year}-${month}-01`;
             document.getElementById('endDate').value = `${year}-${month}-${lastDay}`;
         }
@@ -305,26 +319,15 @@
                 const response = await fetch('/apis/v1/player/all');
                 if (!response.ok) throw new Error('Failed to fetch players');
                 const players = await response.json();
-
-                // Store in cache
-                playerCache = players.map(p => ({
-                    id: p.id,
-                    name: p.name
-                }));
-
-                // Sort by Player ID as requested
+                playerCache = players.map(p => ({ id: p.id, name: p.name }));
                 playerCache.sort((a, b) => a.id - b.id);
 
-                // Populate Datalist
                 const dataList = document.getElementById('playerList');
                 dataList.innerHTML = '';
                 playerCache.forEach(p => {
                     const option = document.createElement('option');
-                    option.value = p.name; // Value shown in input
-                    option.dataset.id = p.id; // Store ID (though datalist doesn't send this automatically)
-                    // We can append ID to value if we want uniqueness: `${p.name} (${p.id})`
-                    // But usually name is preferred. If duplicates exist, we might need a better UI.
-                    // For now, assume unique names or user picks by name.
+                    option.value = p.name;
+                    option.dataset.id = p.id;
                     dataList.appendChild(option);
                 });
 
@@ -344,20 +347,11 @@
                 return;
             }
 
-            // Find Player ID from Cache if a name is entered
             let selectedPlayerId = null;
             if (playerNameInput) {
                 const found = playerCache.find(p => p.name === playerNameInput);
                 if (found) {
                     selectedPlayerId = found.id;
-                } else {
-                    // Name entered but not in list?
-                    // Option A: Alert user.
-                    // Option B: Search backend by name?
-                    // The prompt said: "Select from player list... call /apis/v1/player/hitter/{playerId}"
-                    // So we must resolve to an ID.
-                    alert('선수 목록에 없는 이름입니다. 정확한 이름을 입력하거나 목록에서 선택해주세요.');
-                    return;
                 }
             }
 
@@ -366,11 +360,14 @@
             try {
                 let url = '';
                 if (selectedPlayerId) {
-                    // Single Player
+                    // Exact ID match
                     url = `/apis/v1/player/hitter/${selectedPlayerId}?start=${startDate}&end=${endDate}`;
                 } else {
-                    // All Players
+                    // All Players OR Name Search
                     url = `/apis/v1/player/hitter/all?start=${startDate}&end=${endDate}`;
+                    if (playerNameInput) {
+                        url += `&name=${encodeURIComponent(playerNameInput)}`;
+                    }
                 }
 
                 const response = await fetch(url);
@@ -378,12 +375,12 @@
 
                 let data = await response.json();
 
-                // If single object returned (specific player), wrap in array
                 if (selectedPlayerId && !Array.isArray(data)) {
                     data = [data];
                 }
 
-                renderTable(data);
+                currentData = data;
+                sortData(sortState.key, sortState.dir);
 
             } catch (error) {
                 console.error('Error searching records:', error);
@@ -392,6 +389,56 @@
             } finally {
                 showLoading(false);
             }
+        }
+
+        // --- Sorting ---
+        function sortBy(key) {
+            if (sortState.key === key) {
+                sortState.dir = sortState.dir === 'desc' ? 'asc' : 'desc';
+            } else {
+                sortState.key = key;
+                sortState.dir = 'desc';
+            }
+            sortData(key, sortState.dir);
+        }
+
+        function sortData(key, dir) {
+            if (!currentData || currentData.length === 0) {
+                renderTable([]);
+                return;
+            }
+
+            currentData.sort((a, b) => {
+                let valA = getValue(a, key);
+                let valB = getValue(b, key);
+
+                // Handle strings (names)
+                if (typeof valA === 'string' && typeof valB === 'string') {
+                    return dir === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+                }
+
+                // Handle numbers
+                return dir === 'asc' ? valA - valB : valB - valA;
+            });
+
+            updateSortIcons(key, dir);
+            renderTable(currentData);
+        }
+
+        function getValue(obj, key) {
+             if (key === 'ops') {
+                 return (obj.onBasePer || 0) + (obj.slugPer || 0);
+             }
+             return obj[key] !== undefined && obj[key] !== null ? obj[key] : 0;
+        }
+
+        function updateSortIcons(key, dir) {
+            document.querySelectorAll('th').forEach(th => {
+                th.classList.remove('sorted-asc', 'sorted-desc');
+                if (th.dataset.key === key) {
+                    th.classList.add(dir === 'asc' ? 'sorted-asc' : 'sorted-desc');
+                }
+            });
         }
 
         // --- Rendering ---
@@ -411,18 +458,10 @@
             table.style.display = 'table';
             noResults.style.display = 'none';
 
-            // Sort data? Usually batting average or name.
-            // For now, let's sort by Batting Average DESC by default
-            data.sort((a, b) => (b.battingAvg || 0) - (a.battingAvg || 0));
-
             data.forEach((p, index) => {
                 const tr = document.createElement('tr');
-
-                // Calculations
                 const ops = ((p.onBasePer || 0) + (p.slugPer || 0)).toFixed(3);
                 const avg = (p.battingAvg || 0).toFixed(3);
-
-                // Safe access helpers
                 const val = (v) => v !== undefined && v !== null ? v : 0;
 
                 tr.innerHTML = `

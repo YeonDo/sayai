@@ -28,4 +28,23 @@ class HitServiceTest {
         }
     }
 
+    @Test
+    void findAllByPeriodWithName() {
+        LocalDate start = LocalDate.of(2023, 01, 01);
+        LocalDate end = LocalDate.of(2023, 12, 31);
+
+        List<PlayerDto> all = hitService.findAllByPeriod(start, end);
+        if (all.isEmpty()) {
+            return;
+        }
+
+        String targetName = all.get(0).getName();
+        List<PlayerDto> filtered = hitService.findAllByPeriod(start, end, targetName);
+
+        assertFalse(filtered.isEmpty());
+        for (PlayerDto p : filtered) {
+            assertTrue(p.getName().contains(targetName));
+        }
+    }
+
 }

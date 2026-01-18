@@ -39,8 +39,10 @@ public class PlayerController {
     }
     @GetMapping("/hitter/all")
     @ResponseBody
-    public List<PlayerDto> getAllHitter(@RequestParam("start") @DateTimeFormat(pattern="yyyy-MM-dd") LocalDate startDate, @RequestParam("end") @DateTimeFormat(pattern="yyyy-MM-dd") LocalDate endDate){
-        return hitService.findAllByPeriod(startDate,endDate);
+    public List<PlayerDto> getAllHitter(@RequestParam("start") @DateTimeFormat(pattern="yyyy-MM-dd") LocalDate startDate,
+                                        @RequestParam("end") @DateTimeFormat(pattern="yyyy-MM-dd") LocalDate endDate,
+                                        @RequestParam(value = "name", required = false) String name){
+        return hitService.findAllByPeriod(startDate,endDate, name);
     }
     @GetMapping("/pitcher/all")
     @ResponseBody

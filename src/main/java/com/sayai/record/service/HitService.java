@@ -46,11 +46,18 @@ public class HitService {
             return PlayerDto.builder().build();
         }
     }
-    public List<PlayerDto> findAllByPeriod(LocalDate startDate, LocalDate endDate){
+    public List<PlayerDto> findAllByPeriod(LocalDate startDate, LocalDate endDate) {
+        return findAllByPeriod(startDate, endDate, null);
+    }
+
+    public List<PlayerDto> findAllByPeriod(LocalDate startDate, LocalDate endDate, String name){
         List<PlayerDto> result = new ArrayList<>();
         List<PlayerInterface> dtos = hitRepository.getPlayerByPeriod(startDate, endDate);
         List<HitterStatDto> statDtos = hitterBoardRepository.getPlayerByPeriod(startDate,endDate);
         for(PlayerInterface dto : dtos){
+            if (name != null && !name.isEmpty() && !dto.getName().contains(name)) {
+                continue;
+            }
             for(HitterStatDto statDto: statDtos)
                 if(statDto.getPlayerId().equals(dto.getId()))
                     result.add(interfaceToDto(dto, statDto));
