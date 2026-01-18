@@ -447,6 +447,7 @@ public class CrawlingService {
         pagelist.put(2022, 6);
         pagelist.put(2023, 5);
         pagelist.put(2024, 5);
+        pagelist.put(2025, 4);
         return pagelist.get(year);
     }
 }
