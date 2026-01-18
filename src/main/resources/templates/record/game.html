@@ -130,6 +130,9 @@
         tr:nth-child(even) {
             background-color: #f9f9f9;
         }
+        .row-win { background-color: #d4edda !important; }
+        .row-draw { background-color: #fff3cd !important; }
+        .row-loss { background-color: #f8d7da !important; }
         .no-results {
             text-align: center;
             padding: 20px;
@@ -192,6 +195,7 @@
                         <th>상대팀</th>
                         <th>결과</th>
                         <th>점수 (홈:원정)</th>
+                        <th>게임원 링크</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -275,7 +279,15 @@
             data.forEach(game => {
                 const tr = document.createElement('tr');
 
-                // Fields: Date, Time, Stadium, Opponent, Result, Score
+                if (game.result === '승리') {
+                    tr.classList.add('row-win');
+                } else if (game.result === '무승부') {
+                    tr.classList.add('row-draw');
+                } else if (game.result === '패배') {
+                    tr.classList.add('row-loss');
+                }
+
+                // Fields: Date, Time, Stadium, Opponent, Result, Score, Gameone Link
                 tr.innerHTML = `
                     <td>${formatDate(game.gameDate)}</td>
                     <td>${formatTime(game.gameTime)}</td>
@@ -283,6 +295,7 @@
                     <td>${game.opponent}</td>
                     <td>${game.result || '-'}</td>
                     <td>${game.homeScore} : ${game.awayScore}</td>
+                    <td><a href="${game.gameoneLink}" target="_blank">게임원 링크</a></td>
                 `;
                 tbody.appendChild(tr);
             });
