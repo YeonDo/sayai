@@ -4,33 +4,63 @@
     <meta charset="UTF-8">
     <title>Sayai Main</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .container { max-width: 600px; margin: 0 auto; text-align: center; }
-        .nav-links { margin-top: 20px; }
-        .nav-links a { display: block; margin: 10px; padding: 10px; background-color: #f0f0f0; text-decoration: none; color: #333; border-radius: 5px; }
-        .nav-links a:hover { background-color: #ddd; }
-        .login-box { border: 1px solid #ccc; padding: 20px; border-radius: 5px; margin-bottom: 20px; }
-        .login-box input { margin: 5px; padding: 5px; width: 80%; }
-        .login-box button { padding: 5px 10px; cursor: pointer; }
+        body { margin: 0; font-family: Arial, sans-serif; }
+        .gnb {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #333;
+            padding: 15px 30px;
+            color: white;
+        }
+        .gnb-left {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        .gnb a {
+            color: white;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .gnb a:hover {
+            color: #ddd;
+        }
+        .gnb-right button {
+            padding: 8px 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .gnb-right button:hover {
+            background-color: #0056b3;
+        }
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
+    <div class="gnb">
+        <div class="gnb-left">
+            <a href="/record">기록 조회</a>
+            <a href="/fantasy">판타지 리그</a>
+            <a href="/episodes/1">사야이 뷰어</a>
+        </div>
+        <div class="gnb-right">
+            <button type="button">로그인</button>
+        </div>
+    </div>
+
     <div class="container">
         <h1>Welcome to Sayai</h1>
-
-        <div class="login-box">
-            <h2>Login</h2>
-            <form action="/login" method="post">
-                <input type="text" name="username" placeholder="Username" required>
-                <input type="password" name="password" placeholder="Password" required>
-                <button type="submit">Login</button>
-            </form>
-        </div>
-
-        <div class="nav-links">
-            <a href="/record">Amateur Baseball Record Inquiry</a>
-            <a href="/fantasy">KBO Fantasy League</a>
-        </div>
+        <p>Select a menu item from the top bar to get started.</p>
     </div>
 </body>
 </html>
