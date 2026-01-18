@@ -1,0 +1,300 @@
+/* Base Styles */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+}
+
+/* Global Navigation Bar (GNB) */
+.gnb {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #333;
+    padding: 15px 30px;
+    color: white;
+}
+
+.gnb-left {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.gnb a {
+    color: white;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.gnb a:hover {
+    color: #ddd;
+}
+
+.gnb-right button {
+    padding: 8px 16px;
+    cursor: pointer;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.gnb-right button:hover {
+    background-color: #0056b3;
+}
+
+/* Main Container */
+.container {
+    max-width: 1200px;
+    margin: 30px auto;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Sub Navigation (Game/Player tabs) */
+.sub-gnb {
+    display: flex;
+    border-bottom: 2px solid #ddd;
+    margin-bottom: 20px;
+}
+
+.sub-gnb a {
+    padding: 10px 20px;
+    text-decoration: none;
+    color: #555;
+    font-weight: bold;
+    border-bottom: 3px solid transparent;
+}
+
+.sub-gnb a.active {
+    color: #007bff;
+    border-bottom: 3px solid #007bff;
+}
+
+.sub-gnb a:hover {
+    color: #007bff;
+}
+
+/* Search Sections */
+.search-section {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+}
+
+.search-box {
+    flex: 1;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+    min-width: 250px; /* Prevent too much squishing */
+}
+
+.search-box h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 16px;
+    color: #333;
+}
+
+.search-form, .search-content {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* Inputs & Buttons */
+input[type="text"], input[type="date"] {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box; /* Important for responsive widths */
+}
+
+button {
+    cursor: pointer;
+}
+
+button.btn-search, .search-form button {
+    padding: 8px 16px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+button.btn-search:hover, .search-form button:hover {
+    background-color: #218838;
+}
+
+.shortcut-btns button {
+    padding: 6px 12px;
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.shortcut-btns button:hover {
+    background-color: #5a6268;
+}
+
+/* Tables */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+    margin-top: 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 800px; /* Force scroll on small screens */
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 12px;
+    text-align: center;
+    white-space: nowrap; /* Prevent text wrapping inside cells */
+}
+
+th {
+    background-color: #f2f2f2;
+    color: #333;
+    font-weight: bold;
+}
+
+tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+/* Game Results specific colors */
+.row-win { background-color: #d4edda !important; }
+.row-draw { background-color: #fff3cd !important; }
+.row-loss { background-color: #f8d7da !important; }
+
+/* Utilities */
+.no-results, .loading {
+    text-align: center;
+    padding: 30px;
+    color: #666;
+    display: none;
+}
+
+.sorted-asc::after { content: " ▲"; font-size: 0.8em; }
+.sorted-desc::after { content: " ▼"; font-size: 0.8em; }
+
+/* =========================================
+   Mobile / Responsive Styles
+   ========================================= */
+@media (max-width: 768px) {
+    /* Adjust Fonts */
+    h1 { font-size: 24px; }
+    h2 { font-size: 20px; }
+    h3 { font-size: 18px; }
+
+    /* Adjust GNB */
+    .gnb {
+        flex-direction: column;
+        padding: 15px;
+        gap: 15px;
+    }
+
+    .gnb-left {
+        flex-direction: column;
+        width: 100%;
+        gap: 10px;
+    }
+
+    .gnb-left a {
+        display: block;
+        padding: 5px;
+        width: 100%;
+        text-align: center;
+    }
+
+    .gnb-right {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+
+    /* Adjust Container */
+    .container {
+        margin: 10px auto;
+        padding: 15px;
+        width: 95%; /* Use percentage width */
+        box-sizing: border-box;
+    }
+
+    /* Sub GNB */
+    .sub-gnb {
+        justify-content: center;
+    }
+    .sub-gnb a {
+        padding: 8px 15px;
+        font-size: 14px;
+    }
+
+    /* Stack Search Forms */
+    .search-section {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .search-content, .search-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .search-content input,
+    .search-content select,
+    .search-content button,
+    .search-content .shortcut-btns,
+    .search-form input,
+    .search-form button {
+        width: 100%;
+        margin-left: 0 !important; /* Override margin-left: auto */
+        margin-bottom: 5px;
+    }
+
+    /* Hide the ~ separator in date ranges for cleaner mobile look, or center it if preferred */
+    .search-content span, .search-form span {
+        display: block;
+        width: 100%;
+        text-align: center;
+        margin-bottom: 5px;
+    }
+
+    .shortcut-btns {
+        display: flex;
+        gap: 5px;
+    }
+
+    .shortcut-btns button {
+        flex: 1;
+    }
+
+    /* Adjust Inputs */
+    input[type="text"], input[type="date"] {
+        width: 100%;
+    }
+
+    /* Compact Table padding */
+    th, td {
+        padding: 8px 4px;
+        font-size: 13px;
+    }
+}
