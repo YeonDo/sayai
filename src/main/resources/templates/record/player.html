@@ -319,7 +319,7 @@
                 const response = await fetch('/apis/v1/player/all');
                 if (!response.ok) throw new Error('Failed to fetch players');
                 const players = await response.json();
-                playerCache = players.map(p => ({ id: p.id, name: p.name }));
+                playerCache = players.map(p => ({ id: p.playerId, name: p.name }));
                 playerCache.sort((a, b) => a.id - b.id);
 
                 const dataList = document.getElementById('playerList');
