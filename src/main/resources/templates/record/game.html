@@ -2,144 +2,9 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sayai - Game Record</title>
-    <style>
-        body { margin: 0; font-family: Arial, sans-serif; background-color: #f4f4f4; }
-        .gnb {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: #333;
-            padding: 15px 30px;
-            color: white;
-        }
-        .gnb-left {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-        }
-        .gnb a {
-            color: white;
-            text-decoration: none;
-            font-size: 16px;
-            font-weight: bold;
-        }
-        .gnb a:hover {
-            color: #ddd;
-        }
-        .gnb-right button {
-            padding: 8px 16px;
-            cursor: pointer;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-        .gnb-right button:hover {
-            background-color: #0056b3;
-        }
-
-        .container {
-            max-width: 1000px;
-            margin: 30px auto;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        /* Sub GNB */
-        .sub-gnb {
-            display: flex;
-            border-bottom: 2px solid #ddd;
-            margin-bottom: 20px;
-        }
-        .sub-gnb a {
-            padding: 10px 20px;
-            text-decoration: none;
-            color: #555;
-            font-weight: bold;
-            border-bottom: 3px solid transparent;
-        }
-        .sub-gnb a.active {
-            color: #007bff;
-            border-bottom: 3px solid #007bff;
-        }
-        .sub-gnb a:hover {
-            color: #007bff;
-        }
-
-        /* Search Section */
-        .search-section {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-        }
-        .search-box {
-            flex: 1;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background-color: #f9f9f9;
-        }
-        .search-box h3 {
-            margin-top: 0;
-            margin-bottom: 10px;
-            font-size: 16px;
-            color: #333;
-        }
-        .search-form {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-        .search-form input {
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        .search-form button {
-            padding: 8px 16px;
-            background-color: #28a745;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .search-form button:hover {
-            background-color: #218838;
-        }
-
-        /* Results Table */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 12px;
-            text-align: center;
-        }
-        th {
-            background-color: #f2f2f2;
-            color: #333;
-        }
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-        .row-win { background-color: #d4edda !important; }
-        .row-draw { background-color: #fff3cd !important; }
-        .row-loss { background-color: #f8d7da !important; }
-        .no-results {
-            text-align: center;
-            padding: 20px;
-            color: #666;
-            display: none;
-        }
-    </style>
+    <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
     <!-- Main GNB -->
@@ -186,21 +51,23 @@
 
         <!-- Result Area -->
         <div id="resultArea">
-            <table id="resultTable">
-                <thead>
-                    <tr>
-                        <th>경기 일시</th>
-                        <th>구장</th>
-                        <th>상대팀</th>
-                        <th>결과</th>
-                        <th>점수 (홈:원정)</th>
-                        <th>게임원 링크</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Results will be injected here -->
-                </tbody>
-            </table>
+            <div class="table-responsive">
+                <table id="resultTable">
+                    <thead>
+                        <tr>
+                            <th>경기 일시</th>
+                            <th>구장</th>
+                            <th>상대팀</th>
+                            <th>결과</th>
+                            <th>점수 (홈:원정)</th>
+                            <th>게임원 링크</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Results will be injected here -->
+                    </tbody>
+                </table>
+            </div>
             <div id="noResults" class="no-results">검색 결과가 없습니다.</div>
         </div>
     </div>
