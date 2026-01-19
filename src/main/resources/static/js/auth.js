@@ -20,7 +20,10 @@ function performLogin() {
         contentType: 'application/json',
         data: JSON.stringify({ username: username, password: password }),
         success: function(response) {
+            const now = new Date();
+            const expiry = now.getTime() + 3600000; // 1 hour in ms
             localStorage.setItem('accessToken', response.accessToken);
+            localStorage.setItem('tokenExpiry', expiry);
             closeLoginModal();
             location.reload();
         },
@@ -32,19 +35,35 @@ function performLogin() {
 
 function logout() {
     localStorage.removeItem('accessToken');
+    localStorage.removeItem('tokenExpiry');
     location.reload();
 }
 
 // Global Headers for AJAX with JWT
 $(document).ajaxSend(function(event, xhr, settings) {
+    checkTokenExpiration();
     const token = localStorage.getItem('accessToken');
     if (token) {
         xhr.setRequestHeader('Authorization', 'Bearer ' + token);
     }
 });
 
+function checkTokenExpiration() {
+    const expiry = localStorage.getItem('tokenExpiry');
+    if (expiry) {
+        const now = new Date().getTime();
+        if (now > parseInt(expiry)) {
+            // Expired
+            logout();
+            return false;
+        }
+    }
+    return true;
+}
+
 // Update GNB on load
 $(document).ready(function() {
+    checkTokenExpiration();
     const token = localStorage.getItem('accessToken');
     const loginBtn = $('#gnb-login-btn');
     if (token) {
