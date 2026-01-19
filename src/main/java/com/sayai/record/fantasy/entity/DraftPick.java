@@ -25,6 +25,9 @@ public class DraftPick {
     @Column(name = "fantasy_game_seq")
     private Long fantasyGameSeq;
 
+    @Column(name = "pick_number")
+    private Integer pickNumber;
+
     private LocalDateTime pickedAt;
 
     @PrePersist

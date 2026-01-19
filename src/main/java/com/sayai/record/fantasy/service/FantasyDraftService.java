@@ -112,10 +112,15 @@ public class FantasyDraftService {
         draftValidator.validate(game, targetPlayer, currentTeam, participant);
 
         // 4. Save Pick
+        // Calculate pick number
+        long count = draftPickRepository.countByFantasyGameSeq(request.getFantasyGameSeq());
+        int pickNumber = (int) count + 1;
+
         DraftPick pick = DraftPick.builder()
                 .fantasyGameSeq(request.getFantasyGameSeq())
                 .playerId(request.getPlayerId())
                 .fantasyPlayerSeq(request.getFantasyPlayerSeq())
+                .pickNumber(pickNumber)
                 .build();
 
         draftPickRepository.save(pick);
@@ -128,7 +133,8 @@ public class FantasyDraftService {
                 .fantasyPlayerSeq(request.getFantasyPlayerSeq())
                 .playerName(targetPlayer.getName())
                 .playerTeam(targetPlayer.getTeam())
-                .message("Player " + request.getPlayerId() + " picked " + targetPlayer.getName())
+                .pickNumber(pickNumber)
+                .message("Player " + request.getPlayerId() + " picked " + targetPlayer.getName() + " (Pick #" + pickNumber + ")")
                 .build();
 
         messagingTemplate.convertAndSend("/topic/draft/" + request.getFantasyGameSeq(), event);

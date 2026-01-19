@@ -12,5 +12,6 @@ public class DraftEventDto {
     private Long fantasyPlayerSeq;
     private String playerName;
     private String playerTeam;
+    private Integer pickNumber;
     private String message;
 }
