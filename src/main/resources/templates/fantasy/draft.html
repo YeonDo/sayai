@@ -6,6 +6,9 @@
     <title>Fantasy League - Draft Room</title>
     <link rel="stylesheet" th:href="@{/css/fantasy.css}">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- SockJS and Stomp -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 </head>
 <body>
     <div class="fantasy-container">
@@ -71,13 +74,43 @@
     <script>
         const gameSeq = document.getElementById('gameSeq').value;
         const userId = document.getElementById('currentUserId').value;
+        let stompClient = null;
 
         $(document).ready(function() {
+            connectWebSocket();
             loadAvailablePlayers();
             loadMyPicks();
             // In a real app, poll status.
             $('#game-status').text('DRAFTING').removeClass('status-WAITING').addClass('status-DRAFTING'); // Mocking status for UI
         });
+
+        function connectWebSocket() {
+            const socket = new SockJS('/ws');
+            stompClient = Stomp.over(socket);
+            stompClient.connect({}, function(frame) {
+                console.log('Connected: ' + frame);
+                stompClient.subscribe('/topic/draft/' + gameSeq, function(message) {
+                    const event = JSON.parse(message.body);
+                    handleDraftEvent(event);
+                });
+            });
+        }
+
+        function handleDraftEvent(event) {
+            console.log("Draft Event:", event);
+
+            // Notify User
+            // Ideally, use a toast notification instead of alert to be less intrusive
+            // alert(event.message);
+
+            // Refresh available players (remove picked player locally for performance or reload)
+            loadAvailablePlayers();
+
+            // Refresh my picks if it was me
+            if (String(event.playerId) === String(userId)) {
+                loadMyPicks();
+            }
+        }
 
         function loadAvailablePlayers() {
             $.get(`/apis/v1/fantasy/games/${gameSeq}/available-players`, function(data) {
@@ -124,9 +157,9 @@
                 contentType: 'application/json',
                 data: JSON.stringify(data),
                 success: function(response) {
-                    alert('Draft Successful!');
-                    loadAvailablePlayers();
-                    loadMyPicks();
+                    // Success handled via WebSocket event usually,
+                    // but for immediate feedback we can keep alert or rely on UI update.
+                    console.log("Draft request sent successfully");
                 },
                 error: function(xhr) {
                     alert('Draft Failed: ' + xhr.responseText);

@@ -1,5 +1,6 @@
 package com.sayai.record.fantasy.service;
 
+import com.sayai.record.fantasy.dto.DraftEventDto;
 import com.sayai.record.fantasy.dto.DraftRequest;
 import com.sayai.record.fantasy.dto.FantasyPlayerDto;
 import com.sayai.record.fantasy.entity.DraftPick;
@@ -11,6 +12,7 @@ import com.sayai.record.fantasy.repository.FantasyGameRepository;
 import com.sayai.record.fantasy.repository.FantasyParticipantRepository;
 import com.sayai.record.fantasy.repository.FantasyPlayerRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +29,7 @@ public class FantasyDraftService {
     private final FantasyGameRepository fantasyGameRepository;
     private final FantasyParticipantRepository fantasyParticipantRepository;
     private final DraftValidator draftValidator;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Transactional
     public void joinGame(Long gameSeq, Long playerId, String preferredTeam) {
@@ -116,6 +119,19 @@ public class FantasyDraftService {
                 .build();
 
         draftPickRepository.save(pick);
+
+        // Broadcast Event
+        DraftEventDto event = DraftEventDto.builder()
+                .type("PICK")
+                .fantasyGameSeq(request.getFantasyGameSeq())
+                .playerId(request.getPlayerId())
+                .fantasyPlayerSeq(request.getFantasyPlayerSeq())
+                .playerName(targetPlayer.getName())
+                .playerTeam(targetPlayer.getTeam())
+                .message("Player " + request.getPlayerId() + " picked " + targetPlayer.getName())
+                .build();
+
+        messagingTemplate.convertAndSend("/topic/draft/" + request.getFantasyGameSeq(), event);
     }
 
     @Transactional(readOnly = true)
