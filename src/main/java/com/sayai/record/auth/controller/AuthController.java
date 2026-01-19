@@ -21,7 +21,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<Void> login(@RequestBody LoginRequest request, HttpServletResponse response) {
-        String token = authService.login(request.getUsername(), request.getPassword());
+        String token = authService.login(request.getUserId(), request.getPassword());
 
         ResponseCookie cookie = ResponseCookie.from("accessToken", token)
                 .httpOnly(true)
@@ -50,7 +50,7 @@ public class AuthController {
 
     @Data
     public static class LoginRequest {
-        private String username;
+        private String userId;
         private String password;
     }
 

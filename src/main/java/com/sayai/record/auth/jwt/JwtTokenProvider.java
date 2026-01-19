@@ -28,8 +28,8 @@ public class JwtTokenProvider {
         this.secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
     }
 
-    public String createToken(Long playerId, String username) {
-        Claims claims = Jwts.claims().setSubject(username);
+    public String createToken(Long playerId, String userId) {
+        Claims claims = Jwts.claims().setSubject(userId);
         claims.put("playerId", playerId);
 
         Date now = new Date();
@@ -69,7 +69,7 @@ public class JwtTokenProvider {
         }
     }
 
-    public String getUsername(String token) {
+    public String getUserId(String token) {
         return Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token).getBody().getSubject();
     }
 

@@ -8,7 +8,7 @@ import javax.persistence.*;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-@Table(name = "ft_users")
+@Table(name = "app_users")
 @Entity
 public class Member {
 
@@ -17,7 +17,10 @@ public class Member {
     private Long playerId;
 
     @Column(nullable = false, unique = true)
-    private String username;
+    private String userId;
+
+    @Column(nullable = false)
+    private String name;
 
     @Column(nullable = false)
     private String password;

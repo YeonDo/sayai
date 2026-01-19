@@ -17,14 +17,14 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
 
     @Transactional(readOnly = true)
-    public String login(String username, String password) {
-        Member member = memberRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid username or password"));
+    public String login(String userId, String password) {
+        Member member = memberRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid userId or password"));
 
         if (!passwordEncoder.matches(password, member.getPassword())) {
-            throw new IllegalArgumentException("Invalid username or password");
+            throw new IllegalArgumentException("Invalid userId or password");
         }
 
-        return jwtTokenProvider.createToken(member.getPlayerId(), member.getUsername());
+        return jwtTokenProvider.createToken(member.getPlayerId(), member.getUserId());
     }
 }

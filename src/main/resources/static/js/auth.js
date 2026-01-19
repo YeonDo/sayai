@@ -6,19 +6,19 @@ function openLoginModal() {
 function closeLoginModal() {
     document.getElementById('login-modal').style.display = 'none';
     document.getElementById('login-error').style.display = 'none';
-    document.getElementById('login-username').value = '';
+    document.getElementById('login-userId').value = '';
     document.getElementById('login-password').value = '';
 }
 
 function performLogin() {
-    const username = $('#login-username').val();
+    const userId = $('#login-userId').val();
     const password = $('#login-password').val();
 
     $.ajax({
         url: '/apis/v1/auth/login',
         type: 'POST',
         contentType: 'application/json',
-        data: JSON.stringify({ username: username, password: password }),
+        data: JSON.stringify({ userId: userId, password: password }),
         success: function(response) {
             // Cookie is set by server
             closeLoginModal();
@@ -72,21 +72,21 @@ $(document).ready(function() {
 // Intercept Login/Logout to set UI flag
 const originalLogin = performLogin;
 performLogin = function() {
-    const username = $('#login-username').val();
+    const userId = $('#login-userId').val();
     const password = $('#login-password').val();
 
     $.ajax({
         url: '/apis/v1/auth/login',
         type: 'POST',
         contentType: 'application/json',
-        data: JSON.stringify({ username: username, password: password }),
+        data: JSON.stringify({ userId: userId, password: password }),
         success: function(response) {
             localStorage.setItem('isLoggedIn', 'true');
             closeLoginModal();
             location.reload();
         },
         error: function(xhr) {
-            $('#login-error').text('Invalid username or password').show();
+            $('#login-error').text('Invalid user ID or password').show();
         }
     });
 }

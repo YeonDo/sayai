@@ -24,14 +24,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = jwtTokenProvider.resolveToken(request);
 
         if (token != null && jwtTokenProvider.validateToken(token)) {
-            String username = jwtTokenProvider.getUsername(token);
+            String userId = jwtTokenProvider.getUserId(token);
             Long playerId = jwtTokenProvider.getPlayerId(token);
 
             // Create a simple UserDetails object.
             // In a real app, you might load more details from DB, but this is sufficient for context.
             // Storing playerId in principal or credentials or details is useful.
             UserDetails userDetails = User.builder()
-                    .username(username)
+                    .username(userId)
                     .password("") // Password not needed here
                     .authorities(Collections.emptyList())
                     .build();
