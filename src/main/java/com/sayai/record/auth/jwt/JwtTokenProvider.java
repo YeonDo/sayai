@@ -9,8 +9,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import java.security.Key;
+import java.util.Arrays;
 import java.util.Date;
 
 @Component
@@ -42,6 +44,15 @@ public class JwtTokenProvider {
     }
 
     public String resolveToken(HttpServletRequest request) {
+        // 1. Try Cookie first
+        if (request.getCookies() != null) {
+            return Arrays.stream(request.getCookies())
+                    .filter(c -> "accessToken".equals(c.getName()))
+                    .map(Cookie::getValue)
+                    .findFirst()
+                    .orElse(null);
+        }
+        // 2. Fallback to Header (optional, good for API clients like Postman)
         String bearerToken = request.getHeader("Authorization");
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7);
