@@ -5,13 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fantasy League - Dashboard</title>
     <link rel="stylesheet" th:href="@{/css/fantasy.css}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script th:src="@{/js/auth.js}"></script>
 </head>
 <body>
     <div class="fantasy-container">
         <header class="fantasy-header">
             <h1>KBO Fantasy League</h1>
             <div>
-                <span>Welcome, Manager</span>
+                <span style="margin-right: 15px;">Welcome, Manager</span>
+                <button id="gnb-login-btn" class="btn-primary" style="padding: 5px 10px; font-size: 0.9rem;" onclick="openLoginModal()">Login</button>
             </div>
         </header>
 
@@ -60,5 +63,8 @@
             </p>
         </div>
     </div>
+
+    <!-- Login Modal -->
+    <th:block th:replace="fragments/login-modal :: #login-modal"></th:block>
 </body>
 </html>
