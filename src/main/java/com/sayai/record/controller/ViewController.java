@@ -11,11 +11,6 @@ public class ViewController {
         return "index";
     }
 
-    @GetMapping("/fantasy")
-    public String fantasy() {
-        return "fantasy";
-    }
-
     @GetMapping("/record")
     public String record() {
         return "redirect:/record/game";
