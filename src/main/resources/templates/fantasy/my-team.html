@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fantasy League - My Team</title>
     <link rel="stylesheet" th:href="@{/css/fantasy.css}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
     <div class="fantasy-container">
@@ -21,31 +22,153 @@
             <a th:href="@{/fantasy/settings}">Settings</a>
         </nav>
 
-        <div class="fantasy-card">
-            <h2 class="card-title">Starting Lineup</h2>
-            <table class="fantasy-table">
-                <thead>
-                    <tr>
-                        <th>Pos</th>
-                        <th>Player</th>
-                        <th>Team</th>
-                        <th>Stats</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="roster-body">
-                    <!-- Populated by JS -->
-                    <tr>
-                        <td colspan="5" style="text-align:center">Loading roster...</td>
-                    </tr>
-                </tbody>
-            </table>
+        <div class="my-team-container">
+            <!-- Field View -->
+            <div class="fantasy-card">
+                <h2 class="card-title">Fielding & Batting</h2>
+                <div class="baseball-field">
+                    <!-- Positions -->
+                    <div class="field-position pos-c" id="slot-C">
+                        <span class="pos-label">C</span>
+                        <span class="player-name">-</span>
+                    </div>
+                    <div class="field-position pos-1b" id="slot-1B">
+                        <span class="pos-label">1B</span>
+                        <span class="player-name">-</span>
+                    </div>
+                    <div class="field-position pos-2b" id="slot-2B">
+                        <span class="pos-label">2B</span>
+                        <span class="player-name">-</span>
+                    </div>
+                    <div class="field-position pos-3b" id="slot-3B">
+                        <span class="pos-label">3B</span>
+                        <span class="player-name">-</span>
+                    </div>
+                    <div class="field-position pos-ss" id="slot-SS">
+                        <span class="pos-label">SS</span>
+                        <span class="player-name">-</span>
+                    </div>
+                    <div class="field-position pos-lf" id="slot-LF">
+                        <span class="pos-label">LF</span>
+                        <span class="player-name">-</span>
+                    </div>
+                    <div class="field-position pos-cf" id="slot-CF">
+                        <span class="pos-label">CF</span>
+                        <span class="player-name">-</span>
+                    </div>
+                    <div class="field-position pos-rf" id="slot-RF">
+                        <span class="pos-label">RF</span>
+                        <span class="player-name">-</span>
+                    </div>
+                    <div class="field-position pos-dh" id="slot-DH">
+                        <span class="pos-label">DH</span>
+                        <span class="player-name">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pitching View -->
+            <div class="fantasy-card">
+                <h2 class="card-title">Pitching Staff</h2>
+                <div class="pitcher-list" id="pitcher-list-container">
+                    <!-- SP Slots -->
+                    <div class="pitcher-slot" id="slot-SP-1"><span class="pitcher-role">SP</span><span class="player-name">-</span></div>
+                    <div class="pitcher-slot" id="slot-SP-2"><span class="pitcher-role">SP</span><span class="player-name">-</span></div>
+                    <div class="pitcher-slot" id="slot-SP-3"><span class="pitcher-role">SP</span><span class="player-name">-</span></div>
+                    <div class="pitcher-slot" id="slot-SP-4"><span class="pitcher-role">SP</span><span class="player-name">-</span></div>
+
+                    <!-- RP Slots -->
+                    <div class="pitcher-slot" id="slot-RP-1"><span class="pitcher-role">RP</span><span class="player-name">-</span></div>
+                    <div class="pitcher-slot" id="slot-RP-2"><span class="pitcher-role">RP</span><span class="player-name">-</span></div>
+                    <div class="pitcher-slot" id="slot-RP-3"><span class="pitcher-role">RP</span><span class="player-name">-</span></div>
+                    <div class="pitcher-slot" id="slot-RP-4"><span class="pitcher-role">RP</span><span class="player-name">-</span></div>
+
+                    <!-- CL Slot -->
+                    <div class="pitcher-slot" id="slot-CL-1"><span class="pitcher-role">CL</span><span class="player-name">-</span></div>
+                </div>
+            </div>
         </div>
     </div>
 
+    <!-- Hardcoded Game/User ID for Demo -->
+    <input type="hidden" id="gameSeq" value="1" />
+    <input type="hidden" id="currentUserId" value="1" />
+
     <script>
-        // Placeholder for future implementation using /apis/v1/fantasy/games/{seq}/players/{id}/picks
-        // For now, static or simple fetch if gameSeq is known.
+        $(document).ready(function() {
+            const gameSeq = $('#gameSeq').val();
+            const userId = $('#currentUserId').val();
+
+            $.get(`/apis/v1/fantasy/games/${gameSeq}/players/${userId}/picks`, function(players) {
+                // Tracking filled slots to handle duplicates/DH
+                const filledSlots = {};
+                const spCount = { count: 1 };
+                const rpCount = { count: 1 };
+
+                players.forEach(p => {
+                    const positions = p.position.split(',').map(s => s.trim());
+                    let assigned = false;
+
+                    // 1. Try Primary Positions first
+                    for (const pos of positions) {
+                        if (isPitcher(pos)) continue; // Handle pitchers separately
+                        if (!filledSlots[pos]) {
+                            fillSlot(pos, p);
+                            filledSlots[pos] = true;
+                            assigned = true;
+                            break;
+                        }
+                    }
+
+                    // 2. If not assigned and not pitcher, try DH
+                    if (!assigned && !isPitcher(positions[0])) {
+                        if (!filledSlots['DH']) {
+                            fillSlot('DH', p);
+                            filledSlots['DH'] = true;
+                            assigned = true;
+                        }
+                    }
+
+                    // 3. Handle Pitchers
+                    if (!assigned && isPitcher(positions[0])) {
+                         // Simplify: Just check if any pos is SP/RP/CL
+                         if (positions.includes('SP')) {
+                             assignPitcher('SP', spCount, p);
+                         } else if (positions.includes('RP')) {
+                             assignPitcher('RP', rpCount, p);
+                         } else if (positions.includes('CL')) {
+                             if (!filledSlots['CL']) {
+                                 fillPitcherSlot('CL-1', p);
+                                 filledSlots['CL'] = true;
+                             }
+                         }
+                    }
+                });
+            });
+        });
+
+        function isPitcher(pos) {
+            return ['SP', 'RP', 'CL'].includes(pos);
+        }
+
+        function fillSlot(pos, player) {
+            const slot = $(`#slot-${pos}`);
+            slot.find('.player-name').text(player.name);
+            slot.append(`<span class="player-team">${player.team}</span>`);
+        }
+
+        function assignPitcher(type, counterObj, player) {
+            if (counterObj.count <= 4) {
+                fillPitcherSlot(`${type}-${counterObj.count}`, player);
+                counterObj.count++;
+            }
+        }
+
+        function fillPitcherSlot(idSuffix, player) {
+            const slot = $(`#slot-${idSuffix}`);
+            slot.addClass('filled');
+            slot.find('.player-name').text(`${player.name} (${player.team})`);
+        }
     </script>
 </body>
 </html>

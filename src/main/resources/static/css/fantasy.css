@@ -5,6 +5,8 @@
     --kbo-gray: #F0F2F5;
     --text-primary: #333333;
     --text-secondary: #666666;
+    --field-green: #388E3C;
+    --field-dirt: #c29869;
 }
 
 body {
@@ -160,4 +162,105 @@ body {
     0% { opacity: 1; }
     50% { opacity: 0.7; }
     100% { opacity: 1; }
+}
+
+/* My Team - Field Visualization */
+.my-team-container {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+}
+
+@media (max-width: 992px) {
+    .my-team-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+.baseball-field {
+    background-color: var(--field-green);
+    /* Simple field graphic using radial gradients */
+    background-image:
+        radial-gradient(circle at 50% 100%, var(--field-dirt) 15%, transparent 16%),
+        radial-gradient(circle at 50% 100%, transparent 60%, var(--field-dirt) 61%, var(--field-dirt) 65%, transparent 66%);
+    border-radius: 8px 8px 100px 100px;
+    height: 600px;
+    position: relative;
+    border: 4px solid #fff;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
+    margin-bottom: 20px;
+}
+
+.field-position {
+    position: absolute;
+    width: 100px;
+    transform: translate(-50%, -50%);
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 6px;
+    padding: 5px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    border: 2px solid var(--kbo-blue);
+}
+
+.field-position .pos-label {
+    display: block;
+    font-weight: bold;
+    font-size: 0.8rem;
+    color: var(--kbo-red);
+    margin-bottom: 2px;
+    text-transform: uppercase;
+}
+
+.field-position .player-name {
+    display: block;
+    font-weight: bold;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.field-position .player-team {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+}
+
+/* Position Coordinates (Top %, Left %) */
+.pos-c  { bottom: 5%; left: 50%; transform: translate(-50%, 0); }
+.pos-p  { bottom: 40%; left: 50%; } /* General P spot on field, distinct from roster list */
+.pos-1b { bottom: 40%; right: 25%; }
+.pos-2b { bottom: 60%; right: 35%; }
+.pos-3b { bottom: 40%; left: 25%; }
+.pos-ss { bottom: 60%; left: 35%; }
+.pos-lf { top: 30%; left: 20%; }
+.pos-cf { top: 20%; left: 50%; }
+.pos-rf { top: 30%; right: 20%; }
+.pos-dh { bottom: 10%; right: 10%; } /* Just placing DH somewhere visible */
+
+.pitcher-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.pitcher-slot {
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.pitcher-slot.filled {
+    background: #e3f2fd;
+    border-color: var(--kbo-blue);
+}
+
+.pitcher-role {
+    font-weight: bold;
+    color: var(--kbo-blue);
+    width: 40px;
 }
