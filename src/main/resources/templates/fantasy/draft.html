@@ -41,7 +41,38 @@
         <div class="draft-container">
             <div class="fantasy-card">
                 <h2 class="card-title">Available Players</h2>
-                <input type="text" id="search-player" placeholder="Search player..." style="width: 100%; padding: 8px; margin-bottom: 10px;">
+                <div style="margin-bottom: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <select id="filter-team" style="padding: 5px;">
+                        <option value="">All Teams</option>
+                        <option value="Doosan">Doosan Bears</option>
+                        <option value="LG">LG Twins</option>
+                        <option value="Kia">Kia Tigers</option>
+                        <option value="Samsung">Samsung Lions</option>
+                        <option value="Lotte">Lotte Giants</option>
+                        <option value="Hanwha">Hanwha Eagles</option>
+                        <option value="NC">NC Dinos</option>
+                        <option value="KT">KT Wiz</option>
+                        <option value="SSG">SSG Landers</option>
+                        <option value="Kiwoom">Kiwoom Heroes</option>
+                    </select>
+                    <select id="filter-position" style="padding: 5px;">
+                        <option value="">All Positions</option>
+                        <option value="C">C</option>
+                        <option value="1B">1B</option>
+                        <option value="2B">2B</option>
+                        <option value="3B">3B</option>
+                        <option value="SS">SS</option>
+                        <option value="LF">LF</option>
+                        <option value="CF">CF</option>
+                        <option value="RF">RF</option>
+                        <option value="DH">DH</option>
+                        <option value="SP">SP</option>
+                        <option value="RP">RP</option>
+                        <option value="CL">CL</option>
+                    </select>
+                    <input type="text" id="search-player" placeholder="Search player..." style="padding: 5px; flex-grow: 1;">
+                    <button class="btn-primary" onclick="loadAvailablePlayers()">Filter</button>
+                </div>
                 <table class="fantasy-table">
                     <thead>
                         <tr>
@@ -80,6 +111,15 @@
             connectWebSocket();
             loadAvailablePlayers();
             loadMyPicks();
+
+            // Filter Change Events
+            $('#filter-team, #filter-position').change(function() {
+                loadAvailablePlayers();
+            });
+            $('#search-player').on('keyup', function(e) {
+                if (e.key === 'Enter') loadAvailablePlayers();
+            });
+
             // In a real app, poll status.
             $('#game-status').text('DRAFTING').removeClass('status-WAITING').addClass('status-DRAFTING'); // Mocking status for UI
         });
@@ -113,7 +153,16 @@
         }
 
         function loadAvailablePlayers() {
-            $.get(`/apis/v1/fantasy/games/${gameSeq}/available-players`, function(data) {
+            const team = $('#filter-team').val();
+            const position = $('#filter-position').val();
+            const search = $('#search-player').val();
+
+            let query = `?`;
+            if (team) query += `team=${encodeURIComponent(team)}&`;
+            if (position) query += `position=${encodeURIComponent(position)}&`;
+            if (search) query += `search=${encodeURIComponent(search)}&`;
+
+            $.get(`/apis/v1/fantasy/games/${gameSeq}/available-players${query}`, function(data) {
                 const tbody = $('#available-players-body');
                 tbody.empty();
                 data.forEach(player => {
