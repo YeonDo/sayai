@@ -25,7 +25,7 @@ public class AuthService {
             throw new IllegalArgumentException("Invalid userId or password");
         }
 
-        return jwtTokenProvider.createToken(member.getPlayerId(), member.getUserId());
+        return jwtTokenProvider.createToken(member.getPlayerId(), member.getUserId(), member.getRole());
     }
 
     @Transactional
@@ -38,7 +38,8 @@ public class AuthService {
                 .userId(userId)
                 .password(passwordEncoder.encode(password))
                 .name(name)
-                .playerId(playerId) // Assuming admin provides valid playerId or it's auto-generated if null, but user requested input.
+                .playerId(playerId)
+                .role(Member.Role.USER) // Default role
                 .build();
 
         memberRepository.save(member);

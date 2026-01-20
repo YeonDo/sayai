@@ -34,8 +34,10 @@ public class SecurityConfig {
                 .and()
                 .authorizeRequests()
                 // Allow public access to Record APIs and Auth Login
-                .antMatchers("/apis/v1/player/**", "/apis/v1/auth/login", "/").permitAll()
+                .antMatchers("/apis/v1/player/**", "/apis/v1/auth/login", "/apis/v1/auth/signup", "/").permitAll()
                 .antMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
+                // Admin access
+                .antMatchers("/apis/v1/admin/**").hasRole("ADMIN")
                 // Require auth for Fantasy APIs and Views
                 .antMatchers("/apis/v1/fantasy/**", "/fantasy/**").authenticated()
                 .anyRequest().permitAll() // Default to permit for other existing endpoints unless specified

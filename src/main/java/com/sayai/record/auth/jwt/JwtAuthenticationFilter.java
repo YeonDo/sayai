@@ -10,6 +10,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Collections;
@@ -25,15 +26,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (token != null && jwtTokenProvider.validateToken(token)) {
             String userId = jwtTokenProvider.getUserId(token);
-            Long playerId = jwtTokenProvider.getPlayerId(token);
+            String role = jwtTokenProvider.getRole(token);
 
-            // Create a simple UserDetails object.
-            // In a real app, you might load more details from DB, but this is sufficient for context.
-            // Storing playerId in principal or credentials or details is useful.
             UserDetails userDetails = User.builder()
                     .username(userId)
                     .password("") // Password not needed here
-                    .authorities(Collections.emptyList())
+                    .authorities(Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role)))
                     .build();
 
             // We can store playerId in the details or as a custom Principal.

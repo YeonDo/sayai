@@ -1,5 +1,6 @@
 package com.sayai.record.auth.jwt;
 
+import com.sayai.record.auth.entity.Member;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
@@ -28,9 +29,10 @@ public class JwtTokenProvider {
         this.secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
     }
 
-    public String createToken(Long playerId, String userId) {
+    public String createToken(Long playerId, String userId, Member.Role role) {
         Claims claims = Jwts.claims().setSubject(userId);
         claims.put("playerId", playerId);
+        claims.put("role", role.name());
 
         Date now = new Date();
         Date validity = new Date(now.getTime() + tokenValidityInMilliseconds);
@@ -75,5 +77,9 @@ public class JwtTokenProvider {
 
     public Long getPlayerId(String token) {
         return Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token).getBody().get("playerId", Long.class);
+    }
+
+    public String getRole(String token) {
+        return Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token).getBody().get("role", String.class);
     }
 }

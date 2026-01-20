@@ -24,4 +24,20 @@ public class Member {
 
     @Column(nullable = false)
     private String password;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
+
+    @PrePersist
+    public void prePersist() {
+        if (this.role == null) {
+            this.role = Role.USER;
+        }
+    }
+
+    public enum Role {
+        USER,
+        ADMIN
+    }
 }
