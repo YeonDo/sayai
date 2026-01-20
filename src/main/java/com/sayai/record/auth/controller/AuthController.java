@@ -48,10 +48,27 @@ public class AuthController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/signup")
+    public ResponseEntity<String> signup(@RequestBody SignupRequest request) {
+        try {
+            authService.signup(request.getUserId(), request.getPassword(), request.getName(), request.getPlayerId());
+            return ResponseEntity.ok("User registered successfully");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     @Data
     public static class LoginRequest {
         private String userId;
         private String password;
     }
 
+    @Data
+    public static class SignupRequest {
+        private String userId;
+        private String password;
+        private String name;
+        private Long playerId;
+    }
 }

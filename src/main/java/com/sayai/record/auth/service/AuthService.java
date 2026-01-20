@@ -27,4 +27,20 @@ public class AuthService {
 
         return jwtTokenProvider.createToken(member.getPlayerId(), member.getUserId());
     }
+
+    @Transactional
+    public void signup(String userId, String password, String name, Long playerId) {
+        if (memberRepository.findByUserId(userId).isPresent()) {
+            throw new IllegalArgumentException("User ID already exists");
+        }
+
+        Member member = Member.builder()
+                .userId(userId)
+                .password(passwordEncoder.encode(password))
+                .name(name)
+                .playerId(playerId) // Assuming admin provides valid playerId or it's auto-generated if null, but user requested input.
+                .build();
+
+        memberRepository.save(member);
+    }
 }
