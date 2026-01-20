@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Create Game</title>
+</head>
+<body>
+    <h1>Create Fantasy Game</h1>
+    <form>
+        Title: <input type="text" name="title"><br>
+        Rule Type:
+        <select name="ruleType">
+            <option value="RULE_1">Rule 1 (Roster)</option>
+            <option value="RULE_2">Rule 2 (Preferred Team)</option>
+        </select><br>
+        Scoring Type:
+        <select name="scoringType">
+            <option value="POINTS">Points</option>
+            <option value="ROTISSERIE">Rotisserie</option>
+        </select><br>
+        Scoring Settings (JSON): <textarea name="scoringSettings"></textarea><br>
+        <button type="button">Create</button>
+    </form>
+</body>
+</html>

@@ -25,6 +25,12 @@ public class FantasyGame {
     @Enumerated(EnumType.STRING)
     private RuleType ruleType;
 
+    @Enumerated(EnumType.STRING)
+    private ScoringType scoringType;
+
+    @Column(columnDefinition = "TEXT")
+    private String scoringSettings; // JSON format: {"AVG": 10, "HR": 50 ...}
+
     private LocalDateTime createdAt;
 
     @PrePersist
@@ -35,6 +41,9 @@ public class FantasyGame {
         }
         if (this.ruleType == null) {
             this.ruleType = RuleType.RULE_1;
+        }
+        if (this.scoringType == null) {
+            this.scoringType = ScoringType.POINTS; // Default
         }
     }
 
@@ -48,5 +57,10 @@ public class FantasyGame {
     public enum RuleType {
         RULE_1,
         RULE_2
+    }
+
+    public enum ScoringType {
+        POINTS,
+        ROTISSERIE
     }
 }

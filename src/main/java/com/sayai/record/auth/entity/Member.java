@@ -27,6 +27,7 @@ public class Member {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @Setter
     private Role role;
 
     @PrePersist
