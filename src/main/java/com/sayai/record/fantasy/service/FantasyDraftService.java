@@ -55,17 +55,17 @@ public class FantasyDraftService {
     }
 
     @Transactional(readOnly = true)
-    public List<FantasyPlayerDto> getAvailablePlayers(Long gameSeq) {
+    public List<FantasyPlayerDto> getAvailablePlayers(Long gameSeq, String team, String position, String search) {
         // 1. Get all picks for this game
         List<DraftPick> picks = draftPickRepository.findByFantasyGameSeq(gameSeq);
         Set<Long> pickedPlayerSeqs = picks.stream()
                 .map(DraftPick::getFantasyPlayerSeq)
                 .collect(Collectors.toSet());
 
-        // 2. Get all players and filter
-        List<FantasyPlayer> allPlayers = fantasyPlayerRepository.findAll();
+        // 2. Get filtered players from DB
+        List<FantasyPlayer> filteredPlayers = fantasyPlayerRepository.findPlayers(team, position, search);
 
-        return allPlayers.stream()
+        return filteredPlayers.stream()
                 .filter(p -> !pickedPlayerSeqs.contains(p.getSeq()))
                 .map(FantasyPlayerDto::from)
                 .collect(Collectors.toList());

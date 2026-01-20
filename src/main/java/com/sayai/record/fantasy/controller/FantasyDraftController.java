@@ -19,8 +19,12 @@ public class FantasyDraftController {
     private final FantasyDraftService fantasyDraftService;
 
     @GetMapping("/games/{gameSeq}/available-players")
-    public ResponseEntity<List<FantasyPlayerDto>> getAvailablePlayers(@PathVariable Long gameSeq) {
-        return ResponseEntity.ok(fantasyDraftService.getAvailablePlayers(gameSeq));
+    public ResponseEntity<List<FantasyPlayerDto>> getAvailablePlayers(
+            @PathVariable Long gameSeq,
+            @RequestParam(required = false) String team,
+            @RequestParam(required = false) String position,
+            @RequestParam(required = false) String search) {
+        return ResponseEntity.ok(fantasyDraftService.getAvailablePlayers(gameSeq, team, position, search));
     }
 
     @PostMapping("/games/{gameSeq}/join")
