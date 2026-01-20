@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sayai Main</title>
     <link rel="stylesheet" href="/css/style.css">
+    <!-- Auth dependencies -->
+    <link rel="stylesheet" href="/css/fantasy.css"> <!-- Reusing fantasy css for modal or extract modal css to common -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script th:src="@{/js/auth.js}"></script>
 </head>
 <body>
     <div class="gnb">
@@ -14,9 +18,12 @@
             <a href="/episodes/1">사야이 뷰어</a>
         </div>
         <div class="gnb-right">
-            <button type="button">로그인</button>
+            <button id="gnb-login-btn" type="button" onclick="openLoginModal()">로그인</button>
         </div>
     </div>
+
+    <!-- Login Modal -->
+    <th:block th:replace="fragments/login-modal :: #login-modal"></th:block>
 
     <div class="container">
         <h1>Welcome to Sayai</h1>
