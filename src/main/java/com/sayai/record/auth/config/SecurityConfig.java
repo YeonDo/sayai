@@ -34,7 +34,7 @@ public class SecurityConfig {
                 .and()
                 .authorizeRequests()
                 // Allow public access to Record APIs and Auth Login
-                .antMatchers("/apis/v1/player/**", "/apis/v1/auth/login", "/apis/v1/auth/signup", "/").permitAll()
+                .antMatchers("/apis/v1/player/**", "/apis/v1/auth/login", "/apis/v1/auth/signup","/apis/v1/fantasy/players/import", "/").permitAll()
                 .antMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
                 // Admin access
                 .antMatchers("/apis/v1/admin/**").hasRole("ADMIN")
