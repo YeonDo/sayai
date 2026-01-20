@@ -20,8 +20,9 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<Void> login(@RequestBody LoginRequest request, HttpServletResponse response) {
+    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request, HttpServletResponse response) {
         String token = authService.login(request.getUserId(), request.getPassword());
+        String name = authService.getUserName(request.getUserId());
 
         ResponseCookie cookie = ResponseCookie.from("accessToken", token)
                 .httpOnly(true)
@@ -33,7 +34,7 @@ public class AuthController {
 
         response.addHeader("Set-Cookie", cookie.toString());
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(new LoginResponse(name));
     }
 
     @PostMapping("/logout")
@@ -70,5 +71,11 @@ public class AuthController {
         private String password;
         private String name;
         private Long playerId;
+    }
+
+    @Data
+    @RequiredArgsConstructor
+    public static class LoginResponse {
+        private final String name;
     }
 }

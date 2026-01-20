@@ -9,12 +9,17 @@
     <script th:src="@{/js/auth.js}"></script>
 </head>
 <body>
+    <!-- Main GNB -->
+    <th:block th:replace="fragments/gnb :: #gnb"></th:block>
+
+    <!-- Login Modal -->
+    <th:block th:replace="fragments/login-modal :: #login-modal"></th:block>
+
     <div class="fantasy-container">
         <header class="fantasy-header">
             <h1>KBO Fantasy League</h1>
             <div>
                 <span style="margin-right: 15px;">Welcome, Manager</span>
-                <button id="gnb-login-btn" class="btn-primary" style="padding: 5px 10px; font-size: 0.9rem;" onclick="openLoginModal()">Login</button>
             </div>
         </header>
 

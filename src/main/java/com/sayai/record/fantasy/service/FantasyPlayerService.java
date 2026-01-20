@@ -52,9 +52,9 @@ public class FantasyPlayerService {
                 if (row == null) continue;
 
                 // Assuming columns: Seq(0), Name(1), Position(2), Team(3), Stats(4)
-                String name = getCellValueAsString(row.getCell(2));
-                String position = getCellValueAsString(row.getCell(3));
-                String team = getCellValueAsString(row.getCell(1));
+                String name = getCellValueAsString(row.getCell(1));
+                String position = getCellValueAsString(row.getCell(2));
+                String team = getCellValueAsString(row.getCell(3));
                 String stats = getCellValueAsString(row.getCell(4));
 
                 // If name is empty, skip (or handle as end of data)

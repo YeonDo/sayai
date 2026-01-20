@@ -5,19 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sayai - Game Record</title>
     <link rel="stylesheet" href="/css/style.css">
+    <!-- Auth dependencies -->
+    <link rel="stylesheet" href="/css/fantasy.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script th:src="@{/js/auth.js}"></script>
 </head>
 <body>
     <!-- Main GNB -->
-    <div class="gnb">
-        <div class="gnb-left">
-            <a href="/record">기록 조회</a>
-            <a href="/fantasy">판타지 리그</a>
-            <a href="/episodes/1">사야이 뷰어</a>
-        </div>
-        <div class="gnb-right">
-            <button type="button">로그인</button>
-        </div>
-    </div>
+    <th:block th:replace="fragments/gnb :: #gnb"></th:block>
+
+    <!-- Login Modal -->
+    <th:block th:replace="fragments/login-modal :: #login-modal"></th:block>
 
     <div class="container">
         <!-- Sub GNB -->

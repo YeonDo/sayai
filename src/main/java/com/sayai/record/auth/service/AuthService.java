@@ -28,6 +28,13 @@ public class AuthService {
         return jwtTokenProvider.createToken(member.getPlayerId(), member.getUserId(), member.getRole());
     }
 
+    @Transactional(readOnly = true)
+    public String getUserName(String userId) {
+        return memberRepository.findByUserId(userId)
+                .map(Member::getName)
+                .orElse("Unknown");
+    }
+
     @Transactional
     public void signup(String userId, String password, String name, Long playerId) {
         if (memberRepository.findByUserId(userId).isPresent()) {

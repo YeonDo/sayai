@@ -58,14 +58,22 @@ $(document).ready(function() {
     // Security relies on the Cookie.
 
     const isLoggedIn = localStorage.getItem('isLoggedIn');
+    const userName = localStorage.getItem('userName');
 
     const loginBtn = $('#gnb-login-btn');
+    const userNameSpan = $('#gnb-user-name');
+
     if (isLoggedIn) {
         loginBtn.text('Logout');
         loginBtn.attr('onclick', 'logout()');
+        if (userName) {
+            userNameSpan.text(userName + '님 반갑습니다.');
+            userNameSpan.show();
+        }
     } else {
         loginBtn.text('Login');
         loginBtn.attr('onclick', 'openLoginModal()');
+        userNameSpan.hide();
     }
 });
 
@@ -82,6 +90,9 @@ performLogin = function() {
         data: JSON.stringify({ userId: userId, password: password }),
         success: function(response) {
             localStorage.setItem('isLoggedIn', 'true');
+            if (response && response.name) {
+                localStorage.setItem('userName', response.name);
+            }
             closeLoginModal();
             location.reload();
         },
@@ -95,6 +106,7 @@ const originalLogout = logout;
 logout = function() {
     $.post('/apis/v1/auth/logout', function() {
         localStorage.removeItem('isLoggedIn');
+        localStorage.removeItem('userName');
         location.reload();
     });
 }
