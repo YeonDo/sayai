@@ -22,7 +22,9 @@ public class PlayerService {
 
     private final PlayerRepository playerRepository;
     public List<PlayerRecord> getPlayerList(){
-        return playerRepository.findAll().stream().map(this::toRecord).collect(Collectors.toList());
+        return playerRepository.findAll().stream()
+                .filter(p -> "N".equals(p.getSleepYn()))
+                .map(this::toRecord).collect(Collectors.toList());
     }
 
     public PlayerRecord getPlayer(Long id){

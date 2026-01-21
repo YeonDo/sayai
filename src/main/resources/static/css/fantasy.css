@@ -1,0 +1,321 @@
+:root {
+    --kbo-blue: #002561;
+    --kbo-red: #D60C0C;
+    --kbo-white: #FFFFFF;
+    --kbo-gray: #F0F2F5;
+    --text-primary: #333333;
+    --text-secondary: #666666;
+    --field-green: #388E3C;
+    --field-dirt: #c29869;
+}
+
+body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background-color: var(--kbo-gray);
+    color: var(--text-primary);
+}
+
+/* Fantasy Layout */
+.fantasy-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.fantasy-header {
+    background-color: var(--kbo-blue);
+    color: var(--kbo-white);
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.fantasy-nav {
+    display: flex;
+    gap: 15px;
+    background-color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    overflow-x: auto;
+}
+
+.fantasy-nav a {
+    text-decoration: none;
+    color: var(--text-primary);
+    font-weight: 500;
+    padding: 5px 10px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.fantasy-nav a:hover, .fantasy-nav a.active {
+    background-color: var(--kbo-blue);
+    color: white;
+}
+
+/* Cards */
+.fantasy-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.card-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+    border-bottom: 2px solid var(--kbo-red);
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+    color: var(--kbo-blue);
+}
+
+/* Tables */
+.fantasy-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.fantasy-table th {
+    background-color: var(--kbo-gray);
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.fantasy-table td {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.fantasy-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Draft Specific */
+.draft-container {
+    display: grid;
+    grid-template-columns: 3fr 1fr;
+    gap: 20px;
+}
+
+@media (max-width: 768px) {
+    .draft-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+.position-badge {
+    background-color: #eee;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.team-badge {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.btn-primary {
+    background-color: var(--kbo-blue);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn-primary:hover {
+    background-color: #001a4d;
+}
+
+.btn-draft {
+    background-color: var(--kbo-red);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    color: white;
+}
+.status-WAITING { background-color: #f1c40f; }
+.status-DRAFTING { background-color: var(--kbo-red); animation: pulse 2s infinite; }
+.status-FINISHED { background-color: var(--kbo-blue); }
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+/* My Team - Field Visualization */
+.my-team-container {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+}
+
+@media (max-width: 992px) {
+    .my-team-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+.baseball-field {
+    background-color: var(--field-green);
+    /* Simple field graphic using radial gradients */
+    background-image:
+        radial-gradient(circle at 50% 100%, var(--field-dirt) 15%, transparent 16%),
+        radial-gradient(circle at 50% 100%, transparent 60%, var(--field-dirt) 61%, var(--field-dirt) 65%, transparent 66%);
+    border-radius: 8px 8px 100px 100px;
+    height: 600px;
+    position: relative;
+    border: 4px solid #fff;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
+    margin-bottom: 20px;
+}
+
+.field-position {
+    position: absolute;
+    width: 100px;
+    transform: translate(-50%, -50%);
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 6px;
+    padding: 5px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    border: 2px solid var(--kbo-blue);
+}
+
+.field-position .pos-label {
+    display: block;
+    font-weight: bold;
+    font-size: 0.8rem;
+    color: var(--kbo-red);
+    margin-bottom: 2px;
+    text-transform: uppercase;
+}
+
+.field-position .player-name {
+    display: block;
+    font-weight: bold;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.field-position .player-team {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+}
+
+/* Position Coordinates (Top %, Left %) */
+.pos-c  { bottom: 5%; left: 50%; transform: translate(-50%, 0); }
+.pos-p  { bottom: 40%; left: 50%; } /* General P spot on field, distinct from roster list */
+.pos-1b { bottom: 40%; right: 25%; }
+.pos-2b { bottom: 60%; right: 35%; }
+.pos-3b { bottom: 40%; left: 25%; }
+.pos-ss { bottom: 60%; left: 35%; }
+.pos-lf { top: 30%; left: 20%; }
+.pos-cf { top: 20%; left: 50%; }
+.pos-rf { top: 30%; right: 20%; }
+.pos-dh { bottom: 10%; right: 10%; } /* Just placing DH somewhere visible */
+
+.pitcher-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.pitcher-slot {
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.pitcher-slot.filled {
+    background: #e3f2fd;
+    border-color: var(--kbo-blue);
+}
+
+.pitcher-role {
+    font-weight: bold;
+    color: var(--kbo-blue);
+    width: 40px;
+}
+
+/* Modal */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 400px;
+    position: relative;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 24px;
+    cursor: pointer;
+    color: #999;
+}
+
+.close-btn:hover {
+    color: #333;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
