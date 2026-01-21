@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.query.JpaQueryMethodFactory;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 
 @Configuration
 @RequiredArgsConstructor

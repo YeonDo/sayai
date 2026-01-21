@@ -22,7 +22,7 @@ public interface HitterBoardRepository extends JpaRepository<HitterBoard, Long> 
         SUM(hb.sb)
     )
     FROM HitterBoard hb
-    WHERE hb.game IN (
+    WHERE hb.game.id IN (
         SELECT g.id
         FROM Game g
         WHERE g.gameDate BETWEEN :startDate AND :endDate
@@ -40,7 +40,7 @@ public interface HitterBoardRepository extends JpaRepository<HitterBoard, Long> 
         SUM(hb.sb)
     )
     FROM HitterBoard hb
-    WHERE hb.game IN (
+    WHERE hb.game.id IN (
         SELECT g.id
         FROM Game g
         WHERE g.gameDate BETWEEN :startDate AND :endDate

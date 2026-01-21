@@ -4,7 +4,7 @@ package com.sayai.record.model;
 import com.sayai.record.model.enums.FirstLast;
 import lombok.*;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Time;
 import java.time.LocalDate;
 import java.time.LocalTime;
