@@ -15,3 +15,7 @@ spring:
     init:
       encoding: utf-8
       mode: always
+  config:
+    use-legacy-processing: true
+server:
+  port: 8081
