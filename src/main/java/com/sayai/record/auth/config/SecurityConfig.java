@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -28,20 +29,19 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .httpBasic().disable()
-                .csrf().disable()
-                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                .and()
-                .authorizeRequests()
-                // Allow public access to Record APIs and Auth Login
-                .antMatchers("/apis/v1/player/**", "/apis/v1/auth/login", "/apis/v1/auth/signup", "/").permitAll()
-                .antMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
-                // Admin access
-                .antMatchers("/apis/v1/admin/**").hasRole("ADMIN")
-                // Require auth for Fantasy APIs and Views
-                .antMatchers("/apis/v1/fantasy/**", "/fantasy/**").authenticated()
-                .anyRequest().permitAll() // Default to permit for other existing endpoints unless specified
-                .and()
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        // Allow public access to Record APIs and Auth Login
+                        .requestMatchers("/apis/v1/player/**", "/apis/v1/auth/login", "/apis/v1/auth/signup", "/").permitAll()
+                        .requestMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
+                        // Admin access
+                        .requestMatchers("/apis/v1/admin/**").hasRole("ADMIN")
+                        // Require auth for Fantasy APIs and Views
+                        .requestMatchers("/apis/v1/fantasy/**", "/fantasy/**").authenticated()
+                        .anyRequest().permitAll()
+                )
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

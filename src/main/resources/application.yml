@@ -13,5 +13,3 @@ spring:
         show_sql: true
   profiles:
     active: prod
-  config:
-    use-legacy-processing: true

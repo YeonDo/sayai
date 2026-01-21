@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import javax.transaction.Transactional;
+import jakarta.transaction.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class GameServiceTest {
     @Autowired
     GameService gameService;
-    //@Test
+    @Test
     void findMatches() {
         List<GameDto> matches = gameService.findMatches(LocalDate.of(2023, 01, 01), LocalDate.of(2023, 12, 31));
     }

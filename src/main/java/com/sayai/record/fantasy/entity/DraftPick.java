@@ -2,7 +2,7 @@ package com.sayai.record.fantasy.entity;
 
 import lombok.*;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Getter

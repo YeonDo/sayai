@@ -11,8 +11,8 @@ public interface FantasyPlayerRepository extends JpaRepository<FantasyPlayer, Lo
 
     @Query("SELECT p FROM FantasyPlayer p WHERE " +
             "(:team IS NULL OR p.team = :team) AND " +
-            "(:position IS NULL OR p.position LIKE %:position%) AND " +
-            "(:search IS NULL OR p.name LIKE %:search%)")
+            "(:position IS NULL OR p.position LIKE CONCAT('%', :position, '%')) AND " +
+            "(:search IS NULL OR p.name LIKE CONCAT('%', :search, '%'))")
     List<FantasyPlayer> findPlayers(@Param("team") String team,
                                     @Param("position") String position,
                                     @Param("search") String search);

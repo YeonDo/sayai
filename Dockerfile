@@ -1,6 +1,6 @@
-FROM amazoncorretto:17-al2023-jdk
+FROM amazoncorretto:21-al2023-jdk
 # The application's jar file
-ARG JAR_FILE=target/record-0.0.1-SNAPSHOT.jar
+ARG JAR_FILE=build/libs/record-0.0.1-SNAPSHOT.jar
 
 # Add the application's jar to the container
 ADD ${JAR_FILE} app.jar
