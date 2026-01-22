@@ -44,20 +44,20 @@
                 <h2 class="card-title">Available Players</h2>
                 <div style="margin-bottom: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
                     <select id="filter-team" style="padding: 5px;">
-                        <option value="">All Teams</option>
-                        <option value="Doosan">Doosan Bears</option>
-                        <option value="LG">LG Twins</option>
-                        <option value="Kia">Kia Tigers</option>
-                        <option value="Samsung">Samsung Lions</option>
-                        <option value="Lotte">Lotte Giants</option>
-                        <option value="Hanwha">Hanwha Eagles</option>
-                        <option value="NC">NC Dinos</option>
-                        <option value="KT">KT Wiz</option>
-                        <option value="SSG">SSG Landers</option>
-                        <option value="Kiwoom">Kiwoom Heroes</option>
+                        <option value="">모든 팀</option>
+                        <option value="두산">두산 베어스</option>
+                        <option value="LG">LG 트윈스</option>
+                        <option value="Kia">KIA 타이거즈</option>
+                        <option value="삼성">삼성 라이온즈</option>
+                        <option value="롯데">롯데 자이언츠</option>
+                        <option value="한화">한화 이글스</option>
+                        <option value="NC">NC 다이노스</option>
+                        <option value="KT">KT 위즈</option>
+                        <option value="SSG">SSG 랜더스</option>
+                        <option value="키움">키움 히어로즈</option>
                     </select>
                     <select id="filter-position" style="padding: 5px;">
-                        <option value="">All Positions</option>
+                        <option value="">모든 포지션</option>
                         <option value="C">C</option>
                         <option value="1B">1B</option>
                         <option value="2B">2B</option>
@@ -72,7 +72,7 @@
                         <option value="CL">CL</option>
                     </select>
                     <input type="text" id="search-player" placeholder="Search player..." style="padding: 5px; flex-grow: 1;">
-                    <button class="btn-primary" onclick="loadAvailablePlayers()">Filter</button>
+                    <button class="btn-primary" onclick="loadAvailablePlayers()">검색</button>
                 </div>
                 <div class="table-responsive">
                 <table class="fantasy-table">
