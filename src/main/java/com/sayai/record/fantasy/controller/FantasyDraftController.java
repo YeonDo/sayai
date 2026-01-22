@@ -3,6 +3,7 @@ package com.sayai.record.fantasy.controller;
 import com.sayai.record.fantasy.dto.DraftRequest;
 import com.sayai.record.fantasy.dto.FantasyPlayerDto;
 import com.sayai.record.fantasy.service.FantasyDraftService;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
@@ -21,9 +22,9 @@ public class FantasyDraftController {
     @GetMapping("/games/{gameSeq}/available-players")
     public ResponseEntity<List<FantasyPlayerDto>> getAvailablePlayers(
             @PathVariable("gameSeq") Long gameSeq,
-            @RequestParam(required = false) String team,
-            @RequestParam(required = false) String position,
-            @RequestParam(required = false) String search) {
+            @RequestParam(name = "team", required = false) String team,
+            @RequestParam(name = "position", required = false) String position,
+            @RequestParam(name = "search", required = false) String search) {
         return ResponseEntity.ok(fantasyDraftService.getAvailablePlayers(gameSeq, team, position, search));
     }
 
@@ -58,6 +59,7 @@ public class FantasyDraftController {
 
     @Getter
     @NoArgsConstructor
+    @AllArgsConstructor
     public static class JoinRequest {
         private Long playerId;
         private String preferredTeam;

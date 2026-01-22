@@ -4,22 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fantasy League - Players</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/fantasy.css}">
 </head>
 <body>
-    <div class="fantasy-container">
+    <div class="container">
         <header class="fantasy-header">
             <h1>Player List</h1>
         </header>
 
-        <nav class="fantasy-nav">
+        <div class="sub-gnb">
             <a th:href="@{/fantasy}">Dashboard</a>
             <a th:href="@{/fantasy/my-team}">My Team</a>
             <a th:href="@{/fantasy/draft/1}">Draft Room</a>
             <a th:href="@{/fantasy/players}" class="active">Players</a>
             <a th:href="@{/fantasy/trade}">Trade</a>
             <a th:href="@{/fantasy/settings}">Settings</a>
-        </nav>
+        </div>
 
         <div class="fantasy-card">
             <!-- Search & Filter Placeholder -->
@@ -28,6 +29,7 @@
                 <button class="btn-primary">Search</button>
             </div>
 
+            <div class="table-responsive">
             <table class="fantasy-table">
                 <thead>
                     <tr>
@@ -44,6 +46,7 @@
                     </tr>
                 </tbody>
             </table>
+            </div>
         </div>
     </div>
 </body>

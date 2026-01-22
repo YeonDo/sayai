@@ -1,102 +1,50 @@
 :root {
     --kbo-blue: #002561;
     --kbo-red: #D60C0C;
-    --kbo-white: #FFFFFF;
-    --kbo-gray: #F0F2F5;
-    --text-primary: #333333;
-    --text-secondary: #666666;
     --field-green: #388E3C;
     --field-dirt: #c29869;
 }
 
-body {
-    font-family: 'Noto Sans KR', sans-serif;
-    background-color: var(--kbo-gray);
-    color: var(--text-primary);
-}
-
-/* Fantasy Layout */
-.fantasy-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-}
+/*
+   Fantasy Layout
+   Note: Main container uses .container from style.css
+   Nav uses .sub-gnb from style.css
+*/
 
 .fantasy-header {
-    background-color: var(--kbo-blue);
-    color: var(--kbo-white);
-    padding: 1rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-radius: 8px;
     margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #ddd;
 }
 
-.fantasy-nav {
-    display: flex;
-    gap: 15px;
-    background-color: white;
-    padding: 10px 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    margin-bottom: 20px;
-    overflow-x: auto;
+.fantasy-header h1 {
+    margin: 0;
+    font-size: 24px;
+    color: #333;
 }
 
-.fantasy-nav a {
-    text-decoration: none;
-    color: var(--text-primary);
-    font-weight: 500;
-    padding: 5px 10px;
-    border-radius: 4px;
-    transition: all 0.2s;
-}
-
-.fantasy-nav a:hover, .fantasy-nav a.active {
-    background-color: var(--kbo-blue);
-    color: white;
-}
-
-/* Cards */
+/* Cards - Simplified to blend with Record pages */
 .fantasy-card {
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    padding: 20px;
-    margin-bottom: 20px;
+    margin-bottom: 30px;
+    /* Removed background/shadow to match flat style of Record pages inside .container */
 }
 
 .card-title {
-    font-size: 1.2rem;
+    font-size: 18px;
     font-weight: bold;
-    border-bottom: 2px solid var(--kbo-red);
-    padding-bottom: 10px;
+    color: #333; /* Standard text color instead of KBO blue */
     margin-bottom: 15px;
-    color: var(--kbo-blue);
+    padding-bottom: 5px;
+    border-bottom: 2px solid #eee;
 }
 
-/* Tables */
+/* Tables - Inherit from style.css, but ensure width */
 .fantasy-table {
     width: 100%;
-    border-collapse: collapse;
-}
-
-.fantasy-table th {
-    background-color: var(--kbo-gray);
-    padding: 12px;
-    text-align: left;
-    font-weight: 600;
-    color: var(--text-secondary);
-}
-
-.fantasy-table td {
-    padding: 12px;
-    border-bottom: 1px solid #eee;
-}
-
-.fantasy-table tr:hover {
-    background-color: #f8f9fa;
+    /* Remove custom colors to inherit standard table styles */
 }
 
 /* Draft Specific */
@@ -118,45 +66,54 @@ body {
     border-radius: 4px;
     font-size: 0.8rem;
     font-weight: bold;
+    color: #333;
 }
 
 .team-badge {
-    color: var(--text-secondary);
+    color: #666;
     font-size: 0.9rem;
 }
 
 .btn-primary {
-    background-color: var(--kbo-blue);
+    /* Match style.css buttons (e.g. .btn-search or gnb button) */
+    background-color: #007bff;
     color: white;
     border: none;
     padding: 8px 16px;
     border-radius: 4px;
     cursor: pointer;
-    font-weight: bold;
+    font-weight: normal;
+    font-size: 14px;
 }
 
 .btn-primary:hover {
-    background-color: #001a4d;
+    background-color: #0056b3;
 }
 
 .btn-draft {
-    background-color: var(--kbo-red);
+    background-color: #28a745; /* Green for action */
     color: white;
     border: none;
     padding: 6px 12px;
     border-radius: 4px;
     cursor: pointer;
+    font-size: 13px;
+}
+
+.btn-draft:hover {
+    background-color: #218838;
 }
 
 .status-badge {
-    padding: 4px 8px;
+    padding: 4px 10px;
     border-radius: 12px;
-    font-size: 0.8rem;
+    font-size: 12px;
     color: white;
+    font-weight: bold;
 }
-.status-WAITING { background-color: #f1c40f; }
-.status-DRAFTING { background-color: var(--kbo-red); animation: pulse 2s infinite; }
-.status-FINISHED { background-color: var(--kbo-blue); }
+.status-WAITING { background-color: #ffc107; color: #333; }
+.status-DRAFTING { background-color: #dc3545; animation: pulse 2s infinite; }
+.status-FINISHED { background-color: #007bff; }
 
 @keyframes pulse {
     0% { opacity: 1; }
@@ -195,19 +152,19 @@ body {
     position: absolute;
     width: 100px;
     transform: translate(-50%, -50%);
-    background-color: rgba(255, 255, 255, 0.9);
+    background-color: rgba(255, 255, 255, 0.95);
     border-radius: 6px;
     padding: 5px;
     text-align: center;
     box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    border: 2px solid var(--kbo-blue);
+    border: 1px solid #ccc;
 }
 
 .field-position .pos-label {
     display: block;
     font-weight: bold;
     font-size: 0.8rem;
-    color: var(--kbo-red);
+    color: #333;
     margin-bottom: 2px;
     text-transform: uppercase;
 }
@@ -219,11 +176,12 @@ body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    color: #000;
 }
 
 .field-position .player-team {
     font-size: 0.7rem;
-    color: var(--text-secondary);
+    color: #666;
 }
 
 /* Position Coordinates (Top %, Left %) */
@@ -236,7 +194,7 @@ body {
 .pos-lf { top: 30%; left: 20%; }
 .pos-cf { top: 20%; left: 50%; }
 .pos-rf { top: 30%; right: 20%; }
-.pos-dh { bottom: 10%; right: 10%; } /* Just placing DH somewhere visible */
+.pos-dh { bottom: 10%; right: 10%; }
 
 .pitcher-list {
     display: flex;
@@ -245,9 +203,9 @@ body {
 }
 
 .pitcher-slot {
-    background: #f8f9fa;
+    background: #f9f9f9;
     border: 1px solid #ddd;
-    border-radius: 6px;
+    border-radius: 4px;
     padding: 10px;
     display: flex;
     justify-content: space-between;
@@ -256,66 +214,17 @@ body {
 
 .pitcher-slot.filled {
     background: #e3f2fd;
-    border-color: var(--kbo-blue);
+    border-color: #90caf9;
 }
 
 .pitcher-role {
     font-weight: bold;
-    color: var(--kbo-blue);
+    color: #333;
     width: 40px;
 }
 
-/* Modal */
+/* Modal - Handled by fragment but if specific override needed */
 .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-.modal-content {
-    background: white;
-    padding: 30px;
-    border-radius: 8px;
-    width: 100%;
-    max-width: 400px;
-    position: relative;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-}
-
-.close-btn {
-    position: absolute;
-    top: 10px;
-    right: 15px;
-    font-size: 24px;
-    cursor: pointer;
-    color: #999;
-}
-
-.close-btn:hover {
-    color: #333;
-}
-
-.form-group {
-    margin-bottom: 15px;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: 500;
-}
-
-.form-group input {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    box-sizing: border-box;
+    /* Ensure z-index is high enough */
+    z-index: 9999;
 }
