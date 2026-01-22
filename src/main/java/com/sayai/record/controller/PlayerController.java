@@ -29,7 +29,7 @@ public class PlayerController {
     private final HitService hitService;
     @GetMapping("/{id}")
     @ResponseBody
-    public PlayerRecord getPlayer(@PathVariable("playerid") Long id){
+    public PlayerRecord getPlayer(@PathVariable("id") Long id){
         return playerService.getPlayer(id);
     }
     @GetMapping("/all")
@@ -48,21 +48,21 @@ public class PlayerController {
         List<PitcherDto> result = pitchService.select(startDate,endDate);
         return result;
     }
-    @GetMapping("/hitter/{playerid}")
+    @GetMapping("/hitter/{playerId}")
     @ResponseBody
-    public PlayerDto getHitter(@PathVariable("playerid") Long playerid,@RequestParam("start") @DateTimeFormat(pattern="yyyy-MM-dd") LocalDate startDate, @RequestParam("end") @DateTimeFormat(pattern="yyyy-MM-dd") LocalDate endDate){
-        return hitService.findOne(startDate,endDate,playerid);
+    public PlayerDto getHitter(@PathVariable("playerId") Long playerId, @RequestParam("start") @DateTimeFormat(pattern="yyyy-MM-dd") LocalDate startDate, @RequestParam("end") @DateTimeFormat(pattern="yyyy-MM-dd") LocalDate endDate){
+        return hitService.findOne(startDate,endDate,playerId);
     }
 
-    @GetMapping("/pitcher/{playerid}")
+    @GetMapping("/pitcher/{playerId}")
     @ResponseBody
-    public PitcherDto getPitcher(@PathVariable("playerid") Long playerid,@RequestParam("start") @DateTimeFormat(pattern="yyyy-MM-dd") LocalDate startDate, @RequestParam("end") @DateTimeFormat(pattern="yyyy-MM-dd") LocalDate endDate){
-        return pitchService.selectOne(startDate,endDate,playerid);
+    public PitcherDto getPitcher(@PathVariable("playerId") Long playerId,@RequestParam("start") @DateTimeFormat(pattern="yyyy-MM-dd") LocalDate startDate, @RequestParam("end") @DateTimeFormat(pattern="yyyy-MM-dd") LocalDate endDate){
+        return pitchService.selectOne(startDate,endDate,playerId);
     }
 
     @GetMapping("/hitter/{playerId}/period")
     @ResponseBody
-    public List<PlayerDto> getHitPeriod(@PathVariable Long playerId,@RequestParam("list") String[] periodList){
+    public List<PlayerDto> getHitPeriod(@PathVariable("playerId") Long playerId,@RequestParam("list") String[] periodList){
         List result = new ArrayList();
         Utils utils = new Utils();
         for(String s : periodList){
