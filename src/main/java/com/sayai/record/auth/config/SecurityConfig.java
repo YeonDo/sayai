@@ -2,6 +2,7 @@ package com.sayai.record.auth.config;
 
 import com.sayai.record.auth.jwt.JwtAuthenticationFilter;
 import com.sayai.record.auth.jwt.JwtTokenProvider;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,6 +14,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 @Configuration
 @EnableWebSecurity
@@ -41,6 +45,20 @@ public class SecurityConfig {
                         // Require auth for Fantasy APIs and Views
                         .requestMatchers("/apis/v1/fantasy/**", "/fantasy/**").authenticated()
                         .anyRequest().permitAll()
+                )
+                .exceptionHandling(e -> e
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            String uri = request.getRequestURI();
+                            if (uri.startsWith("/apis/")) {
+                                response.sendError(HttpServletResponse.SC_FORBIDDEN);
+                            } else {
+                                String redirectUrl = "/?login=required";
+                                if (!"/".equals(uri)) {
+                                    redirectUrl += "&redirect=" + URLEncoder.encode(uri, StandardCharsets.UTF_8);
+                                }
+                                response.sendRedirect(redirectUrl);
+                            }
+                        })
                 )
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
 

@@ -20,18 +20,31 @@ function performLogin() {
         contentType: 'application/json',
         data: JSON.stringify({ userId: userId, password: password }),
         success: function(response) {
-            // Cookie is set by server
+            localStorage.setItem('isLoggedIn', 'true');
+            if (response && response.name) {
+                localStorage.setItem('userName', response.name);
+            }
             closeLoginModal();
-            location.reload();
+
+            // Check for redirect
+            const redirectUrl = localStorage.getItem('loginRedirect');
+            if (redirectUrl) {
+                localStorage.removeItem('loginRedirect');
+                window.location.href = redirectUrl;
+            } else {
+                location.reload();
+            }
         },
         error: function(xhr) {
-            $('#login-error').text('Invalid username or password').show();
+            $('#login-error').text('Invalid user ID or password').show();
         }
     });
 }
 
 function logout() {
     $.post('/apis/v1/auth/logout', function() {
+        localStorage.removeItem('isLoggedIn');
+        localStorage.removeItem('userName');
         location.reload();
     });
 }
@@ -44,19 +57,6 @@ function getCookie(name) {
 
 // Update GNB on load
 $(document).ready(function() {
-    // Check if accessToken cookie exists (note: HttpOnly cookies can't be read by JS,
-    // so we rely on API call success or specific non-HttpOnly flag cookie for UI state if needed.
-    // For now, let's assume if the login API succeeds, we are logged in.
-    // However, to persist "Logout" button state on reload without HttpOnly read access:
-    // Ideally, server sets a separate "is_logged_in=true" non-HttpOnly cookie.
-    // OR we just try to access a protected resource.
-    // Simplest for now: Assume session logic or keep a flag in localStorage just for UI state (not security).
-
-    // Better approach: Let's assume we are logged out by default.
-    // If we can access a protected API, we are logged in.
-    // Or, for this MVP, let's set a localStorage flag 'isLoggedIn' purely for UI toggle.
-    // Security relies on the Cookie.
-
     const isLoggedIn = localStorage.getItem('isLoggedIn');
     const userName = localStorage.getItem('userName');
 
@@ -75,38 +75,39 @@ $(document).ready(function() {
         loginBtn.attr('onclick', 'openLoginModal()');
         userNameSpan.hide();
     }
+
+    // Check for login query param
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('login') === 'required') {
+        openLoginModal();
+        const redirectTarget = urlParams.get('redirect');
+        if (redirectTarget) {
+             localStorage.setItem('loginRedirect', redirectTarget);
+        }
+        // Clean URL
+        const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+        window.history.replaceState({path: newUrl}, '', newUrl);
+    }
 });
 
-// Intercept Login/Logout to set UI flag
-const originalLogin = performLogin;
-performLogin = function() {
-    const userId = $('#login-userId').val();
-    const password = $('#login-password').val();
-
-    $.ajax({
-        url: '/apis/v1/auth/login',
-        type: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({ userId: userId, password: password }),
-        success: function(response) {
-            localStorage.setItem('isLoggedIn', 'true');
-            if (response && response.name) {
-                localStorage.setItem('userName', response.name);
-            }
-            closeLoginModal();
-            location.reload();
+// Global AJAX Setup for jQuery
+$.ajaxSetup({
+    statusCode: {
+        403: function() {
+            openLoginModal();
         },
-        error: function(xhr) {
-            $('#login-error').text('Invalid user ID or password').show();
+        401: function() {
+            openLoginModal();
         }
-    });
-}
+    }
+});
 
-const originalLogout = logout;
-logout = function() {
-    $.post('/apis/v1/auth/logout', function() {
-        localStorage.removeItem('isLoggedIn');
-        localStorage.removeItem('userName');
-        location.reload();
-    });
-}
+// Basic Fetch Interceptor
+const originalFetch = window.fetch;
+window.fetch = async function(...args) {
+    const response = await originalFetch(...args);
+    if (response.status === 403 || response.status === 401) {
+        openLoginModal();
+    }
+    return response;
+};
