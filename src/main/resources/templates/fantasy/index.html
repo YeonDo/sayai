@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fantasy League - Dashboard</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/fantasy.css}">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script th:src="@{/js/auth.js}"></script>
@@ -15,7 +16,7 @@
     <!-- Login Modal -->
     <th:block th:replace="fragments/login-modal :: #login-modal"></th:block>
 
-    <div class="fantasy-container">
+    <div class="container">
         <header class="fantasy-header">
             <h1>KBO Fantasy League</h1>
             <div>
@@ -23,17 +24,18 @@
             </div>
         </header>
 
-        <nav class="fantasy-nav">
+        <div class="sub-gnb">
             <a th:href="@{/fantasy}" class="active">Dashboard</a>
             <a th:href="@{/fantasy/my-team}">My Team</a>
             <a th:href="@{/fantasy/draft/1}">Draft Room</a>
             <a th:href="@{/fantasy/players}">Players</a>
             <a th:href="@{/fantasy/trade}">Trade</a>
             <a th:href="@{/fantasy/settings}">Settings</a>
-        </nav>
+        </div>
 
         <div class="fantasy-card">
             <h2 class="card-title">League Standings</h2>
+            <div class="table-responsive">
             <table class="fantasy-table">
                 <thead>
                     <tr>
@@ -59,6 +61,7 @@
                     <!-- Placeholder Data -->
                 </tbody>
             </table>
+            </div>
         </div>
 
         <div class="fantasy-card">

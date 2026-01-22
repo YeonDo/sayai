@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fantasy League - Draft Room</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/fantasy.css}">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- SockJS and Stomp -->
@@ -11,20 +12,20 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 </head>
 <body>
-    <div class="fantasy-container">
+    <div class="container">
         <header class="fantasy-header">
             <h1>Draft Room</h1>
             <span id="game-status" class="status-badge status-WAITING">Loading...</span>
         </header>
 
-        <nav class="fantasy-nav">
+        <div class="sub-gnb">
             <a th:href="@{/fantasy}">Dashboard</a>
             <a th:href="@{/fantasy/my-team}">My Team</a>
             <a th:href="@{/fantasy/draft/1}" class="active">Draft Room</a>
             <a th:href="@{/fantasy/players}">Players</a>
             <a th:href="@{/fantasy/trade}">Trade</a>
             <a th:href="@{/fantasy/settings}">Settings</a>
-        </nav>
+        </div>
 
         <div id="join-section" class="fantasy-card" style="display:none;">
             <h2 class="card-title">Join Game</h2>
@@ -73,6 +74,7 @@
                     <input type="text" id="search-player" placeholder="Search player..." style="padding: 5px; flex-grow: 1;">
                     <button class="btn-primary" onclick="loadAvailablePlayers()">Filter</button>
                 </div>
+                <div class="table-responsive">
                 <table class="fantasy-table">
                     <thead>
                         <tr>
@@ -87,6 +89,7 @@
                         <!-- Populated by JS -->
                     </tbody>
                 </table>
+                </div>
             </div>
 
             <div class="fantasy-card">

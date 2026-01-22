@@ -4,22 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fantasy League - Settings</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/fantasy.css}">
 </head>
 <body>
-    <div class="fantasy-container">
+    <div class="container">
         <header class="fantasy-header">
             <h1>League Settings</h1>
         </header>
 
-        <nav class="fantasy-nav">
+        <div class="sub-gnb">
             <a th:href="@{/fantasy}">Dashboard</a>
             <a th:href="@{/fantasy/my-team}">My Team</a>
             <a th:href="@{/fantasy/draft/1}">Draft Room</a>
             <a th:href="@{/fantasy/players}">Players</a>
             <a th:href="@{/fantasy/trade}">Trade</a>
             <a th:href="@{/fantasy/settings}" class="active">Settings</a>
-        </nav>
+        </div>
 
         <div class="fantasy-card">
             <h2 class="card-title">Scoring Rules</h2>
