@@ -21,5 +21,7 @@ public class FantasyParticipant {
 
     private Long playerId;
 
+    private String teamName;
+
     private String preferredTeam;
 }

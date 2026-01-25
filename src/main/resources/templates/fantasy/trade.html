@@ -1,31 +1,25 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fantasy League - Trade</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <title>Fantasy League - Trade Room</title>
     <link rel="stylesheet" th:href="@{/css/fantasy.css}">
 </head>
 <body>
+<div layout:fragment="content">
     <div class="container">
-        <header class="fantasy-header">
-            <h1>Trade Center</h1>
-        </header>
-
-        <div class="sub-gnb">
-            <a th:href="@{/fantasy}">Dashboard</a>
-            <a th:href="@{/fantasy/my-team}">My Team</a>
-            <a th:href="@{/fantasy/draft/1}">Draft Room</a>
-            <a th:href="@{/fantasy/players}">Players</a>
-            <a th:href="@{/fantasy/trade}" class="active">Trade</a>
-            <a th:href="@{/fantasy/settings}">Settings</a>
+        <div class="fantasy-header">
+            <h1>Trade Room</h1>
         </div>
 
-        <div class="fantasy-card">
-            <h2 class="card-title">Active Trade Proposals</h2>
-            <p>No active trades.</p>
+        <div th:replace="fragments/fantasy-nav :: nav(active='trade')"></div>
+
+        <div class="fantasy-card" style="text-align: center; padding: 50px;">
+            <h2>Coming Soon</h2>
+            <p>Trading functionality is currently under development.</p>
         </div>
     </div>
+</div>
 </body>
 </html>

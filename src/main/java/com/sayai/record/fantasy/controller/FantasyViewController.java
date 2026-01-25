@@ -44,4 +44,14 @@ public class FantasyViewController {
     public String settings() {
         return "fantasy/settings";
     }
+
+    @GetMapping("/admin")
+    public String admin() {
+        return "fantasy/admin";
+    }
+
+    @GetMapping("/draft-log")
+    public String draftLog() {
+        return "fantasy/draft-log";
+    }
 }

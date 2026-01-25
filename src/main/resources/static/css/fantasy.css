@@ -228,3 +228,56 @@
     /* Ensure z-index is high enough */
     z-index: 9999;
 }
+
+/* Sub Nav */
+.fantasy-nav-container {
+    background-color: #fff;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 20px;
+}
+.fantasy-nav {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    justify-content: flex-start;
+    border-bottom: 1px solid #eee;
+}
+.fantasy-nav li {
+    margin: 0;
+}
+.fantasy-nav a {
+    display: block;
+    padding: 15px 20px;
+    text-decoration: none;
+    color: #555;
+    font-weight: bold;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+}
+.fantasy-nav a:hover, .fantasy-nav a.active {
+    color: var(--kbo-blue);
+    border-bottom-color: var(--kbo-blue);
+    background-color: #f8f9fa;
+}
+.fantasy-nav a.disabled {
+    color: #ccc;
+    cursor: not-allowed;
+}
+.fantasy-nav a.disabled:hover {
+    background-color: transparent;
+    border-bottom-color: transparent;
+}
+
+/* Position Colors */
+.pos-sp { color: #D60C0C; font-weight: bold; } /* Red */
+.pos-rp { color: #FF9800; font-weight: bold; } /* Orange */
+.pos-cp { color: #9C27B0; font-weight: bold; } /* Purple */
+.pos-c  { color: #795548; font-weight: bold; } /* Brown */
+.pos-if { color: #007bff; font-weight: bold; } /* Blue */
+.pos-of { color: #28a745; font-weight: bold; } /* Green */
+.pos-dh { color: #333; font-weight: bold; }    /* Black */
+
+/* Map specific positions to generic classes */
+.pos-1b, .pos-2b, .pos-3b, .pos-ss { color: #007bff; font-weight: bold; }
+.pos-lf, .pos-cf, .pos-rf { color: #28a745; font-weight: bold; }

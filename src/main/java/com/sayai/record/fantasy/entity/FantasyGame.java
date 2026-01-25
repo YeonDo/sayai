@@ -31,7 +31,14 @@ public class FantasyGame {
     @Column(columnDefinition = "TEXT")
     private String scoringSettings; // JSON format: {"AVG": 10, "HR": 50 ...}
 
+    private Integer maxParticipants;
+    private LocalDateTime draftDate;
+
     private LocalDateTime createdAt;
+
+    public void setStatus(GameStatus status) {
+        this.status = status;
+    }
 
     @PrePersist
     public void prePersist() {

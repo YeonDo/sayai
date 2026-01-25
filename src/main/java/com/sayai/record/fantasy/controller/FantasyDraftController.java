@@ -31,7 +31,7 @@ public class FantasyDraftController {
     @PostMapping("/games/{gameSeq}/join")
     public ResponseEntity<String> joinGame(@PathVariable("gameSeq") Long gameSeq, @RequestBody JoinRequest request) {
         try {
-            fantasyDraftService.joinGame(gameSeq, request.getPlayerId(), request.getPreferredTeam());
+            fantasyDraftService.joinGame(gameSeq, request.getPlayerId(), request.getPreferredTeam(), request.getTeamName());
             return ResponseEntity.ok("Joined successfully");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -63,5 +63,6 @@ public class FantasyDraftController {
     public static class JoinRequest {
         private Long playerId;
         private String preferredTeam;
+        private String teamName;
     }
 }
