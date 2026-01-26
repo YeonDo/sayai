@@ -84,37 +84,29 @@
     </div>
 
     <script th:inline="javascript">
-        $(document).ready(function() {
-            loadGames();
+        /*<![CDATA[*/
+        function openCreateModal() {
+            $('#createGameModal').css('display', 'flex');
+        }
 
-            $('#createGameForm').submit(function(e) {
-                e.preventDefault();
-                const formData = {
-                    title: $('input[name="title"]').val(),
-                    ruleType: $('select[name="ruleType"]').val(),
-                    scoringType: $('select[name="scoringType"]').val(),
-                    maxParticipants: $('input[name="maxParticipants"]').val(),
-                    draftDate: $('input[name="draftDate"]').val(),
-                    scoringSettings: $('textarea[name="scoringSettings"]').val()
-                };
+        function closeCreateModal() {
+            $('#createGameModal').hide();
+        }
 
-                $.ajax({
-                    url: '/apis/v1/admin/games',
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify(formData),
-                    success: function() {
-                        alert('Game created!');
-                        closeCreateModal();
-                        loadGames();
-                        $('#createGameForm')[0].reset();
-                    },
-                    error: function(xhr) {
-                        alert('Error: ' + (xhr.responseText || 'Failed'));
-                    }
-                });
+        function updateStatus(seq) {
+            const status = $(`.status-select[data-seq="${seq}"]`).val();
+            $.ajax({
+                url: `/apis/v1/admin/fantasy/games/${seq}/status?status=${status}`,
+                type: 'PUT',
+                success: function() {
+                    alert('Status updated');
+                    loadGames();
+                },
+                error: function(xhr) {
+                    alert('Error updating status: ' + (xhr.responseText || 'Failed'));
+                }
             });
-        });
+        }
 
         function loadGames() {
             $.get('/apis/v1/fantasy/games', function(games) {
@@ -150,28 +142,38 @@
             });
         }
 
-        window.updateStatus = function(seq) {
-            const status = $(`.status-select[data-seq="${seq}"]`).val();
-            $.ajax({
-                url: `/apis/v1/admin/fantasy/games/${seq}/status?status=${status}`,
-                type: 'PUT',
-                success: function() {
-                    alert('Status updated');
-                    loadGames();
-                },
-                error: function(xhr) {
-                    alert('Error updating status: ' + (xhr.responseText || 'Failed'));
-                }
+        $(document).ready(function() {
+            loadGames();
+
+            $('#createGameForm').submit(function(e) {
+                e.preventDefault();
+                const formData = {
+                    title: $('input[name="title"]').val(),
+                    ruleType: $('select[name="ruleType"]').val(),
+                    scoringType: $('select[name="scoringType"]').val(),
+                    maxParticipants: $('input[name="maxParticipants"]').val(),
+                    draftDate: $('input[name="draftDate"]').val(),
+                    scoringSettings: $('textarea[name="scoringSettings"]').val()
+                };
+
+                $.ajax({
+                    url: '/apis/v1/admin/games',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(formData),
+                    success: function() {
+                        alert('Game created!');
+                        closeCreateModal();
+                        loadGames();
+                        $('#createGameForm')[0].reset();
+                    },
+                    error: function(xhr) {
+                        alert('Error: ' + (xhr.responseText || 'Failed'));
+                    }
+                });
             });
-        };
-
-        window.openCreateModal = function() {
-            $('#createGameModal').css('display', 'flex');
-        };
-
-        window.closeCreateModal = function() {
-            $('#createGameModal').hide();
-        };
+        });
+        /*]]>*/
     </script>
 </div>
 </body>
