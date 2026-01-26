@@ -72,6 +72,14 @@ public class FantasyDraftController {
         return ResponseEntity.ok(fantasyDraftService.getPickedPlayers(gameSeq, playerId));
     }
 
+    @GetMapping("/games/{gameSeq}/my-picks")
+    public ResponseEntity<List<FantasyPlayerDto>> getMyPicks(
+            @PathVariable(name = "gameSeq") Long gameSeq,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long playerId = getPlayerIdFromUserDetails(userDetails);
+        return ResponseEntity.ok(fantasyDraftService.getPickedPlayers(gameSeq, playerId));
+    }
+
     private Long getPlayerIdFromUserDetails(UserDetails userDetails) {
         if (userDetails == null) {
             throw new IllegalArgumentException("Authentication required");

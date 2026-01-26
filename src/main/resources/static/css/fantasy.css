@@ -281,3 +281,16 @@
 /* Map specific positions to generic classes */
 .pos-1b, .pos-2b, .pos-3b, .pos-ss { color: #007bff; font-weight: bold; }
 .pos-lf, .pos-cf, .pos-rf { color: #28a745; font-weight: bold; }
+
+/* Updated Field Positions */
+/* Center - roughly based on image */
+.pos-c  { bottom: 5%; left: 50%; transform: translate(-50%, 0); }
+.pos-1b { bottom: 40%; right: 28%; }
+.pos-2b { bottom: 60%; right: 38%; }
+.pos-3b { bottom: 40%; left: 28%; }
+.pos-ss { bottom: 60%; left: 38%; }
+.pos-lf { top: 25%; left: 15%; }
+.pos-cf { top: 15%; left: 50%; transform: translate(-50%, 0); }
+.pos-rf { top: 25%; right: 15%; }
+.pos-dh { bottom: 10%; right: 5%; }
+.pos-p { display: none; } /* Hide if any script tries to use it */

@@ -56,6 +56,7 @@
                         <span class="pos-label">RF</span>
                         <span class="player-name">-</span>
                     </div>
+                    <!-- DH at Bottom Right -->
                     <div class="field-position pos-dh" id="slot-DH">
                         <span class="pos-label">DH</span>
                         <span class="player-name">-</span>
@@ -93,8 +94,6 @@
 
     <script th:inline="javascript">
         /*<![CDATA[*/
-        const currentUserId = 1; // Simulation
-
         $(document).ready(function() {
             loadMyGames();
 
@@ -137,7 +136,8 @@
             $('.player-team').remove();
             $('.pitcher-slot').removeClass('filled');
 
-            $.get(`/apis/v1/fantasy/games/${gameSeq}/players/${currentUserId}/picks`, function(players) {
+            // Use my-picks endpoint which uses token ID
+            $.get(`/apis/v1/fantasy/games/${gameSeq}/my-picks`, function(players) {
                 const filledSlots = {};
                 const spCount = { count: 1 };
                 const rpCount = { count: 1 };
