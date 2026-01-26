@@ -59,9 +59,6 @@
 
     <script th:inline="javascript">
         /*<![CDATA[*/
-        // Simple Auth context - in real app, fetched from session or API
-        const currentUserId = 1; // Simulation: Default to 1. In real world, API should handle auth context implicitly.
-
         $(document).ready(function() {
             loadGames();
 
@@ -69,7 +66,6 @@
                 e.preventDefault();
                 const seq = $('#joinGameSeq').val();
                 const data = {
-                    playerId: currentUserId, // Backend might override with principal if configured
                     preferredTeam: $('#joinPrefTeam').val(),
                     teamName: $('#joinTeamName').val()
                 };
@@ -92,7 +88,7 @@
         });
 
         function loadGames() {
-            $.get('/apis/v1/fantasy/games?userId=' + currentUserId, function(games) {
+            $.get('/apis/v1/fantasy/games', function(games) {
                 const container = $('#games-container');
                 container.empty();
 
@@ -133,15 +129,15 @@
             });
         }
 
-        window.openJoinModal = function(seq, ruleType) {
+        function openJoinModal(seq, ruleType) {
             $('#joinGameSeq').val(seq);
             $('#modalRuleDesc').text(ruleType);
             $('#joinModal').css('display', 'flex'); // Flex to center
-        };
+        }
 
-        window.closeJoinModal = function() {
+        function closeJoinModal() {
             $('#joinModal').hide();
-        };
+        }
         /*]]>*/
     </script>
 </div>

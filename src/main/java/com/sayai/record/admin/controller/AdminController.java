@@ -35,7 +35,8 @@ public class AdminController {
     }
 
     @PutMapping("/fantasy/games/{gameSeq}/status")
-    public ResponseEntity<Void> updateGameStatus(@PathVariable Long gameSeq, @RequestParam FantasyGame.GameStatus status) {
+    public ResponseEntity<Void> updateGameStatus(@PathVariable(name = "gameSeq") Long gameSeq,
+                                                 @RequestParam(name = "status") FantasyGame.GameStatus status) {
         fantasyGameService.updateGameStatus(gameSeq, status);
         return ResponseEntity.ok().build();
     }
@@ -46,7 +47,8 @@ public class AdminController {
     }
 
     @PutMapping("/users/{id}/role")
-    public ResponseEntity<String> updateUserRole(@PathVariable Long id, @RequestParam Member.Role role) {
+    public ResponseEntity<String> updateUserRole(@PathVariable(name = "id") Long id,
+                                                 @RequestParam(name = "role") Member.Role role) {
         Member member = memberRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 

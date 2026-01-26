@@ -107,7 +107,7 @@
         });
 
         function loadMyGames() {
-            $.get('/apis/v1/fantasy/my-games?userId=' + currentUserId, function(games) {
+            $.get('/apis/v1/fantasy/my-games', function(games) {
                 const select = $('#gameSelector');
                 select.empty();
 
