@@ -46,6 +46,11 @@ public class FantasyViewController {
         return "fantasy/my-team";
     }
 
+    @GetMapping("/ranking")
+    public String ranking() {
+        return "fantasy/ranking";
+    }
+
     @GetMapping("/draft/{gameSeq}")
     public String draftRoom(@PathVariable("gameSeq") Long gameSeq, Model model) {
         model.addAttribute("gameSeq", gameSeq);

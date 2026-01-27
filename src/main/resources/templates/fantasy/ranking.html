@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}">
+<head>
+    <title>Fantasy League - Ranking</title>
+    <link rel="stylesheet" th:href="@{/css/fantasy.css}">
+    <style>
+        .ranking-header {
+            text-align: center;
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #ddd;
+            font-weight: bold;
+        }
+        .ranking-value {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container">
+        <header class="fantasy-header">
+            <h1>Game Ranking</h1>
+            <select id="gameSelector" class="form-control" style="width: 250px; padding: 5px;">
+                <option value="">Loading Games...</option>
+            </select>
+        </header>
+
+        <div th:replace="fragments/fantasy-nav :: nav(active='ranking')"></div>
+
+        <div id="ranking-view" class="fantasy-card" style="display:none;">
+            <h2 class="card-title">Rotisserie Standings (2026 Simulation)</h2>
+            <div style="overflow-x: auto;">
+                <table class="table table-hover fantasy-table">
+                    <thead>
+                        <tr>
+                            <th class="ranking-header">Team Name</th>
+                            <th class="ranking-header">AVG</th>
+                            <th class="ranking-header">HR</th>
+                            <th class="ranking-header">RBI</th>
+                            <th class="ranking-header">SO (Bat)</th>
+                            <th class="ranking-header">SB</th>
+                            <th class="ranking-header">W</th>
+                            <th class="ranking-header">K (Pitch)</th>
+                            <th class="ranking-header">ERA</th>
+                            <th class="ranking-header">WHIP</th>
+                            <th class="ranking-header">SV</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ranking-body">
+                        <!-- Filled by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="points-msg" style="display:none; text-align: center; padding: 50px;">
+            <p style="font-size: 1.2rem; color: #666;">Ranking table is not available for Point Scoring games.</p>
+        </div>
+
+        <div id="no-game-msg" style="display:none; text-align: center; padding: 50px;">
+            <p style="font-size: 1.2rem; color: #666;">No active fantasy teams found. Join a game first!</p>
+            <a href="/fantasy" class="btn btn-primary">Go to Dashboard</a>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        $(document).ready(function() {
+            loadMyGames();
+
+            $('#gameSelector').change(function() {
+                const seq = $(this).val();
+                if (seq) {
+                    loadRanking(seq);
+                }
+            });
+        });
+
+        function loadMyGames() {
+            $.get('/apis/v1/fantasy/my-games', function(games) {
+                const select = $('#gameSelector');
+                select.empty();
+
+                if (games.length === 0) {
+                    select.append('<option value="">No Games</option>');
+                    $('#no-game-msg').show();
+                    return;
+                }
+
+                // Sort by ID desc (latest)
+                games.sort((a, b) => b.seq - a.seq);
+
+                games.forEach(g => {
+                    select.append(`<option value="${g.seq}">${g.title} (${g.status})</option>`);
+                });
+
+                // Select first and load
+                select.val(games[0].seq);
+                loadRanking(games[0].seq);
+            });
+        }
+
+        function loadRanking(gameSeq) {
+            $('#ranking-view').hide();
+            $('#points-msg').hide();
+
+            $.get(`/apis/v1/fantasy/games/${gameSeq}/ranking`, function(data) {
+                if (data.scoringType === 'POINTS') {
+                    $('#points-msg').show();
+                    return;
+                }
+
+                const tbody = $('#ranking-body');
+                tbody.empty();
+
+                data.rankings.forEach(r => {
+                    const row = `
+                        <tr>
+                            <td style="font-weight:bold;">${r.teamName}</td>
+                            <td class="ranking-value">${r.battingAvg ? r.battingAvg.toFixed(3) : '0.000'}</td>
+                            <td class="ranking-value">${r.homeruns}</td>
+                            <td class="ranking-value">${r.rbi}</td>
+                            <td class="ranking-value">${r.batterStrikeOuts}</td>
+                            <td class="ranking-value">${r.stolenBases}</td>
+                            <td class="ranking-value">${r.wins}</td>
+                            <td class="ranking-value">${r.pitcherStrikeOuts}</td>
+                            <td class="ranking-value">${r.era ? r.era.toFixed(2) : '0.00'}</td>
+                            <td class="ranking-value">${r.whip ? r.whip.toFixed(2) : '0.00'}</td>
+                            <td class="ranking-value">${r.saves}</td>
+                        </tr>
+                    `;
+                    tbody.append(row);
+                });
+
+                $('#ranking-view').show();
+            });
+        }
+        /*]]>*/
+    </script>
+</div>
+</body>
+</html>

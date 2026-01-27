@@ -5,6 +5,7 @@
         <ul class="fantasy-nav">
             <li><a th:href="@{/fantasy}" th:classappend="${active == 'main'} ? 'active'">Main</a></li>
             <li><a th:href="@{/fantasy/my-team}" th:classappend="${active == 'my-team'} ? 'active'">My Team</a></li>
+            <li><a th:href="@{/fantasy/ranking}" th:classappend="${active == 'ranking'} ? 'active'">Ranking</a></li>
             <li>
                 <a th:if="${draftingGameSeq != null}" th:href="@{/fantasy/draft/{seq}(seq=${draftingGameSeq})}" th:classappend="${active == 'draft'} ? 'active'">Draft Room</a>
                 <a th:if="${draftingGameSeq == null}" href="#" class="disabled" onclick="alert('No active draft available.'); return false;">Draft Room</a>
