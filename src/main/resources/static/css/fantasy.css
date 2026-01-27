@@ -283,14 +283,16 @@
 .pos-lf, .pos-cf, .pos-rf { color: #28a745; font-weight: bold; }
 
 /* Updated Field Positions */
-/* Center - roughly based on image */
+/* Equal spacing for infield: 3B(5%) - SS(35%) - 2B(65%) - 1B(95%) approx */
 .pos-c  { bottom: 5%; left: 50%; transform: translate(-50%, 0); }
-.pos-1b { bottom: 40%; right: 28%; }
-.pos-2b { bottom: 60%; right: 38%; }
-.pos-3b { bottom: 40%; left: 28%; }
-.pos-ss { bottom: 60%; left: 38%; }
-.pos-lf { top: 25%; left: 15%; }
-.pos-cf { top: 15%; left: 50%; transform: translate(-50%, 0); }
-.pos-rf { top: 25%; right: 15%; }
+.pos-1b { bottom: 40%; left: 88%; transform: translate(-50%, 0); } /* Far Right */
+.pos-2b { bottom: 60%; left: 62%; transform: translate(-50%, 0); }
+.pos-ss { bottom: 60%; left: 38%; transform: translate(-50%, 0); }
+.pos-3b { bottom: 40%; left: 12%; transform: translate(-50%, 0); } /* Far Left */
+
+.pos-lf { top: 20%; left: 15%; }
+.pos-cf { top: 5%; left: 50%; transform: translate(-50%, 0); }
+.pos-rf { top: 20%; right: 15%; }
+
 .pos-dh { bottom: 10%; right: 5%; }
 .pos-p { display: none; } /* Hide if any script tries to use it */
