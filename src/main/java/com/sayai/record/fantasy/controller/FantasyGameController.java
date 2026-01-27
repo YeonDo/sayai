@@ -21,33 +21,18 @@ public class FantasyGameController {
     private final FantasyGameService fantasyGameService;
     private final MemberRepository memberRepository;
 
-    /**
-     * 판타지 리그 조회
-     * @param userDetails
-     * @return
-     */
     @GetMapping("/games")
     public ResponseEntity<List<FantasyGameDto>> getGames(@AuthenticationPrincipal UserDetails userDetails) {
         Long playerId = getPlayerIdFromUserDetails(userDetails);
         return ResponseEntity.ok(fantasyGameService.getDashboardGames(playerId));
     }
 
-    /**
-     * 내가 참가한 판타지 리그 조회
-     * @param userDetails
-     * @return
-     */
     @GetMapping("/my-games")
     public ResponseEntity<List<FantasyGameDto>> getMyGames(@AuthenticationPrincipal UserDetails userDetails) {
         Long playerId = getPlayerIdFromUserDetails(userDetails);
         return ResponseEntity.ok(fantasyGameService.getMyGames(playerId));
     }
 
-    /**
-     * 드래프트 로그 조회
-     * @param gameSeq
-     * @return
-     */
     @GetMapping("/games/{gameSeq}/picks")
     public ResponseEntity<List<DraftLogDto>> getDraftPicks(@PathVariable(name = "gameSeq") Long gameSeq) {
         return ResponseEntity.ok(fantasyGameService.getDraftPicks(gameSeq));

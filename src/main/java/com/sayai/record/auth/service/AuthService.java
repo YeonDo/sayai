@@ -4,7 +4,6 @@ import com.sayai.record.auth.entity.Member;
 import com.sayai.record.auth.jwt.JwtTokenProvider;
 import com.sayai.record.auth.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,14 +50,5 @@ public class AuthService {
                 .build();
 
         memberRepository.save(member);
-    }
-
-    public Long getPlayerIdFromUserDetails(UserDetails userDetails) {
-        if (userDetails == null) {
-            throw new IllegalArgumentException("Authentication required");
-        }
-        return memberRepository.findByUserId(userDetails.getUsername())
-                .map(Member::getPlayerId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
     }
 }

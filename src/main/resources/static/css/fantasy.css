@@ -184,6 +184,18 @@
     color: #666;
 }
 
+/* Position Coordinates (Top %, Left %) */
+.pos-c  { bottom: 5%; left: 50%; transform: translate(-50%, 0); }
+.pos-p  { bottom: 40%; left: 50%; } /* General P spot on field, distinct from roster list */
+.pos-1b { bottom: 40%; right: 25%; }
+.pos-2b { bottom: 60%; right: 35%; }
+.pos-3b { bottom: 40%; left: 25%; }
+.pos-ss { bottom: 60%; left: 35%; }
+.pos-lf { top: 30%; left: 20%; }
+.pos-cf { top: 20%; left: 50%; }
+.pos-rf { top: 30%; right: 20%; }
+.pos-dh { bottom: 10%; right: 10%; }
+
 .pitcher-list {
     display: flex;
     flex-direction: column;
@@ -280,7 +292,7 @@
 
 .pos-lf { top: 20%; left: 15%; }
 .pos-cf { top: 5%; left: 50%; transform: translate(-50%, 0); }
-.pos-rf { top: 20%; right: 0%; }
+.pos-rf { top: 20%; right: 15%; }
 
 .pos-dh { bottom: 10%; right: 5%; }
 .pos-p { display: none; } /* Hide if any script tries to use it */

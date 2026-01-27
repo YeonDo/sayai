@@ -24,15 +24,6 @@ public class FantasyDraftController {
     private final FantasyDraftService fantasyDraftService;
     private final MemberRepository memberRepository;
 
-    /**
-     * 드래프트 가능한 선수 조회
-     * @param gameSeq
-     * @param team
-     * @param position
-     * @param search
-     * @return
-     */
-
     @GetMapping("/games/{gameSeq}/available-players")
     public ResponseEntity<List<FantasyPlayerDto>> getAvailablePlayers(
             @PathVariable(name = "gameSeq") Long gameSeq,
@@ -42,14 +33,6 @@ public class FantasyDraftController {
         return ResponseEntity.ok(fantasyDraftService.getAvailablePlayers(gameSeq, team, position, search));
     }
 
-
-    /**
-     * 판타지 리그 참가
-     * @param gameSeq
-     * @param request
-     * @param userDetails
-     * @return
-     */
     @PostMapping("/games/{gameSeq}/join")
     public ResponseEntity<String> joinGame(@PathVariable(name = "gameSeq") Long gameSeq,
                                            @RequestBody JoinRequest request,
@@ -64,12 +47,6 @@ public class FantasyDraftController {
         }
     }
 
-    /**
-     * 선수 드래프트
-     * @param request
-     * @param userDetails
-     * @return
-     */
     @PostMapping("/draft")
     public ResponseEntity<String> draftPlayer(@RequestBody DraftRequest request,
                                               @AuthenticationPrincipal UserDetails userDetails) {
@@ -88,11 +65,6 @@ public class FantasyDraftController {
         }
     }
 
-    /**
-     * 드래프트한 선수 보기
-     * @param gameSeq
-     * @return
-     */
     @GetMapping("/games/{gameSeq}/players/{playerId}/picks")
     public ResponseEntity<List<FantasyPlayerDto>> getPickedPlayers(
             @PathVariable(name = "gameSeq") Long gameSeq,
@@ -100,12 +72,6 @@ public class FantasyDraftController {
         return ResponseEntity.ok(fantasyDraftService.getPickedPlayers(gameSeq, playerId));
     }
 
-    /**
-     * 내가 드래프트한 선수 보기
-     * @param gameSeq
-     * @param userDetails
-     * @return
-     */
     @GetMapping("/games/{gameSeq}/my-picks")
     public ResponseEntity<List<FantasyPlayerDto>> getMyPicks(
             @PathVariable(name = "gameSeq") Long gameSeq,

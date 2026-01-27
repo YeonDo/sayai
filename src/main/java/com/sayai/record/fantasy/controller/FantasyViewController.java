@@ -1,12 +1,15 @@
 package com.sayai.record.fantasy.controller;
 
-import com.sayai.record.auth.service.AuthService;
+import com.sayai.record.auth.entity.Member;
+import com.sayai.record.auth.repository.MemberRepository;
+import com.sayai.record.fantasy.service.FantasyGameService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -15,7 +18,24 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequiredArgsConstructor
 public class FantasyViewController {
 
-    private final AuthService authService;
+    private final FantasyGameService fantasyGameService;
+    private final MemberRepository memberRepository;
+
+    @ModelAttribute
+    public void addAttributes(Model model, @AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails != null) {
+            Long playerId = memberRepository.findByUserId(userDetails.getUsername())
+                    .map(Member::getPlayerId)
+                    .orElse(null);
+
+            if (playerId != null) {
+                model.addAttribute("currentUserId", playerId);
+                Long draftingGameSeq = fantasyGameService.findDraftingGameId(playerId);
+                model.addAttribute("draftingGameSeq", draftingGameSeq);
+            }
+        }
+    }
+
     @GetMapping
     public String dashboard() {
         return "fantasy/index";
@@ -27,10 +47,8 @@ public class FantasyViewController {
     }
 
     @GetMapping("/draft/{gameSeq}")
-    public String draftRoom(@PathVariable("gameSeq") Long gameSeq, @AuthenticationPrincipal UserDetails userDetails, Model model) {
+    public String draftRoom(@PathVariable("gameSeq") Long gameSeq, Model model) {
         model.addAttribute("gameSeq", gameSeq);
-        Long playerId = authService.getPlayerIdFromUserDetails(userDetails);
-        model.addAttribute("currentUserId", playerId);
         return "fantasy/draft";
     }
 
@@ -58,5 +76,4 @@ public class FantasyViewController {
     public String draftLog() {
         return "fantasy/draft-log";
     }
-
 }

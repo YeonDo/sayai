@@ -6,8 +6,8 @@
             <li><a th:href="@{/fantasy}" th:classappend="${active == 'main'} ? 'active'">Main</a></li>
             <li><a th:href="@{/fantasy/my-team}" th:classappend="${active == 'my-team'} ? 'active'">My Team</a></li>
             <li>
-                <a th:if="${gameSeq != null}" th:href="@{/fantasy/draft/{seq}(seq=${gameSeq})}" th:classappend="${active == 'draft'} ? 'active'">Draft Room</a>
-                <a th:if="${gameSeq == null}" href="#" class="disabled" onclick="alert('Please select a game first or join a game.'); return false;">Draft Room</a>
+                <a th:if="${draftingGameSeq != null}" th:href="@{/fantasy/draft/{seq}(seq=${draftingGameSeq})}" th:classappend="${active == 'draft'} ? 'active'">Draft Room</a>
+                <a th:if="${draftingGameSeq == null}" href="#" class="disabled" onclick="alert('No active draft available.'); return false;">Draft Room</a>
             </li>
             <li><a th:href="@{/fantasy/draft-log}" th:classappend="${active == 'log'} ? 'active'">Draft Log</a></li>
             <li><a th:href="@{/fantasy/trade}" th:classappend="${active == 'trade'} ? 'active'">Trade Room</a></li>

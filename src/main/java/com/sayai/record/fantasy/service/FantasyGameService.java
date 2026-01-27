@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -77,6 +78,23 @@ public class FantasyGameService {
         List<FantasyGame> games = fantasyGameRepository.findAllById(gameSeqs);
 
         return games.stream().map(FantasyGameDto::from).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public Long findDraftingGameId(Long userId) {
+        List<FantasyParticipant> myParticipations = fantasyParticipantRepository.findAll().stream()
+                .filter(p -> p.getPlayerId().equals(userId))
+                .collect(Collectors.toList());
+
+        List<Long> gameSeqs = myParticipations.stream()
+                .map(FantasyParticipant::getFantasyGameSeq)
+                .collect(Collectors.toList());
+
+        return fantasyGameRepository.findAllById(gameSeqs).stream()
+                .filter(g -> g.getStatus() == FantasyGame.GameStatus.DRAFTING)
+                .map(FantasyGame::getSeq)
+                .findFirst()
+                .orElse(null);
     }
 
     @Transactional
