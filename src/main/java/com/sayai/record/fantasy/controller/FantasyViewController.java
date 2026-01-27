@@ -1,5 +1,9 @@
 package com.sayai.record.fantasy.controller;
 
+import com.sayai.record.auth.service.AuthService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -8,8 +12,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 @RequestMapping("/fantasy")
+@RequiredArgsConstructor
 public class FantasyViewController {
 
+    private final AuthService authService;
     @GetMapping
     public String dashboard() {
         return "fantasy/index";
@@ -21,12 +27,10 @@ public class FantasyViewController {
     }
 
     @GetMapping("/draft/{gameSeq}")
-    public String draftRoom(@PathVariable("gameSeq") Long gameSeq, Model model) {
+    public String draftRoom(@PathVariable("gameSeq") Long gameSeq, @AuthenticationPrincipal UserDetails userDetails, Model model) {
         model.addAttribute("gameSeq", gameSeq);
-        // We will need to pass playerId for context.
-        // For now, let's assume playerId is 1 or passed via query param or handled by JS/Session in a real app.
-        // I'll add a placeholder ID for frontend testing in the template.
-        model.addAttribute("currentUserId", 1L);
+        Long playerId = authService.getPlayerIdFromUserDetails(userDetails);
+        model.addAttribute("currentUserId", playerId);
         return "fantasy/draft";
     }
 
@@ -54,4 +58,5 @@ public class FantasyViewController {
     public String draftLog() {
         return "fantasy/draft-log";
     }
+
 }

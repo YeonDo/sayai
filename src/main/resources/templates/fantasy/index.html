@@ -37,18 +37,18 @@
                         <input type="text" id="joinTeamName" class="form-control" required placeholder="Enter your fantasy team name" style="width: 100%; padding: 8px;">
                     </div>
                     <div class="form-group" style="margin-bottom: 15px;">
-                        <label style="display:block; margin-bottom: 5px; font-weight: bold;">Preferred KBO Team</label>
+                        <label style="display:block; margin-bottom: 5px; font-weight: bold;">응원팀</label>
                         <select id="joinPrefTeam" class="form-control" style="width: 100%; padding: 8px;">
-                            <option value="KIA">KIA Tigers</option>
-                            <option value="SAMSUNG">Samsung Lions</option>
-                            <option value="LG">LG Twins</option>
-                            <option value="DOOSAN">Doosan Bears</option>
-                            <option value="KT">KT Wiz</option>
-                            <option value="SSG">SSG Landers</option>
-                            <option value="LOTTE">Lotte Giants</option>
-                            <option value="HANWHA">Hanwha Eagles</option>
-                            <option value="NC">NC Dinos</option>
-                            <option value="KIWOOM">Kiwoom Heroes</option>
+                            <option value="KIA">KIA 타이거즈</option>
+                            <option value="SAMSUNG">삼성 라이온즈</option>
+                            <option value="LG">LG 트윈스</option>
+                            <option value="DOOSAN">두산 베어스</option>
+                            <option value="KT">KT 위즈</option>
+                            <option value="SSG">SSG 랜더스</option>
+                            <option value="LOTTE">롯데 자이언츠</option>
+                            <option value="HANWHA">한화 이글스</option>
+                            <option value="NC">NC 다이노스</option>
+                            <option value="KIWOOM">키움 히어로즈</option>
                         </select>
                     </div>
                     <button type="submit" class="btn btn-primary" style="width: 100%; padding: 10px;">Join League</button>
@@ -94,7 +94,7 @@
 
                 if (games.length === 0) {
                     container.html('<p style="grid-column: 1 / -1; text-align: center; font-size: 1.2rem; margin-top: 50px;">현재 진행 중인 경기가 없습니다</p>');
-                    return;
+                    return
                 }
 
                 games.forEach(game => {
@@ -120,10 +120,10 @@
                     const card = `
                         <div class="fantasy-card" style="border: 1px solid #ddd; padding: 20px; border-radius: 8px; background: #fff;">
                             <h3 style="margin-top:0; border-bottom: 2px solid #eee; padding-bottom: 10px;">${game.title}</h3>
-                            <p><strong>Rule:</strong> ${game.ruleType}</p>
-                            <p><strong>Scoring:</strong> ${game.scoringType}</p>
-                            <p><strong>Participants:</strong> ${game.participantCount} / ${game.maxParticipants || 'Unlim.'}</p>
-                            <p><strong>Draft Date:</strong> ${game.draftDate ? new Date(game.draftDate).toLocaleString() : 'TBD'}</p>
+                            <p><strong>룰:</strong> ${game.ruleType}</p>
+                            <p><strong>배점방식:</strong> ${game.scoringType}</p>
+                            <p><strong>참가자수:</strong> ${game.participantCount} / ${game.maxParticipants || 'Unlim.'}</p>
+                            <p><strong>드래프트 일자:</strong> ${game.draftDate ? new Date(game.draftDate).toLocaleString() : 'TBD'}</p>
                             <div style="margin-top: 15px;">
                                 ${actionBtn}
                             </div>

@@ -42,7 +42,6 @@
 
     <script th:inline="javascript">
         /*<![CDATA[*/
-        const currentUserId = 1;
         $(document).ready(function() {
             loadMyGames();
 
@@ -53,7 +52,7 @@
         });
 
         function loadMyGames() {
-            $.get('/apis/v1/fantasy/my-games?userId=' + currentUserId, function(games) {
+            $.get('/apis/v1/fantasy/my-games', function(games) {
                 const select = $('#gameSelector');
                 select.empty();
                 if (games.length === 0) {
