@@ -1,14 +1,40 @@
 package com.sayai.record.fantasy.controller;
 
+import com.sayai.record.auth.entity.Member;
+import com.sayai.record.auth.repository.MemberRepository;
+import com.sayai.record.fantasy.service.FantasyGameService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 @RequestMapping("/fantasy")
+@RequiredArgsConstructor
 public class FantasyViewController {
+
+    private final FantasyGameService fantasyGameService;
+    private final MemberRepository memberRepository;
+
+    @ModelAttribute
+    public void addAttributes(Model model, @AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails != null) {
+            Long playerId = memberRepository.findByUserId(userDetails.getUsername())
+                    .map(Member::getPlayerId)
+                    .orElse(null);
+
+            if (playerId != null) {
+                model.addAttribute("currentUserId", playerId);
+                Long draftingGameSeq = fantasyGameService.findDraftingGameId(playerId);
+                model.addAttribute("draftingGameSeq", draftingGameSeq);
+            }
+        }
+    }
 
     @GetMapping
     public String dashboard() {
@@ -23,10 +49,6 @@ public class FantasyViewController {
     @GetMapping("/draft/{gameSeq}")
     public String draftRoom(@PathVariable("gameSeq") Long gameSeq, Model model) {
         model.addAttribute("gameSeq", gameSeq);
-        // We will need to pass playerId for context.
-        // For now, let's assume playerId is 1 or passed via query param or handled by JS/Session in a real app.
-        // I'll add a placeholder ID for frontend testing in the template.
-        model.addAttribute("currentUserId", 1L);
         return "fantasy/draft";
     }
 
@@ -43,5 +65,15 @@ public class FantasyViewController {
     @GetMapping("/settings")
     public String settings() {
         return "fantasy/settings";
+    }
+
+    @GetMapping("/admin")
+    public String admin() {
+        return "fantasy/admin";
+    }
+
+    @GetMapping("/draft-log")
+    public String draftLog() {
+        return "fantasy/draft-log";
     }
 }

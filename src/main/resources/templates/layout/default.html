@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title layout:title-pattern="$CONTENT_TITLE">Sayai Record</title>
+
+    <!-- Common CSS -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+
+    <!-- Common JS -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script th:src="@{/js/auth.js}"></script>
+</head>
+<body>
+    <!-- Global Navigation Bar -->
+    <th:block th:replace="fragments/gnb :: #gnb"></th:block>
+
+    <!-- Main Content Area -->
+    <div layout:fragment="content">
+        <!-- Content injected here -->
+    </div>
+
+    <!-- Login Modal -->
+    <th:block th:replace="fragments/login-modal :: #login-modal"></th:block>
+</body>
+</html>

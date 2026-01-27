@@ -1,78 +1,150 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fantasy League - Dashboard</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/fantasy.css}">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script th:src="@{/js/auth.js}"></script>
 </head>
 <body>
-    <!-- Main GNB -->
-    <th:block th:replace="fragments/gnb :: #gnb"></th:block>
-
-    <!-- Login Modal -->
-    <th:block th:replace="fragments/login-modal :: #login-modal"></th:block>
-
+<div layout:fragment="content">
     <div class="container">
-        <header class="fantasy-header">
+        <div class="fantasy-header">
             <h1>KBO Fantasy League</h1>
-            <div>
-                <span style="margin-right: 15px;">Welcome, Manager</span>
-            </div>
-        </header>
-
-        <div class="sub-gnb">
-            <a th:href="@{/fantasy}" class="active">Dashboard</a>
-            <a th:href="@{/fantasy/my-team}">My Team</a>
-            <a th:href="@{/fantasy/draft/1}">Draft Room</a>
-            <a th:href="@{/fantasy/players}">Players</a>
-            <a th:href="@{/fantasy/trade}">Trade</a>
-            <a th:href="@{/fantasy/settings}">Settings</a>
         </div>
 
-        <div class="fantasy-card">
-            <h2 class="card-title">League Standings</h2>
-            <div class="table-responsive">
-            <table class="fantasy-table">
-                <thead>
-                    <tr>
-                        <th>Rank</th>
-                        <th>Team</th>
-                        <th>W-L-T</th>
-                        <th>Points</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>1</td>
-                        <td>Bears Fantasy</td>
-                        <td>10-2-0</td>
-                        <td>1200</td>
-                    </tr>
-                    <tr>
-                        <td>2</td>
-                        <td>Giants Power</td>
-                        <td>9-3-0</td>
-                        <td>1150</td>
-                    </tr>
-                    <!-- Placeholder Data -->
-                </tbody>
-            </table>
-            </div>
-        </div>
+        <div th:replace="fragments/fantasy-nav :: nav(active='main')"></div>
 
-        <div class="fantasy-card">
-            <h2 class="card-title">This Week's Matchup</h2>
-            <p style="text-align: center; font-size: 1.2rem; padding: 20px;">
-                <strong>My Team</strong> vs <strong>Eagles Wings</strong>
-            </p>
+        <div id="games-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+            <!-- JS will populate -->
+            <p>Loading games...</p>
         </div>
     </div>
 
-    <!-- Login Modal -->
-    <th:block th:replace="fragments/login-modal :: #login-modal"></th:block>
+    <!-- Join Modal -->
+    <div id="joinModal" class="modal-overlay" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div class="modal-container" style="background: white; padding: 20px; border-radius: 8px; width: 400px; max-width: 90%; margin: 100px auto; position: relative;">
+            <div class="modal-header" style="border-bottom: 1px solid #eee; margin-bottom: 15px; display: flex; justify-content: space-between;">
+                <h3 style="margin: 0;">Join Fantasy League</h3>
+                <button onclick="closeJoinModal()" style="background:none; border:none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 15px;"><strong>Rule Type:</strong> <span id="modalRuleDesc"></span></p>
+                <form id="joinForm">
+                    <input type="hidden" id="joinGameSeq">
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label style="display:block; margin-bottom: 5px; font-weight: bold;">My Team Name</label>
+                        <input type="text" id="joinTeamName" class="form-control" required placeholder="Enter your fantasy team name" style="width: 100%; padding: 8px;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label style="display:block; margin-bottom: 5px; font-weight: bold;">Preferred KBO Team</label>
+                        <select id="joinPrefTeam" class="form-control" style="width: 100%; padding: 8px;">
+                            <option value="KIA">KIA Tigers</option>
+                            <option value="SAMSUNG">Samsung Lions</option>
+                            <option value="LG">LG Twins</option>
+                            <option value="DOOSAN">Doosan Bears</option>
+                            <option value="KT">KT Wiz</option>
+                            <option value="SSG">SSG Landers</option>
+                            <option value="LOTTE">Lotte Giants</option>
+                            <option value="HANWHA">Hanwha Eagles</option>
+                            <option value="NC">NC Dinos</option>
+                            <option value="KIWOOM">Kiwoom Heroes</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; padding: 10px;">Join League</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        $(document).ready(function() {
+            loadGames();
+
+            $('#joinForm').submit(function(e) {
+                e.preventDefault();
+                const seq = $('#joinGameSeq').val();
+                const data = {
+                    preferredTeam: $('#joinPrefTeam').val(),
+                    teamName: $('#joinTeamName').val()
+                };
+
+                $.ajax({
+                    url: '/apis/v1/fantasy/games/' + seq + '/join',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(data),
+                    success: function() {
+                        alert('Joined successfully!');
+                        closeJoinModal();
+                        loadGames();
+                    },
+                    error: function(xhr) {
+                        alert('Join failed: ' + (xhr.responseText || 'Error'));
+                    }
+                });
+            });
+        });
+
+        function loadGames() {
+            $.get('/apis/v1/fantasy/games', function(games) {
+                const container = $('#games-container');
+                container.empty();
+
+                if (games.length === 0) {
+                    container.html('<p style="grid-column: 1 / -1; text-align: center; font-size: 1.2rem; margin-top: 50px;">현재 진행 중인 경기가 없습니다</p>');
+                    return;
+                }
+
+                games.forEach(game => {
+                    let actionBtn = '';
+                    if (game.joined) {
+                        if (game.status === 'DRAFTING') {
+                            // DRAFTING -> Active Link
+                            actionBtn = `<a href="/fantasy/draft/${game.seq}" class="status-badge status-${game.status}" style="display:block; text-align:center; padding: 10px; text-decoration:none;">${game.status} (Enter Draft Room)</a>`;
+                        } else {
+                            // WAITING, ONGOING, FINISHED -> Status Text only
+                            actionBtn = `<span class="status-badge status-${game.status}" style="display:block; text-align:center; padding: 10px;">${game.status} (Joined: ${game.myTeamName})</span>`;
+                        }
+                    } else if (game.status === 'WAITING') {
+                        // Not Joined, Waiting -> Show Join Button
+                        // Pass JSON string to onClick
+                        const gameJson = JSON.stringify(game).replace(/"/g, '&quot;');
+                        actionBtn = `<button class="btn btn-primary" style="width:100%" onclick="openJoinModal(${game.seq}, '${game.ruleType}')">Participate</button>`;
+                    } else {
+                        // Not Joined, Not Waiting -> Show Status
+                        actionBtn = `<span class="status-badge status-${game.status}" style="display:block; text-align:center; padding: 10px;">${game.status}</span>`;
+                    }
+
+                    const card = `
+                        <div class="fantasy-card" style="border: 1px solid #ddd; padding: 20px; border-radius: 8px; background: #fff;">
+                            <h3 style="margin-top:0; border-bottom: 2px solid #eee; padding-bottom: 10px;">${game.title}</h3>
+                            <p><strong>Rule:</strong> ${game.ruleType}</p>
+                            <p><strong>Scoring:</strong> ${game.scoringType}</p>
+                            <p><strong>Participants:</strong> ${game.participantCount} / ${game.maxParticipants || 'Unlim.'}</p>
+                            <p><strong>Draft Date:</strong> ${game.draftDate ? new Date(game.draftDate).toLocaleString() : 'TBD'}</p>
+                            <div style="margin-top: 15px;">
+                                ${actionBtn}
+                            </div>
+                        </div>
+                    `;
+                    container.append(card);
+                });
+            });
+        }
+
+        function openJoinModal(seq, ruleType) {
+            $('#joinGameSeq').val(seq);
+            $('#modalRuleDesc').text(ruleType);
+            $('#joinModal').css('display', 'flex'); // Flex to center
+        }
+
+        function closeJoinModal() {
+            $('#joinModal').hide();
+        }
+        /*]]>*/
+    </script>
+</div>
 </body>
 </html>

@@ -1,29 +1,24 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fantasy League - My Team</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/fantasy.css}">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
+<div layout:fragment="content">
     <div class="container">
         <header class="fantasy-header">
             <h1>My Team Roster</h1>
+            <select id="gameSelector" class="form-control" style="width: 250px; padding: 5px;">
+                <option value="">Loading Games...</option>
+            </select>
         </header>
 
-        <div class="sub-gnb">
-            <a th:href="@{/fantasy}">Dashboard</a>
-            <a th:href="@{/fantasy/my-team}" class="active">My Team</a>
-            <a th:href="@{/fantasy/draft/1}">Draft Room</a>
-            <a th:href="@{/fantasy/players}">Players</a>
-            <a th:href="@{/fantasy/trade}">Trade</a>
-            <a th:href="@{/fantasy/settings}">Settings</a>
-        </div>
+        <div th:replace="fragments/fantasy-nav :: nav(active='my-team')"></div>
 
-        <div class="my-team-container">
+        <div id="roster-view" class="my-team-container" style="display:none;">
             <!-- Field View -->
             <div class="fantasy-card">
                 <h2 class="card-title">Fielding & Batting</h2>
@@ -61,6 +56,7 @@
                         <span class="pos-label">RF</span>
                         <span class="player-name">-</span>
                     </div>
+                    <!-- DH at Bottom Right -->
                     <div class="field-position pos-dh" id="slot-DH">
                         <span class="pos-label">DH</span>
                         <span class="player-name">-</span>
@@ -85,34 +81,76 @@
                     <div class="pitcher-slot" id="slot-RP-4"><span class="pitcher-role">RP</span><span class="player-name">-</span></div>
 
                     <!-- CL Slot -->
-                    <div class="pitcher-slot" id="slot-CL-1"><span class="pitcher-role">CL</span><span class="player-name">-</span></div>
+                    <div class="pitcher-slot" id="slot-CL-1"><span class="pitcher-role">CP</span><span class="player-name">-</span></div>
                 </div>
             </div>
         </div>
+
+        <div id="no-game-msg" style="display:none; text-align: center; padding: 50px;">
+            <p style="font-size: 1.2rem; color: #666;">No active fantasy teams found. Join a game first!</p>
+            <a href="/fantasy" class="btn btn-primary">Go to Dashboard</a>
+        </div>
     </div>
 
-    <!-- Hardcoded Game/User ID for Demo -->
-    <input type="hidden" id="gameSeq" value="1" />
-    <input type="hidden" id="currentUserId" value="1" />
-
-    <script>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
         $(document).ready(function() {
-            const gameSeq = $('#gameSeq').val();
-            const userId = $('#currentUserId').val();
+            loadMyGames();
 
-            $.get(`/apis/v1/fantasy/games/${gameSeq}/players/${userId}/picks`, function(players) {
-                // Tracking filled slots to handle duplicates/DH
+            $('#gameSelector').change(function() {
+                const seq = $(this).val();
+                if (seq) {
+                    loadRoster(seq);
+                }
+            });
+        });
+
+        function loadMyGames() {
+            $.get('/apis/v1/fantasy/my-games', function(games) {
+                const select = $('#gameSelector');
+                select.empty();
+
+                if (games.length === 0) {
+                    select.append('<option value="">No Games</option>');
+                    $('#no-game-msg').show();
+                    return;
+                }
+
+                // Sort by ID desc (latest)
+                games.sort((a, b) => b.seq - a.seq);
+
+                games.forEach(g => {
+                    select.append(`<option value="${g.seq}">${g.title} (${g.status})</option>`);
+                });
+
+                // Select first and load
+                select.val(games[0].seq);
+                loadRoster(games[0].seq);
+                $('#roster-view').show();
+            });
+        }
+
+        function loadRoster(gameSeq) {
+            // Reset slots
+            $('.player-name').text('-');
+            $('.player-team').remove();
+            $('.pitcher-slot').removeClass('filled');
+
+            // Use my-picks endpoint which uses token ID
+            $.get(`/apis/v1/fantasy/games/${gameSeq}/my-picks`, function(players) {
                 const filledSlots = {};
                 const spCount = { count: 1 };
                 const rpCount = { count: 1 };
 
                 players.forEach(p => {
+                    // Position mapping
+                    // p.position might be "C" or "C, 1B"
                     const positions = p.position.split(',').map(s => s.trim());
                     let assigned = false;
 
                     // 1. Try Primary Positions first
                     for (const pos of positions) {
-                        if (isPitcher(pos)) continue; // Handle pitchers separately
+                        if (isPitcher(pos)) continue;
                         if (!filledSlots[pos]) {
                             fillSlot(pos, p);
                             filledSlots[pos] = true;
@@ -121,7 +159,7 @@
                         }
                     }
 
-                    // 2. If not assigned and not pitcher, try DH
+                    // 2. Try DH
                     if (!assigned && !isPitcher(positions[0])) {
                         if (!filledSlots['DH']) {
                             fillSlot('DH', p);
@@ -130,14 +168,13 @@
                         }
                     }
 
-                    // 3. Handle Pitchers
+                    // 3. Pitchers
                     if (!assigned && isPitcher(positions[0])) {
-                         // Simplify: Just check if any pos is SP/RP/CL
                          if (positions.includes('SP')) {
                              assignPitcher('SP', spCount, p);
                          } else if (positions.includes('RP')) {
                              assignPitcher('RP', rpCount, p);
-                         } else if (positions.includes('CL')) {
+                         } else if (positions.includes('CL') || positions.includes('CP')) {
                              if (!filledSlots['CL']) {
                                  fillPitcherSlot('CL-1', p);
                                  filledSlots['CL'] = true;
@@ -146,16 +183,18 @@
                     }
                 });
             });
-        });
+        }
 
         function isPitcher(pos) {
-            return ['SP', 'RP', 'CL'].includes(pos);
+            return ['SP', 'RP', 'CP', 'CL'].includes(pos);
         }
 
         function fillSlot(pos, player) {
             const slot = $(`#slot-${pos}`);
-            slot.find('.player-name').text(player.name);
-            slot.append(`<span class="player-team">${player.team}</span>`);
+            if (slot.length) {
+                slot.find('.player-name').text(player.name);
+                slot.append(`<span class="player-team" style="display:block; font-size:0.8rem; color:#666;">${player.team}</span>`);
+            }
         }
 
         function assignPitcher(type, counterObj, player) {
@@ -167,9 +206,13 @@
 
         function fillPitcherSlot(idSuffix, player) {
             const slot = $(`#slot-${idSuffix}`);
-            slot.addClass('filled');
-            slot.find('.player-name').text(`${player.name} (${player.team})`);
+            if (slot.length) {
+                slot.addClass('filled');
+                slot.find('.player-name').text(`${player.name} (${player.team})`);
+            }
         }
+        /*]]>*/
     </script>
+</div>
 </body>
 </html>

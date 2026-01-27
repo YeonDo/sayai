@@ -1,43 +1,22 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fantasy League - Draft Room</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/fantasy.css}">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!-- SockJS and Stomp -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 </head>
 <body>
+<div layout:fragment="content">
     <div class="container">
         <header class="fantasy-header">
             <h1>Draft Room</h1>
             <span id="game-status" class="status-badge status-WAITING">Loading...</span>
         </header>
 
-        <div class="sub-gnb">
-            <a th:href="@{/fantasy}">Dashboard</a>
-            <a th:href="@{/fantasy/my-team}">My Team</a>
-            <a th:href="@{/fantasy/draft/1}" class="active">Draft Room</a>
-            <a th:href="@{/fantasy/players}">Players</a>
-            <a th:href="@{/fantasy/trade}">Trade</a>
-            <a th:href="@{/fantasy/settings}">Settings</a>
-        </div>
-
-        <div id="join-section" class="fantasy-card" style="display:none;">
-            <h2 class="card-title">Join Game</h2>
-            <p>Select your preferred team to join the draft.</p>
-            <select id="preferred-team">
-                <option value="Doosan">Doosan Bears</option>
-                <option value="LG">LG Twins</option>
-                <option value="Kia">Kia Tigers</option>
-                <!-- Add other teams -->
-            </select>
-            <button class="btn-primary" onclick="joinGame()">Join Game</button>
-        </div>
+        <div th:replace="fragments/fantasy-nav :: nav(active='draft')"></div>
 
         <div class="draft-container">
             <div class="fantasy-card">
@@ -105,7 +84,8 @@
     <input type="hidden" id="gameSeq" th:value="${gameSeq}" />
     <input type="hidden" id="currentUserId" th:value="${currentUserId}" />
 
-    <script>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
         const gameSeq = document.getElementById('gameSeq').value;
         const userId = document.getElementById('currentUserId').value;
         let stompClient = null;
@@ -115,7 +95,6 @@
             loadAvailablePlayers();
             loadMyPicks();
 
-            // Filter Change Events
             $('#filter-team, #filter-position').change(function() {
                 loadAvailablePlayers();
             });
@@ -123,8 +102,7 @@
                 if (e.key === 'Enter') loadAvailablePlayers();
             });
 
-            // In a real app, poll status.
-            $('#game-status').text('DRAFTING').removeClass('status-WAITING').addClass('status-DRAFTING'); // Mocking status for UI
+            $('#game-status').text('DRAFTING').removeClass('status-WAITING').addClass('status-DRAFTING');
         });
 
         function connectWebSocket() {
@@ -140,16 +118,7 @@
         }
 
         function handleDraftEvent(event) {
-            console.log("Draft Event:", event);
-
-            // Notify User
-            // Ideally, use a toast notification instead of alert to be less intrusive
-            // alert(event.message);
-
-            // Refresh available players (remove picked player locally for performance or reload)
             loadAvailablePlayers();
-
-            // Refresh my picks if it was me
             if (String(event.playerId) === String(userId)) {
                 loadMyPicks();
             }
@@ -169,10 +138,19 @@
                 const tbody = $('#available-players-body');
                 tbody.empty();
                 data.forEach(player => {
+                    const firstPos = player.position ? player.position.split(',')[0].trim().toLowerCase() : '';
+                    const posClass = 'pos-' + firstPos;
+                    // 'CL' -> 'pos-cp' mapping for color consistency if needed, but CSS has 'pos-cl' if I add it, or map here.
+                    // CSS has .pos-cp. Let's map CL to CP if needed or add .pos-cl to CSS.
+                    // Wait, I didn't add .pos-cl. I added .pos-cp.
+                    // I'll check player.position values. If it's 'CL', I should use 'pos-cp'.
+                    let cssClass = posClass;
+                    if(firstPos === 'cl') cssClass = 'pos-cp';
+
                     tbody.append(`
                         <tr>
                             <td>${player.name}</td>
-                            <td><span class="position-badge">${player.position}</span></td>
+                            <td><span class="position-badge ${cssClass}">${player.position}</span></td>
                             <td><span class="team-badge">${player.team}</span></td>
                             <td>${player.stats || '-'}</td>
                             <td><button class="btn-draft" onclick="draftPlayer(${player.seq})">Draft</button></td>
@@ -187,9 +165,13 @@
                 const list = $('#my-picks-list');
                 list.empty();
                 data.forEach(player => {
+                    const firstPos = player.position ? player.position.split(',')[0].trim().toLowerCase() : '';
+                    let cssClass = 'pos-' + firstPos;
+                    if(firstPos === 'cl') cssClass = 'pos-cp';
+
                     list.append(`
                         <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
-                            <strong>${player.name}</strong> <span class="position-badge">${player.position}</span>
+                            <strong>${player.name}</strong> <span class="position-badge ${cssClass}">${player.position}</span>
                         </li>
                     `);
                 });
@@ -209,36 +191,15 @@
                 contentType: 'application/json',
                 data: JSON.stringify(data),
                 success: function(response) {
-                    // Success handled via WebSocket event usually,
-                    // but for immediate feedback we can keep alert or rely on UI update.
                     console.log("Draft request sent successfully");
                 },
                 error: function(xhr) {
-                    alert('Draft Failed: ' + xhr.responseText);
+                    alert('Draft Failed: ' + (xhr.responseText || 'Error'));
                 }
             });
         }
-
-        function joinGame() {
-            const team = $('#preferred-team').val();
-            const data = {
-                playerId: userId,
-                preferredTeam: team
-            };
-             $.ajax({
-                url: `/apis/v1/fantasy/games/${gameSeq}/join`,
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify(data),
-                success: function(response) {
-                    alert('Joined Successfully!');
-                    $('#join-section').hide();
-                },
-                error: function(xhr) {
-                    alert('Join Failed: ' + xhr.responseText);
-                }
-            });
-        }
+        /*]]>*/
     </script>
+</div>
 </body>
 </html>

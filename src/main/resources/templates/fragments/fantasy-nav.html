@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body th:fragment="nav(active)">
+    <div class="fantasy-nav-container">
+        <ul class="fantasy-nav">
+            <li><a th:href="@{/fantasy}" th:classappend="${active == 'main'} ? 'active'">Main</a></li>
+            <li><a th:href="@{/fantasy/my-team}" th:classappend="${active == 'my-team'} ? 'active'">My Team</a></li>
+            <li>
+                <a th:if="${draftingGameSeq != null}" th:href="@{/fantasy/draft/{seq}(seq=${draftingGameSeq})}" th:classappend="${active == 'draft'} ? 'active'">Draft Room</a>
+                <a th:if="${draftingGameSeq == null}" href="#" class="disabled" onclick="alert('No active draft available.'); return false;">Draft Room</a>
+            </li>
+            <li><a th:href="@{/fantasy/draft-log}" th:classappend="${active == 'log'} ? 'active'">Draft Log</a></li>
+            <li><a th:href="@{/fantasy/trade}" th:classappend="${active == 'trade'} ? 'active'">Trade Room</a></li>
+            <li sec:authorize="hasRole('ADMIN')"><a th:href="@{/fantasy/admin}" th:classappend="${active == 'admin'} ? 'active'">Admin</a></li>
+        </ul>
+    </div>
+</body>
+</html>

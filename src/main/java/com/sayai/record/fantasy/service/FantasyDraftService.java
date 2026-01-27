@@ -32,7 +32,7 @@ public class FantasyDraftService {
     private final SimpMessagingTemplate messagingTemplate;
 
     @Transactional
-    public void joinGame(Long gameSeq, Long playerId, String preferredTeam) {
+    public void joinGame(Long gameSeq, Long playerId, String preferredTeam, String teamName) {
         FantasyGame game = fantasyGameRepository.findById(gameSeq)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid Game Seq"));
 
@@ -49,6 +49,7 @@ public class FantasyDraftService {
                 .fantasyGameSeq(gameSeq)
                 .playerId(playerId)
                 .preferredTeam(preferredTeam)
+                .teamName(teamName)
                 .build();
 
         fantasyParticipantRepository.save(participant);
