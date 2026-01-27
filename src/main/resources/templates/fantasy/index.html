@@ -100,8 +100,13 @@
                 games.forEach(game => {
                     let actionBtn = '';
                     if (game.joined) {
-                        // Already Joined -> Show Status with Link to Draft Room
-                        actionBtn = `<a href="/fantasy/draft/${game.seq}" class="status-badge status-${game.status}" style="display:block; text-align:center; padding: 10px; text-decoration:none;">${game.status} (Joined: ${game.myTeamName}) - Enter</a>`;
+                        if (game.status === 'DRAFTING') {
+                            // DRAFTING -> Active Link
+                            actionBtn = `<a href="/fantasy/draft/${game.seq}" class="status-badge status-${game.status}" style="display:block; text-align:center; padding: 10px; text-decoration:none;">${game.status} (Enter Draft Room)</a>`;
+                        } else {
+                            // WAITING, ONGOING, FINISHED -> Status Text only
+                            actionBtn = `<span class="status-badge status-${game.status}" style="display:block; text-align:center; padding: 10px;">${game.status} (Joined: ${game.myTeamName})</span>`;
+                        }
                     } else if (game.status === 'WAITING') {
                         // Not Joined, Waiting -> Show Join Button
                         // Pass JSON string to onClick
