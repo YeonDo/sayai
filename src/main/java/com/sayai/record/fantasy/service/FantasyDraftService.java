@@ -12,6 +12,7 @@ import com.sayai.record.fantasy.repository.FantasyGameRepository;
 import com.sayai.record.fantasy.repository.FantasyParticipantRepository;
 import com.sayai.record.fantasy.repository.FantasyPlayerRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +24,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class FantasyDraftService {
@@ -220,6 +222,11 @@ public class FantasyDraftService {
             return;
         }
 
+        // Validate deadline again to avoid race conditions
+        if (game.getNextPickDeadline() != null && game.getNextPickDeadline().isAfter(LocalDateTime.now())) {
+            return;
+        }
+
         NextPickInfo nextPick = getNextPickInfo(game);
         Long playerId = nextPick.pickerId;
 
@@ -276,7 +283,7 @@ public class FantasyDraftService {
             draftPlayer(req);
         } else {
             // Log or handle no valid pick found
-            System.err.println("AutoPick failed: No valid player found for game " + gameSeq + " user " + playerId);
+            log.error("AutoPick failed: No valid player found for game {} user {}", gameSeq, playerId);
         }
     }
 }

@@ -63,9 +63,6 @@
             </div>
         </div>
 
-        <div id="admin-controls" sec:authorize="hasRole('ADMIN')" style="margin-bottom: 15px;">
-            <button id="btn-start-draft" class="btn-primary" onclick="startDraft()">Start Draft</button>
-        </div>
 
         <div class="draft-container">
             <!-- Available Players -->
@@ -252,14 +249,6 @@
             }
         }
 
-        function startDraft() {
-            if(!confirm("Start the draft?")) return;
-            $.post(`/apis/v1/fantasy/games/${gameSeq}/start`, function() {
-                // Success
-            }).fail(function(xhr) {
-                alert("Failed to start: " + xhr.responseText);
-            });
-        }
 
         function connectWebSocket() {
             const socket = new SockJS('/ws');
