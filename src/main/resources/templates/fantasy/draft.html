@@ -63,7 +63,7 @@
             </div>
         </div>
 
-        <div id="admin-controls" sec:authorize="hasRole('ADMIN')" style="margin-bottom: 15px; display: none;">
+        <div id="admin-controls" sec:authorize="hasRole('ADMIN')" style="margin-bottom: 15px;">
             <button id="btn-start-draft" class="btn-primary" onclick="startDraft()">Start Draft</button>
         </div>
 
@@ -194,7 +194,10 @@
 
             // Show/Hide Admin Controls
             if (gameState.status === 'WAITING') {
-                $('#admin-controls').show();
+                // Only show if element exists (admin only)
+                if ($('#admin-controls').length) {
+                   $('#admin-controls').show();
+                }
                 $('#draft-ui-container').hide();
             } else if (gameState.status === 'DRAFTING') {
                 $('#admin-controls').hide();
