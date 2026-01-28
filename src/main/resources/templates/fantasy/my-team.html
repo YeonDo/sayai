@@ -113,10 +113,7 @@
 
                 // If no slot selected yet
                 if (selectedSlotId === null) {
-                    // Only select if there is a player (or should we allow selecting empty to move TO empty?)
-                    // Prompt implies moving players: "A player... B player".
-                    if (!player) return;
-
+                    // Allow selecting empty slots
                     selectedSlotId = currentId;
                     $(this).addClass('selected-player');
                 } else {
@@ -127,15 +124,15 @@
                         return;
                     }
 
-                    // Second slot selected -> Swap
+                    // Second slot selected -> Attempt Swap
                     const slotA = $('#' + selectedSlotId);
                     const slotB = $(this);
 
-                    // Must check if we are swapping compatible types?
-                    // E.g. Pitcher to Fielder? The logic allows it but validation will flag it red.
-                    // This is per requirements ("If not suitable... red border").
-
-                    swapSlots(slotA, slotB);
+                    if (checkSwapValidity(slotA, slotB)) {
+                        swapSlots(slotA, slotB);
+                    } else {
+                        // Optional: alert('Invalid swap');
+                    }
 
                     // Cleanup
                     slotA.removeClass('selected-player');
@@ -143,6 +140,57 @@
                 }
             });
         });
+
+        function checkSwapValidity(slotA, slotB) {
+            const pA = slotA.data('player');
+            const pB = slotB.data('player');
+
+            // If both are empty, nothing to do, but technically valid? Or invalid?
+            // Let's say valid, nothing changes.
+            if (!pA && !pB) return true;
+
+            // Check if pA fits in slotB
+            if (pA && !isPlayerValidForSlot(pA, slotB)) {
+                return false;
+            }
+
+            // Check if pB fits in slotA
+            if (pB && !isPlayerValidForSlot(pB, slotA)) {
+                return false;
+            }
+
+            return true;
+        }
+
+        function isPlayerValidForSlot(player, slot) {
+             // Get Slot Position Requirement
+            let requiredPos = '';
+            const id = slot.attr('id'); // slot-2B, slot-SP-1
+            if (id.startsWith('slot-SP') || id.startsWith('slot-RP') || id.startsWith('slot-CL')) {
+                const parts = id.split('-');
+                requiredPos = parts[1]; // SP, RP, CL
+            } else {
+                requiredPos = id.replace('slot-', '');
+            }
+
+            // Check Player Positions
+            const validPositions = player.position.split(',').map(s => s.trim());
+
+            // Map requiredPos to equivalents
+            if (requiredPos === 'CL' && validPositions.includes('CP')) return true;
+            if (requiredPos === 'CP' && validPositions.includes('CL')) return true;
+
+            if (validPositions.includes(requiredPos)) return true;
+
+            // DH Check
+            if (requiredPos === 'DH' && !isPitcher(validPositions[0])) return true;
+
+            return false;
+        }
+
+        function isPitcher(pos) {
+            return ['SP', 'RP', 'CP', 'CL'].includes(pos);
+        }
 
         function swapSlots(slotA, slotB) {
             const pA = slotA.data('player');
@@ -155,10 +203,6 @@
             // Re-render
             renderSlot(slotA, pB);
             renderSlot(slotB, pA);
-
-            // Validate both
-            validateSlot(slotA);
-            validateSlot(slotB);
         }
 
         function renderSlot(slot, player) {
@@ -184,42 +228,7 @@
             }
         }
 
-        function validateSlot(slot) {
-            const player = slot.data('player');
-            if (!player) {
-                slot.removeClass('invalid-position');
-                return;
-            }
-
-            // Get Slot Position Requirement
-            let requiredPos = '';
-            const id = slot.attr('id'); // slot-2B, slot-SP-1
-            if (id.startsWith('slot-SP') || id.startsWith('slot-RP') || id.startsWith('slot-CL')) {
-                const parts = id.split('-');
-                requiredPos = parts[1]; // SP, RP, CL
-            } else {
-                requiredPos = id.replace('slot-', '');
-            }
-
-            // Check Player Positions
-            const validPositions = player.position.split(',').map(s => s.trim());
-            let isValid = false;
-
-            // Map requiredPos to equivalents
-            if (requiredPos === 'CL' && validPositions.includes('CP')) isValid = true;
-            if (requiredPos === 'CP' && validPositions.includes('CL')) isValid = true;
-
-            if (validPositions.includes(requiredPos)) isValid = true;
-
-            // DH Check (Assume any non-pitcher is valid, or specific rules. Here simple.)
-            if (requiredPos === 'DH' && !isPitcher(validPositions[0])) isValid = true;
-
-            if (isValid) {
-                slot.removeClass('invalid-position');
-            } else {
-                slot.addClass('invalid-position');
-            }
-        }
+        // function validateSlot(slot) { ... } Removed as validation is now pre-swap.
 
         function loadMyGames() {
             $.get('/apis/v1/fantasy/my-games', function(games) {
