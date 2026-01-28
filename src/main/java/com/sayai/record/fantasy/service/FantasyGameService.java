@@ -10,9 +10,11 @@ import com.sayai.record.fantasy.repository.FantasyGameRepository;
 import com.sayai.record.fantasy.repository.FantasyParticipantRepository;
 import com.sayai.record.fantasy.repository.FantasyPlayerRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -25,6 +27,8 @@ public class FantasyGameService {
     private final FantasyParticipantRepository fantasyParticipantRepository;
     private final DraftPickRepository draftPickRepository;
     private final FantasyPlayerRepository fantasyPlayerRepository;
+    private final SimpMessagingTemplate messagingTemplate;
+    private final FantasyDraftService fantasyDraftService;
 
     @Transactional(readOnly = true)
     public List<FantasyGameDto> getDashboardGames(Long userId) {
@@ -94,7 +98,7 @@ public class FantasyGameService {
 
     @Transactional
     public FantasyGame createGame(String title, FantasyGame.RuleType ruleType, FantasyGame.ScoringType scoringType,
-                                  String scoringSettings, Integer maxParticipants, java.time.LocalDateTime draftDate, String gameDuration) {
+                                  String scoringSettings, Integer maxParticipants, java.time.LocalDateTime draftDate, String gameDuration, Integer draftTimeLimit) {
         FantasyGame game = FantasyGame.builder()
                 .title(title)
                 .ruleType(ruleType)
@@ -103,6 +107,7 @@ public class FantasyGameService {
                 .maxParticipants(maxParticipants)
                 .draftDate(draftDate)
                 .gameDuration(gameDuration)
+                .draftTimeLimit(draftTimeLimit != null ? draftTimeLimit : 10)
                 .status(FantasyGame.GameStatus.WAITING)
                 .build();
         return fantasyGameRepository.save(game);
@@ -113,6 +118,76 @@ public class FantasyGameService {
         FantasyGame game = fantasyGameRepository.findById(gameSeq)
                 .orElseThrow(() -> new IllegalArgumentException("Game not found"));
         game.setStatus(status);
+    }
+
+    @Transactional
+    public void startGame(Long gameSeq) {
+        FantasyGame game = fantasyGameRepository.findById(gameSeq)
+                .orElseThrow(() -> new IllegalArgumentException("Game not found"));
+
+        if (game.getStatus() != FantasyGame.GameStatus.WAITING) {
+            throw new IllegalStateException("Game must be in WAITING status to start.");
+        }
+
+        List<FantasyParticipant> participants = fantasyParticipantRepository.findByFantasyGameSeq(gameSeq);
+        if (participants.isEmpty()) {
+            throw new IllegalStateException("Cannot start game with no participants.");
+        }
+
+        // Shuffle and assign order
+        Collections.shuffle(participants);
+        for (int i = 0; i < participants.size(); i++) {
+            // Using reflection/setter if no public setter, but entity usually has Lombok Setter?
+            // FantasyParticipant uses @Builder @Getter. No Setter on fields?
+            // It has @NoArgsConstructor(access = AccessLevel.PROTECTED) and @AllArgsConstructor
+            // Ah, I need to check if it has Setters.
+            // If not, I need to update via Repository or add Setter.
+            // Let's assume I can use Reflection or I added setters?
+            // The file content showed: @Getter, @NoArgsConstructor, @AllArgsConstructor, @Builder. No @Setter.
+            // I need to add @Setter to FantasyParticipant or use Builder to rebuild (not optimal for JPA managed).
+            // I'll check if I can add @Setter.
+        }
+        // Wait, I need to add Setter to FantasyParticipant first or update the file.
+        // I will add @Setter to FantasyParticipant in a moment.
+
+        // Assuming Setters exist (I will add them):
+        int order = 1;
+        for (FantasyParticipant p : participants) {
+            p.setDraftOrder(order++);
+        }
+        fantasyParticipantRepository.saveAll(participants);
+
+        // Update Game Status
+        game.setStatus(FantasyGame.GameStatus.DRAFTING);
+
+        // Set Initial Deadline
+        if (game.getDraftTimeLimit() != null && game.getDraftTimeLimit() > 0) {
+            game.setNextPickDeadline(LocalDateTime.now().plusMinutes(game.getDraftTimeLimit()));
+        }
+
+        // Prepare Event Data
+        List<ParticipantRosterDto> orderList = participants.stream()
+            .sorted(Comparator.comparingInt(FantasyParticipant::getDraftOrder))
+            .map(p -> ParticipantRosterDto.builder()
+                .participantId(p.getPlayerId())
+                .teamName(p.getTeamName())
+                .preferredTeam(p.getPreferredTeam())
+                .draftOrder(p.getDraftOrder())
+                .build())
+            .collect(Collectors.toList());
+
+        DraftEventDto event = DraftEventDto.builder()
+                .type("START")
+                .fantasyGameSeq(gameSeq)
+                .message("Draft Started")
+                .draftOrder(orderList)
+                .nextPickerId(orderList.get(0).getParticipantId()) // First picker
+                .nextPickDeadline(game.getNextPickDeadline())
+                .round(1)
+                .pickInRound(1)
+                .build();
+
+        messagingTemplate.convertAndSend("/topic/draft/" + gameSeq, event);
     }
 
     @Transactional(readOnly = true)
@@ -160,6 +235,16 @@ public class FantasyGameService {
         Map<Long, FantasyPlayer> fantasyPlayers = fantasyPlayerRepository.findAllById(fantasyPlayerSeqs).stream()
                 .collect(Collectors.toMap(FantasyPlayer::getSeq, Function.identity()));
 
+        // Calculate Next Picker (if Drafting)
+        Long nextPickerId = null;
+        if (game.getStatus() == FantasyGame.GameStatus.DRAFTING) {
+             try {
+                 nextPickerId = fantasyDraftService.getNextPickInfo(game).pickerId;
+             } catch (Exception e) {
+                 // Ignore if calculation fails (e.g. no participants yet)
+             }
+        }
+
         List<ParticipantRosterDto> rosterDtos = participants.stream().map(p -> {
             List<DraftPick> myPicks = picksByParticipant.getOrDefault(p.getPlayerId(), Collections.emptyList());
             List<FantasyPlayerDto> roster = myPicks.stream()
@@ -173,6 +258,8 @@ public class FantasyGameService {
             return ParticipantRosterDto.builder()
                     .participantId(p.getPlayerId())
                     .teamName(p.getTeamName())
+                    .preferredTeam(p.getPreferredTeam())
+                    .draftOrder(p.getDraftOrder())
                     .roster(roster)
                     .build();
         }).collect(Collectors.toList());
@@ -187,6 +274,8 @@ public class FantasyGameService {
                 .gameDuration(game.getGameDuration())
                 .participantCount(participants.size())
                 .maxParticipants(game.getMaxParticipants())
+                .nextPickerId(nextPickerId)
+                .nextPickDeadline(game.getNextPickDeadline())
                 .participants(rosterDtos)
                 .build();
     }

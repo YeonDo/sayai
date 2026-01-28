@@ -44,6 +44,12 @@ public class FantasyGameController {
         return ResponseEntity.ok(fantasyGameService.getGameDetails(gameSeq));
     }
 
+    @PostMapping("/games/{gameSeq}/start")
+    public ResponseEntity<String> startGame(@PathVariable(name = "gameSeq") Long gameSeq) {
+        fantasyGameService.startGame(gameSeq);
+        return ResponseEntity.ok("Draft Started");
+    }
+
     private Long getPlayerIdFromUserDetails(UserDetails userDetails) {
         if (userDetails == null) {
             // For now, if no auth, maybe return default or throw 401.

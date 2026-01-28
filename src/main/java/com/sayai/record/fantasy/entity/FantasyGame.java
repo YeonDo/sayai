@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
@@ -34,6 +35,10 @@ public class FantasyGame {
     private Integer maxParticipants;
     private LocalDateTime draftDate;
 
+    private Integer draftTimeLimit; // Minutes. 0 = No limit.
+
+    private LocalDateTime nextPickDeadline;
+
     private String gameDuration;
 
     private LocalDateTime createdAt;
@@ -53,6 +58,9 @@ public class FantasyGame {
         }
         if (this.scoringType == null) {
             this.scoringType = ScoringType.POINTS; // Default
+        }
+        if (this.draftTimeLimit == null) {
+            this.draftTimeLimit = 10;
         }
     }
 

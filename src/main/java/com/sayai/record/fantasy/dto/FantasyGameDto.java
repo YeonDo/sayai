@@ -17,6 +17,7 @@ public class FantasyGameDto {
     private String scoringSettings;
     private Integer maxParticipants;
     private LocalDateTime draftDate;
+    private Integer draftTimeLimit;
     private String gameDuration;
     private LocalDateTime createdAt;
 
@@ -35,6 +36,7 @@ public class FantasyGameDto {
                 .scoringSettings(game.getScoringSettings())
                 .maxParticipants(game.getMaxParticipants())
                 .draftDate(game.getDraftDate())
+                .draftTimeLimit(game.getDraftTimeLimit())
                 .gameDuration(game.getGameDuration())
                 .createdAt(game.getCreatedAt())
                 .build();
