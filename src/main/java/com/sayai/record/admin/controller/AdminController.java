@@ -28,7 +28,8 @@ public class AdminController {
                 request.getScoringType(),
                 request.getScoringSettings(),
                 request.getMaxParticipants(),
-                request.getDraftDate()
+                request.getDraftDate(),
+                request.getGameDuration()
         );
 
         return ResponseEntity.ok(game);
@@ -66,5 +67,6 @@ public class AdminController {
         private String scoringSettings;
         private Integer maxParticipants;
         private LocalDateTime draftDate;
+        private String gameDuration;
     }
 }

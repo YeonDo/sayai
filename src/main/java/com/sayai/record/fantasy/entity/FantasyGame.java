@@ -34,6 +34,8 @@ public class FantasyGame {
     private Integer maxParticipants;
     private LocalDateTime draftDate;
 
+    private String gameDuration;
+
     private LocalDateTime createdAt;
 
     public void setStatus(GameStatus status) {

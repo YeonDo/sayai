@@ -20,6 +20,7 @@ public class FantasyGameDetailDto {
     private String scoringType;
     private String scoringSettings;
     private String status;
+    private String gameDuration;
     private Integer participantCount;
     private Integer maxParticipants;
     private List<ParticipantRosterDto> participants;

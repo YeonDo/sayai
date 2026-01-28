@@ -94,7 +94,7 @@ public class FantasyGameService {
 
     @Transactional
     public FantasyGame createGame(String title, FantasyGame.RuleType ruleType, FantasyGame.ScoringType scoringType,
-                                  String scoringSettings, Integer maxParticipants, java.time.LocalDateTime draftDate) {
+                                  String scoringSettings, Integer maxParticipants, java.time.LocalDateTime draftDate, String gameDuration) {
         FantasyGame game = FantasyGame.builder()
                 .title(title)
                 .ruleType(ruleType)
@@ -102,6 +102,7 @@ public class FantasyGameService {
                 .scoringSettings(scoringSettings)
                 .maxParticipants(maxParticipants)
                 .draftDate(draftDate)
+                .gameDuration(gameDuration)
                 .status(FantasyGame.GameStatus.WAITING)
                 .build();
         return fantasyGameRepository.save(game);
@@ -183,6 +184,7 @@ public class FantasyGameService {
                 .scoringType(game.getScoringType().name())
                 .scoringSettings(game.getScoringSettings())
                 .status(game.getStatus().name())
+                .gameDuration(game.getGameDuration())
                 .participantCount(participants.size())
                 .maxParticipants(game.getMaxParticipants())
                 .participants(rosterDtos)

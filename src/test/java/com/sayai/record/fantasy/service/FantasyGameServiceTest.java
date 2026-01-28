@@ -49,6 +49,7 @@ class FantasyGameServiceTest {
         when(game.getRuleType()).thenReturn(FantasyGame.RuleType.RULE_1);
         when(game.getScoringType()).thenReturn(FantasyGame.ScoringType.POINTS);
         when(game.getStatus()).thenReturn(FantasyGame.GameStatus.DRAFTING);
+        when(game.getGameDuration()).thenReturn("2026-03-01 ~ 2026-10-30");
         when(fantasyGameRepository.findById(gameSeq)).thenReturn(Optional.of(game));
 
         // Mock Participant
@@ -82,6 +83,7 @@ class FantasyGameServiceTest {
         // Verify
         assertNotNull(result);
         assertEquals(gameSeq, result.getSeq());
+        assertEquals("2026-03-01 ~ 2026-10-30", result.getGameDuration());
         assertEquals("Team A", result.getParticipants().get(0).getTeamName());
         assertEquals(1, result.getParticipants().get(0).getRoster().size());
         assertEquals("Player 1", result.getParticipants().get(0).getRoster().get(0).getName());

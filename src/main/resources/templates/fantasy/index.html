@@ -38,6 +38,7 @@
                             <p><strong>Rule Type:</strong> <span id="detailRule"></span></p>
                             <p><strong>Scoring:</strong> <span id="detailScoring"></span></p>
                             <p><strong>Status:</strong> <span id="detailStatus"></span></p>
+                            <p><strong>Period:</strong> <span id="detailDuration"></span></p>
                         </div>
                         <div>
                             <p><strong>Scoring Settings:</strong></p>
@@ -200,6 +201,7 @@
                             <p><strong>Scoring:</strong> ${game.scoringType}</p>
                             <p><strong>Participants:</strong> ${game.participantCount} / ${game.maxParticipants || 'Unlim.'}</p>
                             <p><strong>Draft Date:</strong> ${game.draftDate ? new Date(game.draftDate).toLocaleString() : 'TBD'}</p>
+                            <p><strong>Period:</strong> ${game.gameDuration || 'TBD'}</p>
                             <div style="margin-top: 15px;">
                                 ${actionBtn}
                                 <button class="btn btn-secondary" style="width:100%; margin-top:5px; background:#6c757d; color:white; border:none; padding:8px 16px; border-radius:4px; cursor:pointer;" onclick="openDetailsModal(${game.seq})">Details</button>
@@ -229,6 +231,7 @@
                 $('#detailRule').text(data.ruleType);
                 $('#detailScoring').text(data.scoringType);
                 $('#detailStatus').text(data.status);
+                $('#detailDuration').text(data.gameDuration || 'TBD');
                 $('#detailScoringSettings').text(data.scoringSettings || 'Default Settings');
 
                 // Generate Tabs
