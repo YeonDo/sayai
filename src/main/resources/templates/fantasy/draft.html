@@ -63,7 +63,7 @@
             </div>
         </div>
 
-        <div id="admin-controls" style="margin-bottom: 15px; display: none;">
+        <div id="admin-controls" sec:authorize="hasRole('ADMIN')" style="margin-bottom: 15px; display: none;">
             <button id="btn-start-draft" class="btn-primary" onclick="startDraft()">Start Draft</button>
         </div>
 

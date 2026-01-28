@@ -45,7 +45,15 @@ public class FantasyGameController {
     }
 
     @PostMapping("/games/{gameSeq}/start")
-    public ResponseEntity<String> startGame(@PathVariable(name = "gameSeq") Long gameSeq) {
+    public ResponseEntity<String> startGame(@PathVariable(name = "gameSeq") Long gameSeq,
+                                            @AuthenticationPrincipal UserDetails userDetails) {
+        boolean isAdmin = userDetails.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+        if (!isAdmin) {
+            return ResponseEntity.status(403).body("Only Admin can start the draft");
+        }
+
         fantasyGameService.startGame(gameSeq);
         return ResponseEntity.ok("Draft Started");
     }
