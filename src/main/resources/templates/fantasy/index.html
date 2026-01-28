@@ -21,6 +21,82 @@
         </div>
     </div>
 
+    <!-- Game Details Modal -->
+    <div id="gameDetailsModal" class="modal-overlay" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; overflow-y: auto;">
+        <div class="modal-container" style="background: white; padding: 20px; border-radius: 8px; width: 1000px; max-width: 95%; margin: 50px auto; position: relative; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header" style="border-bottom: 1px solid #eee; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                <h2 style="margin: 0; font-size: 1.5rem;">Game Details: <span id="detailTitle" style="color: #002561;"></span></h2>
+                <button onclick="closeDetailsModal()" style="background:none; border:none; font-size: 2rem; cursor: pointer;">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Rules Section -->
+                <div class="details-section">
+                    <h3>Rules & Scoring</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div>
+                            <p><strong>Rule Type:</strong> <span id="detailRule"></span></p>
+                            <p><strong>Scoring:</strong> <span id="detailScoring"></span></p>
+                            <p><strong>Status:</strong> <span id="detailStatus"></span></p>
+                        </div>
+                        <div>
+                            <p><strong>Scoring Settings:</strong></p>
+                            <div id="detailScoringSettings" style="background: #f9f9f9; padding: 10px; border-radius: 4px; font-size: 0.9rem; max-height: 100px; overflow-y: auto;"></div>
+                        </div>
+                    </div>
+                    <p style="margin-top: 10px; color: #666; font-style: italic;">
+                        (Description of the specific rule type will appear here...)
+                    </p>
+                </div>
+
+                <!-- Rosters Section -->
+                <div class="details-section" style="border-bottom: none;">
+                    <h3>Participant Rosters</h3>
+                    <div id="rosterTabs" class="tabs-header">
+                        <!-- Tabs generated here -->
+                    </div>
+
+                    <div id="rosterContent" class="my-team-container" style="display:none;">
+                        <!-- Field View (Copied Structure) -->
+                        <div class="fantasy-card">
+                            <h4 class="card-title">Fielding & Batting</h4>
+                            <div class="baseball-field" id="detailField">
+                                <div class="field-position pos-c" id="d-slot-C"><span class="pos-label">C</span><span class="player-name">-</span></div>
+                                <div class="field-position pos-1b" id="d-slot-1B"><span class="pos-label">1B</span><span class="player-name">-</span></div>
+                                <div class="field-position pos-2b" id="d-slot-2B"><span class="pos-label">2B</span><span class="player-name">-</span></div>
+                                <div class="field-position pos-3b" id="d-slot-3B"><span class="pos-label">3B</span><span class="player-name">-</span></div>
+                                <div class="field-position pos-ss" id="d-slot-SS"><span class="pos-label">SS</span><span class="player-name">-</span></div>
+                                <div class="field-position pos-lf" id="d-slot-LF"><span class="pos-label">LF</span><span class="player-name">-</span></div>
+                                <div class="field-position pos-cf" id="d-slot-CF"><span class="pos-label">CF</span><span class="player-name">-</span></div>
+                                <div class="field-position pos-rf" id="d-slot-RF"><span class="pos-label">RF</span><span class="player-name">-</span></div>
+                                <div class="field-position pos-dh" id="d-slot-DH"><span class="pos-label">DH</span><span class="player-name">-</span></div>
+                            </div>
+                        </div>
+
+                        <!-- Pitching View -->
+                        <div class="fantasy-card">
+                            <h4 class="card-title">Pitching Staff</h4>
+                            <div class="pitcher-list">
+                                <div class="pitcher-slot" id="d-slot-SP-1"><span class="pitcher-role">SP</span><span class="player-name">-</span></div>
+                                <div class="pitcher-slot" id="d-slot-SP-2"><span class="pitcher-role">SP</span><span class="player-name">-</span></div>
+                                <div class="pitcher-slot" id="d-slot-SP-3"><span class="pitcher-role">SP</span><span class="player-name">-</span></div>
+                                <div class="pitcher-slot" id="d-slot-SP-4"><span class="pitcher-role">SP</span><span class="player-name">-</span></div>
+                                <div class="pitcher-slot" id="d-slot-RP-1"><span class="pitcher-role">RP</span><span class="player-name">-</span></div>
+                                <div class="pitcher-slot" id="d-slot-RP-2"><span class="pitcher-role">RP</span><span class="player-name">-</span></div>
+                                <div class="pitcher-slot" id="d-slot-RP-3"><span class="pitcher-role">RP</span><span class="player-name">-</span></div>
+                                <div class="pitcher-slot" id="d-slot-RP-4"><span class="pitcher-role">RP</span><span class="player-name">-</span></div>
+                                <div class="pitcher-slot" id="d-slot-CL-1"><span class="pitcher-role">CP</span><span class="player-name">-</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="rosterEmptyMsg" style="text-align:center; padding: 30px; display:none;">
+                        No roster data available.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Join Modal -->
     <div id="joinModal" class="modal-overlay" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
         <div class="modal-container" style="background: white; padding: 20px; border-radius: 8px; width: 400px; max-width: 90%; margin: 100px auto; position: relative;">
@@ -126,12 +202,154 @@
                             <p><strong>Draft Date:</strong> ${game.draftDate ? new Date(game.draftDate).toLocaleString() : 'TBD'}</p>
                             <div style="margin-top: 15px;">
                                 ${actionBtn}
+                                <button class="btn btn-secondary" style="width:100%; margin-top:5px; background:#6c757d; color:white; border:none; padding:8px 16px; border-radius:4px; cursor:pointer;" onclick="openDetailsModal(${game.seq})">Details</button>
                             </div>
                         </div>
                     `;
                     container.append(card);
                 });
             });
+        }
+
+        let currentGameDetails = null;
+
+        function openDetailsModal(gameSeq) {
+            $('#gameDetailsModal').css('display', 'flex');
+            // Reset
+            $('#detailTitle').text('Loading...');
+            $('#rosterTabs').empty();
+            $('#rosterContent').hide();
+            $('#rosterEmptyMsg').hide();
+
+            $.get(`/apis/v1/fantasy/games/${gameSeq}/details`, function(data) {
+                currentGameDetails = data;
+
+                // Populate Info
+                $('#detailTitle').text(data.title);
+                $('#detailRule').text(data.ruleType);
+                $('#detailScoring').text(data.scoringType);
+                $('#detailStatus').text(data.status);
+                $('#detailScoringSettings').text(data.scoringSettings || 'Default Settings');
+
+                // Generate Tabs
+                const tabsContainer = $('#rosterTabs');
+                tabsContainer.empty();
+
+                if (!data.participants || data.participants.length === 0) {
+                    tabsContainer.html('<span style="color:#666; padding:10px;">No participants yet.</span>');
+                    return;
+                }
+
+                data.participants.forEach((p, index) => {
+                    const btn = $(`<button class="tab-btn" onclick="selectRosterTab(${index})">${p.teamName}</button>`);
+                    tabsContainer.append(btn);
+                });
+
+                // Select first tab
+                if (data.participants.length > 0) {
+                    selectRosterTab(0);
+                }
+            });
+        }
+
+        function closeDetailsModal() {
+            $('#gameDetailsModal').hide();
+        }
+
+        function selectRosterTab(index) {
+            if (!currentGameDetails || !currentGameDetails.participants[index]) return;
+
+            // Update Active State
+            $('.tab-btn').removeClass('active');
+            $('.tab-btn').eq(index).addClass('active');
+
+            const participant = currentGameDetails.participants[index];
+            renderDetailRoster(participant.roster);
+        }
+
+        function renderDetailRoster(roster) {
+            // Reset Fields
+            $('#detailField .player-name').text('-');
+            $('#detailField .player-team').remove();
+            $('#gameDetailsModal .pitcher-slot').removeClass('filled').find('.player-name').text('-');
+
+            $('#rosterContent').show();
+            $('#rosterEmptyMsg').hide();
+
+            if (!roster || roster.length === 0) {
+                // Show empty roster message? Or just empty field
+                return;
+            }
+
+            const filledSlots = {};
+            const spCount = { count: 1 };
+            const rpCount = { count: 1 };
+
+            roster.forEach(p => {
+                const positions = p.position.split(',').map(s => s.trim());
+                let assigned = false;
+
+                // 1. Primary
+                for (const pos of positions) {
+                    if (isPitcher(pos)) continue;
+                    if (!filledSlots[pos]) {
+                        fillDetailSlot(pos, p);
+                        filledSlots[pos] = true;
+                        assigned = true;
+                        break;
+                    }
+                }
+
+                // 2. DH
+                if (!assigned && !isPitcher(positions[0])) {
+                    if (!filledSlots['DH']) {
+                        fillDetailSlot('DH', p);
+                        filledSlots['DH'] = true;
+                        assigned = true;
+                    }
+                }
+
+                // 3. Pitchers
+                if (!assigned && isPitcher(positions[0])) {
+                     if (positions.includes('SP')) {
+                         assignDetailPitcher('SP', spCount, p);
+                     } else if (positions.includes('RP')) {
+                         assignDetailPitcher('RP', rpCount, p);
+                     } else if (positions.includes('CL') || positions.includes('CP')) {
+                         if (!filledSlots['CL']) {
+                             fillDetailPitcherSlot('CL-1', p);
+                             filledSlots['CL'] = true;
+                         }
+                     }
+                }
+            });
+        }
+
+        function isPitcher(pos) {
+            return ['SP', 'RP', 'CP', 'CL'].includes(pos);
+        }
+
+        function fillDetailSlot(pos, player) {
+            const slot = $(`#d-slot-${pos}`);
+            if (slot.length) {
+                slot.find('.player-name').text(player.name);
+                slot.append(`<span class="player-team" style="display:block; font-size:0.8rem; color:#666;">${player.team}</span>`);
+            }
+        }
+
+        function assignDetailPitcher(type, counterObj, player) {
+            if (counterObj.count <= 4) {
+                fillDetailPitcherSlot(`${type}-${counterObj.count}`, player);
+                counterObj.count++;
+            }
+        }
+
+        function fillDetailPitcherSlot(idSuffix, player) {
+            const slot = $(`#d-slot-${idSuffix}`);
+            if (slot.length) {
+                slot.addClass('filled');
+                slot.find('.player-name').text(`${player.name} (${player.team})`);
+            }
         }
 
         function openJoinModal(seq, ruleType) {

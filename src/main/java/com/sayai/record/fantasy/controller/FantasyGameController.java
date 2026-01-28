@@ -3,6 +3,7 @@ package com.sayai.record.fantasy.controller;
 import com.sayai.record.auth.entity.Member;
 import com.sayai.record.auth.repository.MemberRepository;
 import com.sayai.record.fantasy.dto.DraftLogDto;
+import com.sayai.record.fantasy.dto.FantasyGameDetailDto;
 import com.sayai.record.fantasy.dto.FantasyGameDto;
 import com.sayai.record.fantasy.service.FantasyGameService;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,11 @@ public class FantasyGameController {
     @GetMapping("/games/{gameSeq}/picks")
     public ResponseEntity<List<DraftLogDto>> getDraftPicks(@PathVariable(name = "gameSeq") Long gameSeq) {
         return ResponseEntity.ok(fantasyGameService.getDraftPicks(gameSeq));
+    }
+
+    @GetMapping("/games/{gameSeq}/details")
+    public ResponseEntity<FantasyGameDetailDto> getGameDetails(@PathVariable(name = "gameSeq") Long gameSeq) {
+        return ResponseEntity.ok(fantasyGameService.getGameDetails(gameSeq));
     }
 
     private Long getPlayerIdFromUserDetails(UserDetails userDetails) {
