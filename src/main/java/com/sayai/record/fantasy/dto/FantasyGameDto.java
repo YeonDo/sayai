@@ -17,6 +17,7 @@ public class FantasyGameDto {
     private String scoringSettings;
     private Integer maxParticipants;
     private LocalDateTime draftDate;
+    private String gameDuration;
     private LocalDateTime createdAt;
 
     // Additional fields for Dashboard
@@ -34,6 +35,7 @@ public class FantasyGameDto {
                 .scoringSettings(game.getScoringSettings())
                 .maxParticipants(game.getMaxParticipants())
                 .draftDate(game.getDraftDate())
+                .gameDuration(game.getGameDuration())
                 .createdAt(game.getCreatedAt())
                 .build();
     }

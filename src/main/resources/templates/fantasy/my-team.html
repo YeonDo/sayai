@@ -94,6 +94,8 @@
 
     <script th:inline="javascript">
         /*<![CDATA[*/
+        let selectedSlotId = null;
+
         $(document).ready(function() {
             loadMyGames();
 
@@ -103,7 +105,130 @@
                     loadRoster(seq);
                 }
             });
+
+            // Double Click Swap Logic
+            $('.field-position, .pitcher-slot').dblclick(function() {
+                const currentId = $(this).attr('id');
+                const player = $(this).data('player');
+
+                // If no slot selected yet
+                if (selectedSlotId === null) {
+                    // Allow selecting empty slots
+                    selectedSlotId = currentId;
+                    $(this).addClass('selected-player');
+                } else {
+                    // If same slot clicked again -> Deselect
+                    if (selectedSlotId === currentId) {
+                        $(this).removeClass('selected-player');
+                        selectedSlotId = null;
+                        return;
+                    }
+
+                    // Second slot selected -> Attempt Swap
+                    const slotA = $('#' + selectedSlotId);
+                    const slotB = $(this);
+
+                    if (checkSwapValidity(slotA, slotB)) {
+                        swapSlots(slotA, slotB);
+                    } else {
+                        // Optional: alert('Invalid swap');
+                    }
+
+                    // Cleanup
+                    slotA.removeClass('selected-player');
+                    selectedSlotId = null;
+                }
+            });
         });
+
+        function checkSwapValidity(slotA, slotB) {
+            const pA = slotA.data('player');
+            const pB = slotB.data('player');
+
+            // If both are empty, nothing to do, but technically valid? Or invalid?
+            // Let's say valid, nothing changes.
+            if (!pA && !pB) return true;
+
+            // Check if pA fits in slotB
+            if (pA && !isPlayerValidForSlot(pA, slotB)) {
+                return false;
+            }
+
+            // Check if pB fits in slotA
+            if (pB && !isPlayerValidForSlot(pB, slotA)) {
+                return false;
+            }
+
+            return true;
+        }
+
+        function isPlayerValidForSlot(player, slot) {
+             // Get Slot Position Requirement
+            let requiredPos = '';
+            const id = slot.attr('id'); // slot-2B, slot-SP-1
+            if (id.startsWith('slot-SP') || id.startsWith('slot-RP') || id.startsWith('slot-CL')) {
+                const parts = id.split('-');
+                requiredPos = parts[1]; // SP, RP, CL
+            } else {
+                requiredPos = id.replace('slot-', '');
+            }
+
+            // Check Player Positions
+            const validPositions = player.position.split(',').map(s => s.trim());
+
+            // Map requiredPos to equivalents
+            if (requiredPos === 'CL' && validPositions.includes('CP')) return true;
+            if (requiredPos === 'CP' && validPositions.includes('CL')) return true;
+
+            if (validPositions.includes(requiredPos)) return true;
+
+            // DH Check
+            if (requiredPos === 'DH' && !isPitcher(validPositions[0])) return true;
+
+            return false;
+        }
+
+        function isPitcher(pos) {
+            return ['SP', 'RP', 'CP', 'CL'].includes(pos);
+        }
+
+        function swapSlots(slotA, slotB) {
+            const pA = slotA.data('player');
+            const pB = slotB.data('player');
+
+            // Swap Data
+            slotA.data('player', pB);
+            slotB.data('player', pA);
+
+            // Re-render
+            renderSlot(slotA, pB);
+            renderSlot(slotB, pA);
+        }
+
+        function renderSlot(slot, player) {
+            const isField = slot.hasClass('field-position');
+            const nameElem = slot.find('.player-name');
+
+            // Reset content
+            nameElem.text('-');
+            if (isField) slot.find('.player-team').remove();
+            else slot.removeClass('filled');
+            slot.removeClass('invalid-position'); // Reset validation state
+
+            if (player) {
+                if (isField) {
+                    nameElem.text(player.name);
+                    slot.append(`<span class="player-team" style="display:block; font-size:0.8rem; color:#666;">${player.team}</span>`);
+                } else {
+                    nameElem.text(`${player.name} (${player.team})`);
+                    slot.addClass('filled');
+                }
+                // Validation check (if it was invalid before, or just re-validate?)
+                // Usually render clears invalid, swap triggers validate.
+            }
+        }
+
+        // function validateSlot(slot) { ... } Removed as validation is now pre-swap.
 
         function loadMyGames() {
             $.get('/apis/v1/fantasy/my-games', function(games) {
@@ -135,6 +260,8 @@
             $('.player-name').text('-');
             $('.player-team').remove();
             $('.pitcher-slot').removeClass('filled');
+            $('.field-position, .pitcher-slot').data('player', null).removeClass('selected-player invalid-position invalid-position');
+            selectedSlotId = null;
 
             // Use my-picks endpoint which uses token ID
             $.get(`/apis/v1/fantasy/games/${gameSeq}/my-picks`, function(players) {
@@ -192,8 +319,9 @@
         function fillSlot(pos, player) {
             const slot = $(`#slot-${pos}`);
             if (slot.length) {
-                slot.find('.player-name').text(player.name);
-                slot.append(`<span class="player-team" style="display:block; font-size:0.8rem; color:#666;">${player.team}</span>`);
+                // Attach Data
+                slot.data('player', player);
+                renderSlot(slot, player);
             }
         }
 
@@ -207,8 +335,8 @@
         function fillPitcherSlot(idSuffix, player) {
             const slot = $(`#slot-${idSuffix}`);
             if (slot.length) {
-                slot.addClass('filled');
-                slot.find('.player-name').text(`${player.name} (${player.team})`);
+                slot.data('player', player);
+                renderSlot(slot, player);
             }
         }
         /*]]>*/

@@ -1,7 +1,6 @@
 package com.sayai.record.fantasy.service;
 
-import com.sayai.record.fantasy.dto.DraftLogDto;
-import com.sayai.record.fantasy.dto.FantasyGameDto;
+import com.sayai.record.fantasy.dto.*;
 import com.sayai.record.fantasy.entity.DraftPick;
 import com.sayai.record.fantasy.entity.FantasyGame;
 import com.sayai.record.fantasy.entity.FantasyParticipant;
@@ -14,11 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -99,7 +94,7 @@ public class FantasyGameService {
 
     @Transactional
     public FantasyGame createGame(String title, FantasyGame.RuleType ruleType, FantasyGame.ScoringType scoringType,
-                                  String scoringSettings, Integer maxParticipants, java.time.LocalDateTime draftDate) {
+                                  String scoringSettings, Integer maxParticipants, java.time.LocalDateTime draftDate, String gameDuration) {
         FantasyGame game = FantasyGame.builder()
                 .title(title)
                 .ruleType(ruleType)
@@ -107,6 +102,7 @@ public class FantasyGameService {
                 .scoringSettings(scoringSettings)
                 .maxParticipants(maxParticipants)
                 .draftDate(draftDate)
+                .gameDuration(gameDuration)
                 .status(FantasyGame.GameStatus.WAITING)
                 .build();
         return fantasyGameRepository.save(game);
@@ -143,5 +139,55 @@ public class FantasyGameService {
                     .pickedAt(pick.getPickedAt())
                     .build();
         }).sorted(Comparator.comparing(DraftLogDto::getPickNumber)).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public FantasyGameDetailDto getGameDetails(Long gameSeq) {
+        FantasyGame game = fantasyGameRepository.findById(gameSeq)
+                .orElseThrow(() -> new IllegalArgumentException("Game not found"));
+
+        List<FantasyParticipant> participants = fantasyParticipantRepository.findByFantasyGameSeq(gameSeq);
+
+        // Fetch all picks
+        List<DraftPick> allPicks = draftPickRepository.findByFantasyGameSeq(gameSeq);
+        Map<Long, List<DraftPick>> picksByParticipant = allPicks.stream()
+                .collect(Collectors.groupingBy(DraftPick::getPlayerId));
+
+        // Fetch all relevant fantasy players
+        Set<Long> fantasyPlayerSeqs = allPicks.stream()
+                .map(DraftPick::getFantasyPlayerSeq)
+                .collect(Collectors.toSet());
+        Map<Long, FantasyPlayer> fantasyPlayers = fantasyPlayerRepository.findAllById(fantasyPlayerSeqs).stream()
+                .collect(Collectors.toMap(FantasyPlayer::getSeq, Function.identity()));
+
+        List<ParticipantRosterDto> rosterDtos = participants.stream().map(p -> {
+            List<DraftPick> myPicks = picksByParticipant.getOrDefault(p.getPlayerId(), Collections.emptyList());
+            List<FantasyPlayerDto> roster = myPicks.stream()
+                    .map(pick -> {
+                        FantasyPlayer fp = fantasyPlayers.get(pick.getFantasyPlayerSeq());
+                        return fp != null ? FantasyPlayerDto.from(fp) : null;
+                    })
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+
+            return ParticipantRosterDto.builder()
+                    .participantId(p.getPlayerId())
+                    .teamName(p.getTeamName())
+                    .roster(roster)
+                    .build();
+        }).collect(Collectors.toList());
+
+        return FantasyGameDetailDto.builder()
+                .seq(game.getSeq())
+                .title(game.getTitle())
+                .ruleType(game.getRuleType().name())
+                .scoringType(game.getScoringType().name())
+                .scoringSettings(game.getScoringSettings())
+                .status(game.getStatus().name())
+                .gameDuration(game.getGameDuration())
+                .participantCount(participants.size())
+                .maxParticipants(game.getMaxParticipants())
+                .participants(rosterDtos)
+                .build();
     }
 }
