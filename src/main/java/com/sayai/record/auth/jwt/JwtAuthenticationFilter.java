@@ -3,7 +3,6 @@ package com.sayai.record.auth.jwt;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -27,17 +26,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (token != null && jwtTokenProvider.validateToken(token)) {
             String userId = jwtTokenProvider.getUserId(token);
             String role = jwtTokenProvider.getRole(token);
+            Long playerId = jwtTokenProvider.getPlayerId(token);
 
-            UserDetails userDetails = User.builder()
-                    .username(userId)
-                    .password("") // Password not needed here
-                    .authorities(Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role)))
-                    .build();
+            UserDetails userDetails = new CustomUserDetails(
+                    userId,
+                    "",
+                    Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role)),
+                    playerId
+            );
 
-            // We can store playerId in the details or as a custom Principal.
-            // For simplicity, sticking to standard UserDetails but ensure context is set.
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
-            // Store playerId in details if needed, or just rely on username if that's unique
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
