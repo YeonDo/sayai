@@ -11,5 +11,7 @@ spring:
       hibernate:
         format_sql: true
         show_sql: true
+  profiles:
+    active: prod
   config:
     use-legacy-processing: true

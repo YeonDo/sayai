@@ -15,7 +15,7 @@ public class FantasyPlayerController {
     private final FantasyPlayerService fantasyPlayerService;
 
     @PutMapping("/{seq}")
-    public ResponseEntity<String> updatePlayer(@PathVariable("seq") Long seq, @RequestBody FantasyPlayerDto dto) {
+    public ResponseEntity<String> updatePlayer(@PathVariable Long seq, @RequestBody FantasyPlayerDto dto) {
         try {
             fantasyPlayerService.updatePlayer(seq, dto);
             return ResponseEntity.ok("Player updated successfully");

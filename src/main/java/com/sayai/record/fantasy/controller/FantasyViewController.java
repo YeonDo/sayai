@@ -21,7 +21,7 @@ public class FantasyViewController {
     }
 
     @GetMapping("/draft/{gameSeq}")
-    public String draftRoom(@PathVariable("gameSeq") Long gameSeq, Model model) {
+    public String draftRoom(@PathVariable Long gameSeq, Model model) {
         model.addAttribute("gameSeq", gameSeq);
         // We will need to pass playerId for context.
         // For now, let's assume playerId is 1 or passed via query param or handled by JS/Session in a real app.

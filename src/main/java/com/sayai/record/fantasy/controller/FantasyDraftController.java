@@ -20,7 +20,7 @@ public class FantasyDraftController {
 
     @GetMapping("/games/{gameSeq}/available-players")
     public ResponseEntity<List<FantasyPlayerDto>> getAvailablePlayers(
-            @PathVariable("gameSeq") Long gameSeq,
+            @PathVariable Long gameSeq,
             @RequestParam(required = false) String team,
             @RequestParam(required = false) String position,
             @RequestParam(required = false) String search) {
@@ -28,7 +28,7 @@ public class FantasyDraftController {
     }
 
     @PostMapping("/games/{gameSeq}/join")
-    public ResponseEntity<String> joinGame(@PathVariable("gameSeq") Long gameSeq, @RequestBody JoinRequest request) {
+    public ResponseEntity<String> joinGame(@PathVariable Long gameSeq, @RequestBody JoinRequest request) {
         try {
             fantasyDraftService.joinGame(gameSeq, request.getPlayerId(), request.getPreferredTeam());
             return ResponseEntity.ok("Joined successfully");
@@ -51,8 +51,8 @@ public class FantasyDraftController {
 
     @GetMapping("/games/{gameSeq}/players/{playerId}/picks")
     public ResponseEntity<List<FantasyPlayerDto>> getPickedPlayers(
-            @PathVariable("gameSeq") Long gameSeq,
-            @PathVariable("playerId") Long playerId) {
+            @PathVariable Long gameSeq,
+            @PathVariable Long playerId) {
         return ResponseEntity.ok(fantasyDraftService.getPickedPlayers(gameSeq, playerId));
     }
 

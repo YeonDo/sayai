@@ -29,7 +29,7 @@ public class PlayerController {
     private final HitService hitService;
     @GetMapping("/{id}")
     @ResponseBody
-    public PlayerRecord getPlayer(@PathVariable("playerid") Long id){
+    public PlayerRecord getPlayer(@PathVariable Long id){
         return playerService.getPlayer(id);
     }
     @GetMapping("/all")
@@ -50,13 +50,13 @@ public class PlayerController {
     }
     @GetMapping("/hitter/{playerid}")
     @ResponseBody
-    public PlayerDto getHitter(@PathVariable("playerid") Long playerid,@RequestParam("start") @DateTimeFormat(pattern="yyyy-MM-dd") LocalDate startDate, @RequestParam("end") @DateTimeFormat(pattern="yyyy-MM-dd") LocalDate endDate){
+    public PlayerDto getHitter(@PathVariable Long playerid,@RequestParam("start") @DateTimeFormat(pattern="yyyy-MM-dd") LocalDate startDate, @RequestParam("end") @DateTimeFormat(pattern="yyyy-MM-dd") LocalDate endDate){
         return hitService.findOne(startDate,endDate,playerid);
     }
 
     @GetMapping("/pitcher/{playerid}")
     @ResponseBody
-    public PitcherDto getPitcher(@PathVariable("playerid") Long playerid,@RequestParam("start") @DateTimeFormat(pattern="yyyy-MM-dd") LocalDate startDate, @RequestParam("end") @DateTimeFormat(pattern="yyyy-MM-dd") LocalDate endDate){
+    public PitcherDto getPitcher(@PathVariable Long playerid,@RequestParam("start") @DateTimeFormat(pattern="yyyy-MM-dd") LocalDate startDate, @RequestParam("end") @DateTimeFormat(pattern="yyyy-MM-dd") LocalDate endDate){
         return pitchService.selectOne(startDate,endDate,playerid);
     }
 

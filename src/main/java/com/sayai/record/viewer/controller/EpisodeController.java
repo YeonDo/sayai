@@ -14,7 +14,7 @@ import com.sayai.record.viewer.dto.EpisodeDto;
 public class EpisodeController {
     private final EpisodeService episodeService;
     @GetMapping("/episodes/{episodeNumber}")
-    public String getEpisode(@PathVariable("episodeNumber") int episodeNumber, Model model) {
+    public String getEpisode(@PathVariable int episodeNumber, Model model) {
         EpisodeDto episode = episodeService.getEpisode(episodeNumber);
         if(episode == null)
             return "error";

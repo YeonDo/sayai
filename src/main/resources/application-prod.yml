@@ -11,8 +11,10 @@ spring:
       hibernate:
         format_sql: true
         show_sql: true
-  config:
-    use-legacy-processing: true
+#  profiles:
+#    active: prod
+#  config:
+#    use-legacy-processing: true
 server:
   servlet:
     encoding:
