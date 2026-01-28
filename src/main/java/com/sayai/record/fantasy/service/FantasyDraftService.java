@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -146,20 +147,33 @@ public class FantasyDraftService {
         // Get NEXT Pick Info
         NextPickInfo nextNext = getNextPickInfo(game);
 
+        // Check for Draft Completion (18 players per participant)
+        // Note: Rule 1 & 2 share this 18-player limit? Assuming yes for now.
+        long totalPicks = draftPickRepository.countByFantasyGameSeq(request.getFantasyGameSeq());
+        List<FantasyParticipant> participants = fantasyParticipantRepository.findByFantasyGameSeq(request.getFantasyGameSeq());
+
+        boolean isFinished = false;
+        if (!participants.isEmpty() && totalPicks >= participants.size() * 18L) {
+            game.setStatus(FantasyGame.GameStatus.ONGOING);
+            game.setNextPickDeadline(null);
+            fantasyGameRepository.save(game); // Ensure status persist
+            isFinished = true;
+        }
+
         // Broadcast Event
         DraftEventDto event = DraftEventDto.builder()
-                .type("PICK")
+                .type(isFinished ? "FINISH" : "PICK")
                 .fantasyGameSeq(request.getFantasyGameSeq())
                 .playerId(request.getPlayerId())
                 .fantasyPlayerSeq(request.getFantasyPlayerSeq())
                 .playerName(targetPlayer.getName())
                 .playerTeam(targetPlayer.getTeam())
                 .pickNumber(pickNumber)
-                .message("Player " + request.getPlayerId() + " picked " + targetPlayer.getName() + " (Pick #" + pickNumber + ")")
-                .nextPickerId(nextNext.pickerId)
+                .message(isFinished ? "Draft Completed!" : "Player " + request.getPlayerId() + " picked " + targetPlayer.getName() + " (Pick #" + pickNumber + ")")
+                .nextPickerId(isFinished ? null : nextNext.pickerId)
                 .nextPickDeadline(game.getNextPickDeadline())
-                .round(nextNext.round)
-                .pickInRound(nextNext.pickInRound)
+                .round(isFinished ? null : nextNext.round)
+                .pickInRound(isFinished ? null : nextNext.pickInRound)
                 .build();
 
         messagingTemplate.convertAndSend("/topic/draft/" + request.getFantasyGameSeq(), event);
@@ -201,15 +215,19 @@ public class FantasyDraftService {
 
     @Transactional(readOnly = true)
     public List<FantasyPlayerDto> getPickedPlayers(Long gameSeq, Long playerId) {
+        // Fetch picks
         List<DraftPick> picks = draftPickRepository.findByFantasyGameSeqAndPlayerId(gameSeq, playerId);
-        Set<Long> pickedSeqs = picks.stream()
-                .map(DraftPick::getFantasyPlayerSeq)
-                .collect(Collectors.toSet());
 
+        // Map Player Seq to Pick Number for sorting
+        Map<Long, Integer> pickOrderMap = picks.stream()
+                .collect(Collectors.toMap(DraftPick::getFantasyPlayerSeq, DraftPick::getPickNumber));
+
+        Set<Long> pickedSeqs = pickOrderMap.keySet();
         List<FantasyPlayer> players = fantasyPlayerRepository.findAllById(pickedSeqs);
 
         return players.stream()
                 .map(FantasyPlayerDto::from)
+                .sorted(Comparator.comparingInt(p -> pickOrderMap.getOrDefault(p.getSeq(), 0)))
                 .collect(Collectors.toList());
     }
 

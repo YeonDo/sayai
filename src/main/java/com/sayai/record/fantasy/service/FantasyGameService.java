@@ -136,21 +136,7 @@ public class FantasyGameService {
 
         // Shuffle and assign order
         Collections.shuffle(participants);
-        for (int i = 0; i < participants.size(); i++) {
-            // Using reflection/setter if no public setter, but entity usually has Lombok Setter?
-            // FantasyParticipant uses @Builder @Getter. No Setter on fields?
-            // It has @NoArgsConstructor(access = AccessLevel.PROTECTED) and @AllArgsConstructor
-            // Ah, I need to check if it has Setters.
-            // If not, I need to update via Repository or add Setter.
-            // Let's assume I can use Reflection or I added setters?
-            // The file content showed: @Getter, @NoArgsConstructor, @AllArgsConstructor, @Builder. No @Setter.
-            // I need to add @Setter to FantasyParticipant or use Builder to rebuild (not optimal for JPA managed).
-            // I'll check if I can add @Setter.
-        }
-        // Wait, I need to add Setter to FantasyParticipant first or update the file.
-        // I will add @Setter to FantasyParticipant in a moment.
 
-        // Assuming Setters exist (I will add them):
         int order = 1;
         for (FantasyParticipant p : participants) {
             p.setDraftOrder(order++);
