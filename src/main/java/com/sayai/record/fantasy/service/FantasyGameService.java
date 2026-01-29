@@ -267,7 +267,7 @@ public class FantasyGameService {
                 .maxParticipants(game.getMaxParticipants())
                 .nextPickerId(nextPickerId)
                 .nextPickDeadline(game.getNextPickDeadline())
-                .round(round)
+                .roundNum(round)
                 .pickInRound(pickInRound)
                 .participants(rosterDtos)
                 .build();

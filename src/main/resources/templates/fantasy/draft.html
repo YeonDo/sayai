@@ -67,13 +67,13 @@
         <div class="draft-container">
             <!-- Available Players -->
             <div class="fantasy-card">
-                <h2 class="card-title">Available Players</h2>
+                <h2 class="card-title">선수 목록</h2>
                 <div style="margin-bottom: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
                     <select id="filter-team" style="padding: 5px;">
                         <option value="">모든 팀</option>
                         <option value="두산">두산 베어스</option>
                         <option value="LG">LG 트윈스</option>
-                        <option value="Kia">KIA 타이거즈</option>
+                        <option value="KIA">KIA 타이거즈</option>
                         <option value="삼성">삼성 라이온즈</option>
                         <option value="롯데">롯데 자이언츠</option>
                         <option value="한화">한화 이글스</option>
@@ -170,6 +170,7 @@
                 gameState.nextPickerId = data.nextPickerId;
                 gameState.nextPickDeadline = data.nextPickDeadline;
                 gameState.ruleType = data.ruleType; // RULE_1 or RULE_2
+                gameState.round = data.roundNum;
 
                 // Determine My Info
                 const myPart = gameState.participants.find(p => String(p.participantId) === String(userId));
@@ -383,7 +384,7 @@
                     console.log("Draft request sent successfully");
                 },
                 error: function(xhr) {
-                    alert('Draft Failed: ' + (xhr.responseText || 'Error'));
+                    alert('Draft 실패: ' + (xhr.responseText || 'Error'));
                 }
             });
         }
