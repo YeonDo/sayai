@@ -26,5 +26,7 @@ public class FantasyGameDetailDto {
     private Integer maxParticipants;
     private Long nextPickerId;
     private LocalDateTime nextPickDeadline;
+    private Integer round;
+    private Integer pickInRound;
     private List<ParticipantRosterDto> participants;
 }

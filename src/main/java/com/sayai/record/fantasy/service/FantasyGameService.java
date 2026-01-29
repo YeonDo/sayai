@@ -223,9 +223,14 @@ public class FantasyGameService {
 
         // Calculate Next Picker (if Drafting)
         Long nextPickerId = null;
+        Integer round = null;
+        Integer pickInRound = null;
         if (game.getStatus() == FantasyGame.GameStatus.DRAFTING) {
              try {
-                 nextPickerId = fantasyDraftService.getNextPickInfo(game).pickerId;
+                 FantasyDraftService.NextPickInfo info = fantasyDraftService.getNextPickInfo(game);
+                 nextPickerId = info.pickerId;
+                 round = info.round;
+                 pickInRound = info.pickInRound;
              } catch (Exception e) {
                  // Ignore if calculation fails (e.g. no participants yet)
              }
@@ -262,6 +267,8 @@ public class FantasyGameService {
                 .maxParticipants(game.getMaxParticipants())
                 .nextPickerId(nextPickerId)
                 .nextPickDeadline(game.getNextPickDeadline())
+                .round(round)
+                .pickInRound(pickInRound)
                 .participants(rosterDtos)
                 .build();
     }
