@@ -147,13 +147,14 @@ public class FantasyDraftService {
         // Get NEXT Pick Info
         NextPickInfo nextNext = getNextPickInfo(game);
 
-        // Check for Draft Completion (18 players per participant)
-        // Note: Rule 1 & 2 share this 18-player limit? Assuming yes for now.
+        // Check for Draft Completion
         long totalPicks = draftPickRepository.countByFantasyGameSeq(request.getFantasyGameSeq());
         List<FantasyParticipant> participants = fantasyParticipantRepository.findByFantasyGameSeq(request.getFantasyGameSeq());
 
+        int totalPlayersPerParticipant = draftValidator.getTotalPlayerCount(game.getRuleType());
+
         boolean isFinished = false;
-        if (!participants.isEmpty() && totalPicks >= participants.size() * 18L) {
+        if (!participants.isEmpty() && totalPicks >= participants.size() * (long)totalPlayersPerParticipant) {
             game.setStatus(FantasyGame.GameStatus.ONGOING);
             game.setNextPickDeadline(null);
             fantasyGameRepository.save(game); // Ensure status persist

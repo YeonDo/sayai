@@ -279,6 +279,16 @@
                 if (String(event.playerId) === String(userId)) {
                     loadMyPicks();
                 }
+            } else if (event.type === 'FINISH') {
+                gameState.status = 'FINISHED'; // Or ONGOING
+                gameState.nextPickerId = null;
+                gameState.nextPickDeadline = null;
+                alert("Draft Completed!");
+                updateUI();
+                loadAvailablePlayers();
+                if (String(event.playerId) === String(userId)) {
+                    loadMyPicks();
+                }
             }
         }
 
