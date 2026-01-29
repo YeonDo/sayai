@@ -28,4 +28,12 @@ public class DraftValidator {
         }
         validator.validate(game, newPlayer, currentTeam, participant);
     }
+
+    public int getTotalPlayerCount(FantasyGame.RuleType ruleType) {
+        DraftRuleValidator validator = validatorMap.get(ruleType);
+        if (validator == null) {
+            throw new IllegalArgumentException("No validator found for rule type: " + ruleType);
+        }
+        return validator.getTotalPlayerCount();
+    }
 }

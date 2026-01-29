@@ -1,7 +1,8 @@
 package com.sayai.record.admin.controller;
 
+import com.sayai.record.auth.repository.MemberRepository;
 import com.sayai.record.fantasy.entity.FantasyGame;
-import com.sayai.record.fantasy.repository.FantasyGameRepository;
+import com.sayai.record.fantasy.service.FantasyGameService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -17,7 +18,10 @@ import static org.mockito.Mockito.when;
 class AdminControllerTest {
 
     @Mock
-    private FantasyGameRepository fantasyGameRepository;
+    private FantasyGameService fantasyGameService;
+
+    @Mock
+    private MemberRepository memberRepository;
 
     @InjectMocks
     private AdminController adminController;
@@ -29,7 +33,12 @@ class AdminControllerTest {
         req.setRuleType(FantasyGame.RuleType.RULE_1);
         req.setScoringType(FantasyGame.ScoringType.POINTS);
 
-        when(fantasyGameRepository.save(any(FantasyGame.class))).thenAnswer(i -> i.getArguments()[0]);
+        when(fantasyGameService.createGame(
+                any(), any(), any(), any(), any(), any(), any(), any()
+        )).thenReturn(FantasyGame.builder()
+                .title("New League")
+                .scoringType(FantasyGame.ScoringType.POINTS)
+                .build());
 
         ResponseEntity<FantasyGame> response = adminController.createGame(req);
 

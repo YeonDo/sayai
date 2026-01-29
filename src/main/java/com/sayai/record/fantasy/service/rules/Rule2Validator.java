@@ -24,7 +24,14 @@ public class Rule2Validator extends Rule1Validator {
             }
 
             // Normalize team names for comparison if needed
-            if (!participant.getPreferredTeam().equalsIgnoreCase(newPlayer.getTeam())) {
+            // Use contains to support Short Name vs Full Name (e.g., KIA vs KIA Tigers)
+            String pref = participant.getPreferredTeam().trim();
+            String playerTeam = newPlayer.getTeam().trim();
+
+            boolean match = playerTeam.toLowerCase().contains(pref.toLowerCase()) ||
+                            pref.toLowerCase().contains(playerTeam.toLowerCase());
+
+            if (!match) {
                 throw new IllegalStateException("First pick must be from preferred team: " + participant.getPreferredTeam());
             }
         }

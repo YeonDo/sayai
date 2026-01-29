@@ -33,6 +33,11 @@ public class Rule1Validator implements DraftRuleValidator {
         return FantasyGame.RuleType.RULE_1;
     }
 
+    @Override
+    public int getTotalPlayerCount() {
+        return 18;
+    }
+
     protected Map<String, Integer> getRequiredSlots() {
         return BASE_SLOTS;
     }

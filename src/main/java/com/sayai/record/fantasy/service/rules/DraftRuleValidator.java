@@ -9,4 +9,5 @@ import java.util.List;
 public interface DraftRuleValidator {
     void validate(FantasyGame game, FantasyPlayer newPlayer, List<FantasyPlayer> currentTeam, FantasyParticipant participant);
     FantasyGame.RuleType getSupportedRuleType();
+    int getTotalPlayerCount();
 }
