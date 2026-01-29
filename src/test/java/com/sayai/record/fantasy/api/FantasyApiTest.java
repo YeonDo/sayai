@@ -2,10 +2,13 @@ package com.sayai.record.fantasy.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sayai.record.admin.controller.AdminController;
+import com.sayai.record.auth.entity.Member;
+import com.sayai.record.auth.repository.MemberRepository;
 import com.sayai.record.fantasy.controller.FantasyDraftController;
 import com.sayai.record.fantasy.entity.FantasyGame;
 import com.sayai.record.fantasy.repository.FantasyGameRepository;
 import com.sayai.record.fantasy.repository.FantasyParticipantRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -33,6 +36,23 @@ public class FantasyApiTest {
 
     @Autowired
     private FantasyGameRepository fantasyGameRepository;
+
+    @Autowired
+    private MemberRepository memberRepository;
+
+    @BeforeEach
+    public void setup() {
+        if (memberRepository.findByUserId("user").isEmpty()) {
+            Member member = Member.builder()
+                    .userId("user")
+                    .password("pass")
+                    .name("Test User")
+                    .role(Member.Role.USER)
+                    .playerId(1L)
+                    .build();
+            memberRepository.save(member);
+        }
+    }
 
     @Test
     @WithMockUser(username = "admin", roles = {"ADMIN"})

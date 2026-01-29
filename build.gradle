@@ -28,6 +28,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'nz.net.ultraq.thymeleaf:thymeleaf-layout-dialect'
+	implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
 
 	implementation 'org.jsoup:jsoup:1.14.2'
 	implementation 'org.apache.poi:poi-ooxml:5.2.3'
@@ -52,6 +53,7 @@ dependencies {
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
+	testImplementation 'com.h2database:h2'
 }
 
 tasks.named('test') {

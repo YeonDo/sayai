@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -23,5 +24,9 @@ public class FantasyGameDetailDto {
     private String gameDuration;
     private Integer participantCount;
     private Integer maxParticipants;
+    private Long nextPickerId;
+    private LocalDateTime nextPickDeadline;
+    private Integer roundNum;
+    private Integer pickInRound;
     private List<ParticipantRosterDto> participants;
 }

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
-      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xmlns="http://www.w3.org/1999/html"
+      xmlns="http://www.w3.org/1999/html" xmlns="http://www.w3.org/1999/html"
       layout:decorate="~{layout/default}">
 <head>
     <title>Fantasy League - Dashboard</title>
@@ -35,18 +36,23 @@
                     <h3>Rules & Scoring</h3>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                         <div>
-                            <p><strong>Rule Type:</strong> <span id="detailRule"></span></p>
-                            <p><strong>Scoring:</strong> <span id="detailScoring"></span></p>
-                            <p><strong>Status:</strong> <span id="detailStatus"></span></p>
-                            <p><strong>Period:</strong> <span id="detailDuration"></span></p>
+                            <p><strong>드래프트룰:</strong> <span id="detailRule"></span></p>
+                            <p><strong>배점 방식:</strong> <span id="detailScoring"></span></p>
+                            <p><strong>상태:</strong> <span id="detailStatus"></span></p>
+                            <p><strong>대회 기간:</strong> <span id="detailDuration"></span></p>
                         </div>
                         <div>
-                            <p><strong>Scoring Settings:</strong></p>
+                            <p><strong>배점 방식:</strong></p>
                             <div id="detailScoringSettings" style="background: #f9f9f9; padding: 10px; border-radius: 4px; font-size: 0.9rem; max-height: 100px; overflow-y: auto;"></div>
                         </div>
                     </div>
                     <p style="margin-top: 10px; color: #666; font-style: italic;">
-                        (Description of the specific rule type will appear here...)
+                        <br> 1. ㄹ 자 드래프트로 18인 픽 (타자 9 / 투수 9) </br>
+                        <br> 2. 배점 방식: 한주간 성적의 종합으로 순위 매김 (로티세리 룰) </br>
+                        <br> 3. 선수단 성적 별로 타자 5개 종목, 투수 5개 종목의 순위에 따라 점수를 받아서 4주간 총점이 높은자가 우승 </br>
+                        <br> 4. 타자부문 타율 홈런 타점 삼진 도루 </br>
+                        <br> 투수부문 다승 탈삼진 세이브 방어율 whip </br>
+                        <br> 5. 드래프트 Rule_2의 경우 1차 지명 룰이 존재 (응원팀의 선수만 1라운드 픽 가능) </br>
                     </p>
                 </div>
 
@@ -110,25 +116,25 @@
                 <form id="joinForm">
                     <input type="hidden" id="joinGameSeq">
                     <div class="form-group" style="margin-bottom: 15px;">
-                        <label style="display:block; margin-bottom: 5px; font-weight: bold;">My Team Name</label>
+                        <label style="display:block; margin-bottom: 5px; font-weight: bold;">팀명</label>
                         <input type="text" id="joinTeamName" class="form-control" required placeholder="Enter your fantasy team name" style="width: 100%; padding: 8px;">
                     </div>
                     <div class="form-group" style="margin-bottom: 15px;">
-                        <label style="display:block; margin-bottom: 5px; font-weight: bold;">Preferred KBO Team</label>
+                        <label style="display:block; margin-bottom: 5px; font-weight: bold;">응원팀을 고르세요</label>
                         <select id="joinPrefTeam" class="form-control" style="width: 100%; padding: 8px;">
-                            <option value="KIA">KIA Tigers</option>
-                            <option value="SAMSUNG">Samsung Lions</option>
-                            <option value="LG">LG Twins</option>
-                            <option value="DOOSAN">Doosan Bears</option>
-                            <option value="KT">KT Wiz</option>
-                            <option value="SSG">SSG Landers</option>
-                            <option value="LOTTE">Lotte Giants</option>
-                            <option value="HANWHA">Hanwha Eagles</option>
-                            <option value="NC">NC Dinos</option>
-                            <option value="KIWOOM">Kiwoom Heroes</option>
+                            <option value="KIA">KIA 타이거즈</option>
+                            <option value="삼성">삼성 라이온즈</option>
+                            <option value="LG">LG 트윈스</option>
+                            <option value="두산">두산 베어스</option>
+                            <option value="KT">KT 위즈</option>
+                            <option value="SSG">SSG 랜더스</option>
+                            <option value="롯데">롯데 자이언츠</option>
+                            <option value="한화">한화 이글스</option>
+                            <option value="NC">NC 다이노스</option>
+                            <option value="키움">키움 히어로즈</option>
                         </select>
                     </div>
-                    <button type="submit" class="btn btn-primary" style="width: 100%; padding: 10px;">Join League</button>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; padding: 10px;">참가하기</button>
                 </form>
             </div>
         </div>
@@ -197,11 +203,11 @@
                     const card = `
                         <div class="fantasy-card" style="border: 1px solid #ddd; padding: 20px; border-radius: 8px; background: #fff;">
                             <h3 style="margin-top:0; border-bottom: 2px solid #eee; padding-bottom: 10px;">${game.title}</h3>
-                            <p><strong>Rule:</strong> ${game.ruleType}</p>
-                            <p><strong>Scoring:</strong> ${game.scoringType}</p>
-                            <p><strong>Participants:</strong> ${game.participantCount} / ${game.maxParticipants || 'Unlim.'}</p>
-                            <p><strong>Draft Date:</strong> ${game.draftDate ? new Date(game.draftDate).toLocaleString() : 'TBD'}</p>
-                            <p><strong>Period:</strong> ${game.gameDuration || 'TBD'}</p>
+                            <p><strong>드래프트룰:</strong> ${game.ruleType}</p>
+                            <p><strong>배점 방식:</strong> ${game.scoringType}</p>
+                            <p><strong>참가자수:</strong> ${game.participantCount} / ${game.maxParticipants || 'Unlim.'}</p>
+                            <p><strong>드래프트 일정:</strong> ${game.draftDate ? new Date(game.draftDate).toLocaleString() : 'TBD'}</p>
+                            <p><strong>대회 일정:</strong> ${game.gameDuration || 'TBD'}</p>
                             <div style="margin-top: 15px;">
                                 ${actionBtn}
                                 <button class="btn btn-secondary" style="width:100%; margin-top:5px; background:#6c757d; color:white; border:none; padding:8px 16px; border-radius:4px; cursor:pointer;" onclick="openDetailsModal(${game.seq})">Details</button>

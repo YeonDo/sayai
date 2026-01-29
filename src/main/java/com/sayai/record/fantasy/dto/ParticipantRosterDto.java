@@ -16,5 +16,7 @@ import java.util.List;
 public class ParticipantRosterDto {
     private Long participantId;
     private String teamName;
+    private String preferredTeam;
+    private Integer draftOrder;
     private List<FantasyPlayerDto> roster;
 }

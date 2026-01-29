@@ -160,6 +160,27 @@
     border: 1px solid #ccc;
 }
 
+@media (max-width: 576px) {
+    .baseball-field {
+        height: 400px; /* Shrink height on small mobile */
+        border-radius: 8px 8px 50px 50px;
+    }
+    .field-position {
+        width: 70px; /* Shrink cards */
+        padding: 2px;
+    }
+    .field-position .pos-label {
+        font-size: 0.6rem;
+    }
+    .field-position .player-name {
+        font-size: 0.7rem;
+    }
+    .field-position .player-team {
+        font-size: 0.6rem;
+        display: none; /* Hide team name to save space if needed */
+    }
+}
+
 .field-position .pos-label {
     display: block;
     font-weight: bold;
@@ -234,6 +255,8 @@
     background-color: #fff;
     border-bottom: 1px solid #ddd;
     margin-bottom: 20px;
+    overflow-x: auto; /* Enable horizontal scroll on mobile */
+    -webkit-overflow-scrolling: touch;
 }
 .fantasy-nav {
     display: flex;
@@ -242,6 +265,8 @@
     margin: 0;
     justify-content: flex-start;
     border-bottom: 1px solid #eee;
+    white-space: nowrap; /* Prevent wrapping */
+    min-width: min-content; /* Ensure width fits content */
 }
 .fantasy-nav li {
     margin: 0;
@@ -292,7 +317,7 @@
 
 .pos-lf { top: 20%; left: 15%; }
 .pos-cf { top: 5%; left: 50%; transform: translate(-50%, 0); }
-.pos-rf { top: 20%; right: 15%; }
+.pos-rf { top: 20%; right: 0%; }
 
 .pos-dh { bottom: 10%; right: 5%; }
 .pos-p { display: none; } /* Hide if any script tries to use it */
