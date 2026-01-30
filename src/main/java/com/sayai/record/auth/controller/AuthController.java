@@ -1,10 +1,12 @@
 package com.sayai.record.auth.controller;
 
+import com.sayai.record.auth.jwt.CustomUserDetails;
 import com.sayai.record.auth.service.AuthService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -57,6 +59,24 @@ public class AuthController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+
+    @PostMapping("/password")
+    public ResponseEntity<String> changePassword(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody ChangePasswordRequest request) {
+        try {
+            authService.changePassword(userDetails.getPlayerId(), request.getCurrentPassword(), request.getNewPassword());
+            return ResponseEntity.ok("Password changed successfully");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @Data
+    public static class ChangePasswordRequest {
+        private String currentPassword;
+        private String newPassword;
     }
 
     @Data

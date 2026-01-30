@@ -51,4 +51,16 @@ public class AuthService {
 
         memberRepository.save(member);
     }
+
+    @Transactional
+    public void changePassword(Long playerId, String currentPassword, String newPassword) {
+        Member member = memberRepository.findById(playerId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        if (!passwordEncoder.matches(currentPassword, member.getPassword())) {
+            throw new IllegalArgumentException("Invalid current password");
+        }
+
+        member.changePassword(passwordEncoder.encode(newPassword));
+    }
 }
