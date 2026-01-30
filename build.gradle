@@ -60,10 +60,11 @@ tasks.named('test') {
 	useJUnitPlatform()
 }
 
-task copyPrivate(type: Copy){
-	copy{
-		from './record-private/private'
+processResources.doLast {
+	copy {
+		from 'record-private/private'
 		include "*.yml"
-		into 'src/main/resources'
+		into sourceSets.main.output.resourcesDir
+		duplicatesStrategy = DuplicatesStrategy.INCLUDE
 	}
 }
