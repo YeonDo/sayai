@@ -13,9 +13,12 @@ import com.sayai.record.fantasy.repository.FantasyParticipantRepository;
 import com.sayai.record.fantasy.repository.FantasyPlayerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -36,6 +39,7 @@ public class FantasyDraftService {
     private final FantasyParticipantRepository fantasyParticipantRepository;
     private final DraftValidator draftValidator;
     private final SimpMessagingTemplate messagingTemplate;
+    private final ObjectProvider<DraftScheduler> draftSchedulerProvider;
 
     @Transactional
     public void joinGame(Long gameSeq, Long playerId, String preferredTeam, String teamName) {
@@ -159,6 +163,16 @@ public class FantasyDraftService {
             game.setNextPickDeadline(null);
             fantasyGameRepository.save(game); // Ensure status persist
             isFinished = true;
+            if (TransactionSynchronizationManager.isActualTransactionActive()) {
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        draftSchedulerProvider.getObject().removeActiveGame(request.getFantasyGameSeq());
+                    }
+                });
+            } else {
+                draftSchedulerProvider.getObject().removeActiveGame(request.getFantasyGameSeq());
+            }
         }
 
         // Broadcast Event

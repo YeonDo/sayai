@@ -13,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -29,6 +31,7 @@ public class FantasyGameService {
     private final FantasyPlayerRepository fantasyPlayerRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final FantasyDraftService fantasyDraftService;
+    private final DraftScheduler draftScheduler;
 
     @Transactional(readOnly = true)
     public List<FantasyGameDto> getDashboardGames(Long userId) {
@@ -118,6 +121,12 @@ public class FantasyGameService {
         FantasyGame game = fantasyGameRepository.findById(gameSeq)
                 .orElseThrow(() -> new IllegalArgumentException("Game not found"));
         game.setStatus(status);
+
+        if (status == FantasyGame.GameStatus.DRAFTING) {
+            updateSchedulerSafely(gameSeq, true);
+        } else {
+            updateSchedulerSafely(gameSeq, false);
+        }
     }
 
     @Transactional
@@ -145,6 +154,7 @@ public class FantasyGameService {
 
         // Update Game Status
         game.setStatus(FantasyGame.GameStatus.DRAFTING);
+        updateSchedulerSafely(gameSeq, true);
 
         // Set Initial Deadline
         if (game.getDraftTimeLimit() != null && game.getDraftTimeLimit() > 0) {
@@ -200,6 +210,20 @@ public class FantasyGameService {
                     .pickedAt(pick.getPickedAt())
                     .build();
         }).sorted(Comparator.comparing(DraftLogDto::getPickNumber)).collect(Collectors.toList());
+    }
+
+    private void updateSchedulerSafely(Long gameSeq, boolean add) {
+        Runnable action = add ? () -> draftScheduler.addActiveGame(gameSeq) : () -> draftScheduler.removeActiveGame(gameSeq);
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    action.run();
+                }
+            });
+        } else {
+            action.run();
+        }
     }
 
     @Transactional(readOnly = true)

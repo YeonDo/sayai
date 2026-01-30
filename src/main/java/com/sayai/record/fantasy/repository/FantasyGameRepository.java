@@ -12,4 +12,6 @@ public interface FantasyGameRepository extends JpaRepository<FantasyGame, Long> 
 
     @Query("SELECT g FROM FantasyGame g WHERE g.status = :status AND g.draftTimeLimit > 0 AND g.nextPickDeadline < :now")
     List<FantasyGame> findExpiredDraftingGames(@Param("status") FantasyGame.GameStatus status, @Param("now") LocalDateTime now);
+
+    List<FantasyGame> findAllByStatus(FantasyGame.GameStatus status);
 }
