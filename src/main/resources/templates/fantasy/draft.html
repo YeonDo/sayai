@@ -64,9 +64,15 @@
         </div>
 
 
+        <!-- Mobile Tabs -->
+        <div class="draft-mobile-tabs">
+            <button class="draft-tab active" onclick="switchDraftTab('available')">선수 목록</button>
+            <button class="draft-tab" onclick="switchDraftTab('mypicks')">My Picks</button>
+        </div>
+
         <div class="draft-container">
             <!-- Available Players -->
-            <div class="fantasy-card">
+            <div id="tab-available" class="fantasy-card draft-tab-content active">
                 <h2 class="card-title">선수 목록</h2>
                 <div style="margin-bottom: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
                     <select id="filter-team" style="padding: 5px;">
@@ -119,7 +125,7 @@
             </div>
 
             <!-- My Picks -->
-            <div class="fantasy-card">
+            <div id="tab-mypicks" class="fantasy-card draft-tab-content">
                 <h2 class="card-title">My Picks</h2>
                 <ul id="my-picks-list" style="list-style: none; padding: 0;">
                     <!-- Populated by JS -->
@@ -137,6 +143,7 @@
         const gameSeq = document.getElementById('gameSeq').value;
         const userId = document.getElementById('currentUserId').value;
         let stompClient = null;
+        let isConnecting = false;
 
         // Game State
         let gameState = {
@@ -153,6 +160,15 @@
             initGame();
             connectWebSocket();
 
+            // Mobile sync: Refresh state when returning to tab
+            document.addEventListener("visibilitychange", function() {
+                if (document.visibilityState === 'visible') {
+                    console.log("App resumed, syncing state...");
+                    initGame();
+                    connectWebSocket();
+                }
+            });
+
             $('#filter-team, #filter-position').change(function() {
                 loadAvailablePlayers();
             });
@@ -162,6 +178,17 @@
 
             setInterval(updateTimer, 1000);
         });
+
+        function switchDraftTab(tabName) {
+            // Only effective on mobile where tabs are shown
+            $('.draft-tab').removeClass('active');
+            $(`.draft-tab[onclick="switchDraftTab('${tabName}')"]`).addClass('active');
+
+            // Hide all tab contents and show the selected one
+            // Note: On desktop, CSS should override this to always show both
+            $('.draft-tab-content').removeClass('active');
+            $(`#tab-${tabName}`).addClass('active');
+        }
 
         function initGame() {
             $.get(`/apis/v1/fantasy/games/${gameSeq}/details`, function(data) {
@@ -252,13 +279,20 @@
 
 
         function connectWebSocket() {
+            if (isConnecting || (stompClient && stompClient.connected)) return;
+
+            isConnecting = true;
             const socket = new SockJS('/ws');
             stompClient = Stomp.over(socket);
             stompClient.connect({}, function(frame) {
+                isConnecting = false;
                 stompClient.subscribe('/topic/draft/' + gameSeq, function(message) {
                     const event = JSON.parse(message.body);
                     handleDraftEvent(event);
                 });
+            }, function(error) {
+                isConnecting = false;
+                console.error('STOMP connection error:', error);
             });
         }
 
