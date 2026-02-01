@@ -17,6 +17,7 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -178,7 +179,7 @@ public class FantasyGameService {
                 .message("Draft Started")
                 .draftOrder(orderList)
                 .nextPickerId(orderList.get(0).getParticipantId()) // First picker
-                .nextPickDeadline(game.getNextPickDeadline())
+                .nextPickDeadline(game.getNextPickDeadline() != null ? game.getNextPickDeadline().atZone(ZoneId.of("UTC")) : null)
                 .round(1)
                 .pickInRound(1)
                 .build();
@@ -290,7 +291,7 @@ public class FantasyGameService {
                 .participantCount(participants.size())
                 .maxParticipants(game.getMaxParticipants())
                 .nextPickerId(nextPickerId)
-                .nextPickDeadline(game.getNextPickDeadline())
+                .nextPickDeadline(game.getNextPickDeadline() != null ? game.getNextPickDeadline().atZone(ZoneId.of("UTC")) : null)
                 .roundNum(round)
                 .pickInRound(pickInRound)
                 .participants(rosterDtos)

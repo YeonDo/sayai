@@ -21,6 +21,7 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -186,7 +187,7 @@ public class FantasyDraftService {
                 .pickNumber(pickNumber)
                 .message(isFinished ? "Draft Completed!" : "Player " + request.getPlayerId() + " picked " + targetPlayer.getName() + " (Pick #" + pickNumber + ")")
                 .nextPickerId(isFinished ? null : nextNext.pickerId)
-                .nextPickDeadline(game.getNextPickDeadline())
+                .nextPickDeadline(game.getNextPickDeadline() != null ? game.getNextPickDeadline().atZone(ZoneId.of("UTC")) : null)
                 .round(isFinished ? null : nextNext.round)
                 .pickInRound(isFinished ? null : nextNext.pickInRound)
                 .build();
