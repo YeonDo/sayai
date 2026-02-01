@@ -54,9 +54,56 @@
     gap: 20px;
 }
 
+/* Tab Styles (Mobile Only - Default Hidden on Desktop) */
+.draft-mobile-tabs {
+    display: none;
+    gap: 10px;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #ddd;
+}
+
+.draft-tab {
+    padding: 10px 20px;
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    border-bottom: none;
+    border-radius: 5px 5px 0 0;
+    cursor: pointer;
+    font-weight: bold;
+    color: #555;
+    flex: 1; /* Equal width tabs */
+}
+
+.draft-tab.active {
+    background: #fff;
+    color: var(--kbo-blue);
+    border-color: #ddd #ddd #fff; /* Bottom border transparent to merge */
+    margin-bottom: -2px; /* Overlap border */
+}
+
+/* Mobile Media Query */
 @media (max-width: 768px) {
     .draft-container {
-        grid-template-columns: 1fr;
+        display: block; /* Stack (but we will hide one) */
+    }
+
+    .draft-mobile-tabs {
+        display: flex; /* Show tabs on mobile */
+    }
+
+    /* Hide inactive tabs content */
+    .draft-tab-content {
+        display: none;
+    }
+
+    .draft-tab-content.active {
+        display: block;
+    }
+
+    /* Hide Stats Column on Mobile (4th column: Name, Pos, Team, [Stats], Action) */
+    .fantasy-table th:nth-child(4),
+    .fantasy-table td:nth-child(4) {
+        display: none;
     }
 }
 
