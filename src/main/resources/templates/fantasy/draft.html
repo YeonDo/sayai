@@ -153,6 +153,15 @@
             initGame();
             connectWebSocket();
 
+            // Mobile sync: Refresh state when returning to tab
+            document.addEventListener("visibilitychange", function() {
+                if (document.visibilityState === 'visible') {
+                    console.log("App resumed, syncing state...");
+                    initGame();
+                    connectWebSocket();
+                }
+            });
+
             $('#filter-team, #filter-position').change(function() {
                 loadAvailablePlayers();
             });
@@ -252,6 +261,8 @@
 
 
         function connectWebSocket() {
+            if (stompClient && stompClient.connected) return;
+
             const socket = new SockJS('/ws');
             stompClient = Stomp.over(socket);
             stompClient.connect({}, function(frame) {
