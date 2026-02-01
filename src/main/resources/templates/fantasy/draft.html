@@ -137,6 +137,7 @@
         const gameSeq = document.getElementById('gameSeq').value;
         const userId = document.getElementById('currentUserId').value;
         let stompClient = null;
+        let isConnecting = false;
 
         // Game State
         let gameState = {
@@ -261,15 +262,20 @@
 
 
         function connectWebSocket() {
-            if (stompClient && stompClient.connected) return;
+            if (isConnecting || (stompClient && stompClient.connected)) return;
 
+            isConnecting = true;
             const socket = new SockJS('/ws');
             stompClient = Stomp.over(socket);
             stompClient.connect({}, function(frame) {
+                isConnecting = false;
                 stompClient.subscribe('/topic/draft/' + gameSeq, function(message) {
                     const event = JSON.parse(message.body);
                     handleDraftEvent(event);
                 });
+            }, function(error) {
+                isConnecting = false;
+                console.error('STOMP connection error:', error);
             });
         }
 
