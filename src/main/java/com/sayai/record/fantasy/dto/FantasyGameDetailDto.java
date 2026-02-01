@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 @Getter
@@ -25,7 +26,7 @@ public class FantasyGameDetailDto {
     private Integer participantCount;
     private Integer maxParticipants;
     private Long nextPickerId;
-    private LocalDateTime nextPickDeadline;
+    private ZonedDateTime nextPickDeadline;
     private Integer roundNum;
     private Integer pickInRound;
     private List<ParticipantRosterDto> participants;
