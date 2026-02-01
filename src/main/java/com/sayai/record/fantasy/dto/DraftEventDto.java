@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 @Getter
@@ -20,7 +21,7 @@ public class DraftEventDto {
 
     // Next Pick Info
     private Long nextPickerId;
-    private LocalDateTime nextPickDeadline;
+    private ZonedDateTime nextPickDeadline;
     private Integer round;
     private Integer pickInRound;
 
