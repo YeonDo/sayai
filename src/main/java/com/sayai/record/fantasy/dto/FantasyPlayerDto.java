@@ -12,6 +12,7 @@ public class FantasyPlayerDto {
     private String position;
     private String team;
     private String stats;
+    private Integer cost;
 
     public static FantasyPlayerDto from(FantasyPlayer entity) {
         return FantasyPlayerDto.builder()
@@ -20,6 +21,7 @@ public class FantasyPlayerDto {
                 .position(entity.getPosition())
                 .team(entity.getTeam())
                 .stats(entity.getStats())
+                .cost(entity.getCost())
                 .build();
     }
 }

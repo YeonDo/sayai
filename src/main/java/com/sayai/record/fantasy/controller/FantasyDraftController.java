@@ -29,8 +29,9 @@ public class FantasyDraftController {
             @PathVariable(name = "gameSeq") Long gameSeq,
             @RequestParam(name = "team", required = false) String team,
             @RequestParam(name = "position", required = false) String position,
-            @RequestParam(name = "search", required = false) String search) {
-        return ResponseEntity.ok(fantasyDraftService.getAvailablePlayers(gameSeq, team, position, search));
+            @RequestParam(name = "search", required = false) String search,
+            @RequestParam(name = "sort", required = false) String sort) {
+        return ResponseEntity.ok(fantasyDraftService.getAvailablePlayers(gameSeq, team, position, search, sort));
     }
 
     @PostMapping("/games/{gameSeq}/join")

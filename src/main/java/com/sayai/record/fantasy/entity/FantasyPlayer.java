@@ -23,4 +23,6 @@ public class FantasyPlayer {
     private String team;
 
     private String stats;
+
+    private Integer cost;
 }

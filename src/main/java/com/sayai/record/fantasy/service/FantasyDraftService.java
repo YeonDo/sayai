@@ -67,7 +67,7 @@ public class FantasyDraftService {
     }
 
     @Transactional(readOnly = true)
-    public List<FantasyPlayerDto> getAvailablePlayers(Long gameSeq, String team, String position, String search) {
+    public List<FantasyPlayerDto> getAvailablePlayers(Long gameSeq, String team, String position, String search, String sort) {
         // 1. Get all picks for this game
         List<DraftPick> picks = draftPickRepository.findByFantasyGameSeq(gameSeq);
         Set<Long> pickedPlayerSeqs = picks.stream()
@@ -76,6 +76,23 @@ public class FantasyDraftService {
 
         // 2. Get filtered players from DB
         List<FantasyPlayer> filteredPlayers = fantasyPlayerRepository.findPlayers(team, position, search);
+
+        // Sort
+        if (sort != null) {
+            if ("cost_desc".equals(sort)) {
+                filteredPlayers.sort((p1, p2) -> {
+                    int c1 = p1.getCost() == null ? 0 : p1.getCost();
+                    int c2 = p2.getCost() == null ? 0 : p2.getCost();
+                    return Integer.compare(c2, c1);
+                });
+            } else if ("cost_asc".equals(sort)) {
+                filteredPlayers.sort((p1, p2) -> {
+                    int c1 = p1.getCost() == null ? 0 : p1.getCost();
+                    int c2 = p2.getCost() == null ? 0 : p2.getCost();
+                    return Integer.compare(c1, c2);
+                });
+            }
+        }
 
         return filteredPlayers.stream()
                 .filter(p -> !pickedPlayerSeqs.contains(p.getSeq()))
@@ -120,6 +137,15 @@ public class FantasyDraftService {
                 .map(DraftPick::getFantasyPlayerSeq)
                 .collect(Collectors.toSet());
         List<FantasyPlayer> currentTeam = fantasyPlayerRepository.findAllById(pickedSeqs);
+
+        // Salary Cap Check
+        if (game.getSalaryCap() != null && game.getSalaryCap() > 0) {
+            int currentCost = currentTeam.stream().mapToInt(p -> p.getCost() == null ? 0 : p.getCost()).sum();
+            int newPlayerCost = targetPlayer.getCost() == null ? 0 : targetPlayer.getCost();
+            if (currentCost + newPlayerCost > game.getSalaryCap()) {
+                throw new IllegalStateException("Salary Cap Exceeded: " + (currentCost + newPlayerCost) + " / " + game.getSalaryCap());
+            }
+        }
 
         // Get Participant Info (needed for Rule 2)
         FantasyParticipant participant = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(
