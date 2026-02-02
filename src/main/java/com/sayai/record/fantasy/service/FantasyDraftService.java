@@ -267,16 +267,26 @@ public class FantasyDraftService {
         // Fetch picks
         List<DraftPick> picks = draftPickRepository.findByFantasyGameSeqAndPlayerId(gameSeq, playerId);
 
-        // Map Player Seq to Pick Number for sorting
-        Map<Long, Integer> pickOrderMap = picks.stream()
-                .collect(Collectors.toMap(DraftPick::getFantasyPlayerSeq, DraftPick::getPickNumber));
+        // Map Player Seq to DraftPick for easy access
+        Map<Long, DraftPick> pickMap = picks.stream()
+                .collect(Collectors.toMap(DraftPick::getFantasyPlayerSeq, Function.identity()));
 
-        Set<Long> pickedSeqs = pickOrderMap.keySet();
+        Set<Long> pickedSeqs = pickMap.keySet();
         List<FantasyPlayer> players = fantasyPlayerRepository.findAllById(pickedSeqs);
 
         return players.stream()
-                .map(FantasyPlayerDto::from)
-                .sorted(Comparator.comparingInt(p -> pickOrderMap.getOrDefault(p.getSeq(), 0)))
+                .map(p -> {
+                    FantasyPlayerDto dto = FantasyPlayerDto.from(p);
+                    DraftPick pick = pickMap.get(p.getSeq());
+                    if (pick != null) {
+                        dto.setAssignedPosition(pick.getAssignedPosition());
+                    }
+                    return dto;
+                })
+                .sorted(Comparator.comparingInt(p -> {
+                    DraftPick pick = pickMap.get(p.getSeq());
+                    return pick != null ? pick.getPickNumber() : 0;
+                }))
                 .collect(Collectors.toList());
     }
 

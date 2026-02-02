@@ -61,7 +61,25 @@
                         <span class="pos-label">DH</span>
                         <span class="player-name">-</span>
                     </div>
+
+                    <!-- Bench Slots -->
+                    <div class="field-position pos-bench-1" id="slot-BENCH-1">
+                        <span class="pos-label">BN</span>
+                        <span class="player-name">-</span>
+                    </div>
+                    <div class="field-position pos-bench-2" id="slot-BENCH-2">
+                        <span class="pos-label">BN</span>
+                        <span class="player-name">-</span>
+                    </div>
+                    <div class="field-position pos-bench-3" id="slot-BENCH-3">
+                        <span class="pos-label">BN</span>
+                        <span class="player-name">-</span>
+                    </div>
                 </div>
+            </div>
+
+            <div style="text-align: right; margin-bottom: 20px;">
+                <button id="saveRosterBtn" class="btn btn-primary">Save Roster</button>
             </div>
 
             <!-- Pitching View -->
@@ -162,10 +180,18 @@
             return true;
         }
 
+        $('#saveRosterBtn').click(function() {
+            const gameSeq = $('#gameSelector').val();
+            if(!gameSeq) return;
+            saveRoster(gameSeq);
+        });
+
         function isPlayerValidForSlot(player, slot) {
              // Get Slot Position Requirement
             let requiredPos = '';
-            const id = slot.attr('id'); // slot-2B, slot-SP-1
+            const id = slot.attr('id'); // slot-2B, slot-SP-1, slot-BENCH-1
+            if (id.includes('BENCH')) return true; // Bench accepts everyone
+
             if (id.startsWith('slot-SP') || id.startsWith('slot-RP') || id.startsWith('slot-CL')) {
                 const parts = id.split('-');
                 requiredPos = parts[1]; // SP, RP, CL
@@ -223,12 +249,8 @@
                     nameElem.text(`${player.name} (${player.team})`);
                     slot.addClass('filled');
                 }
-                // Validation check (if it was invalid before, or just re-validate?)
-                // Usually render clears invalid, swap triggers validate.
             }
         }
-
-        // function validateSlot(slot) { ... } Removed as validation is now pre-swap.
 
         function loadMyGames() {
             $.get('/apis/v1/fantasy/my-games', function(games) {
@@ -263,56 +285,121 @@
             $('.player-name').text('-');
             $('.player-team').remove();
             $('.pitcher-slot').removeClass('filled');
-            $('.field-position, .pitcher-slot').data('player', null).removeClass('selected-player invalid-position invalid-position');
+            $('.field-position, .pitcher-slot').data('player', null).removeClass('selected-player invalid-position');
             selectedSlotId = null;
 
             // Use my-picks endpoint which uses token ID
             $.get(`/apis/v1/fantasy/games/${gameSeq}/my-picks`, function(players) {
-                const filledSlots = {};
                 const spCount = { count: 1 };
                 const rpCount = { count: 1 };
+                let benchCount = 1;
 
                 players.forEach(p => {
-                    // Position mapping
-                    // p.position might be "C" or "C, 1B"
-                    const positions = p.position.split(',').map(s => s.trim());
-                    let assigned = false;
+                    // Try to use assignedPosition first
+                    if (p.assignedPosition) {
+                        const ap = p.assignedPosition;
+                        // Handle Specific Bench
+                        if (ap.startsWith('BENCH')) {
+                            // ap might be BENCH-1, BENCH-2 or just BENCH
+                            // If BENCH-X, try exact match
+                            // If just BENCH, assign sequentially
+                            if (ap.includes('-')) {
+                                let slot = $('#slot-' + ap);
+                                if(slot.length && !slot.data('player')) {
+                                     fillSlotById(slot.attr('id'), p);
+                                     return;
+                                }
+                            }
+                            // Fallback for BENCH or collision
+                            if (benchCount <= 3) {
+                                fillSlotById('slot-BENCH-' + benchCount, p);
+                                benchCount++;
+                            }
+                            return;
+                        }
 
-                    // 1. Try Primary Positions first
-                    for (const pos of positions) {
-                        if (isPitcher(pos)) continue;
-                        if (!filledSlots[pos]) {
-                            fillSlot(pos, p);
-                            filledSlots[pos] = true;
-                            assigned = true;
-                            break;
+                        // Handle Generic SP/RP
+                        if (ap === 'SP') {
+                            assignPitcher('SP', spCount, p);
+                            return;
+                        }
+                        if (ap === 'RP') {
+                            assignPitcher('RP', rpCount, p);
+                            return;
+                        }
+                        if (ap === 'CL' || ap === 'CP') {
+                            fillSlotById('slot-CL-1', p);
+                            return;
+                        }
+
+                        // Handle Specific Field (1B, C, etc)
+                        let slot = $('#slot-' + ap);
+                        if (slot.length && !slot.data('player')) {
+                            fillSlotById('slot-' + ap, p);
+                            return;
                         }
                     }
 
-                    // 2. Try DH
-                    if (!assigned && !isPitcher(positions[0])) {
-                        if (!filledSlots['DH']) {
-                            fillSlot('DH', p);
-                            filledSlots['DH'] = true;
-                            assigned = true;
-                        }
-                    }
-
-                    // 3. Pitchers
-                    if (!assigned && isPitcher(positions[0])) {
-                         if (positions.includes('SP')) {
-                             assignPitcher('SP', spCount, p);
-                         } else if (positions.includes('RP')) {
-                             assignPitcher('RP', rpCount, p);
-                         } else if (positions.includes('CL') || positions.includes('CP')) {
-                             if (!filledSlots['CL']) {
-                                 fillPitcherSlot('CL-1', p);
-                                 filledSlots['CL'] = true;
-                             }
+                    // Fallback: Use Heuristic (e.g. initial load or no assignment)
+                    // (Same logic as before but with Bench fallback)
+                    // This is only if assignedPosition is null (should only happen for Bench in draft logic)
+                    // But our logic says null = Bench
+                    if (!p.assignedPosition) {
+                         if (benchCount <= 3) {
+                             fillSlotById('slot-BENCH-' + benchCount, p);
+                             benchCount++;
                          }
                     }
                 });
             });
+        }
+
+        function fillSlotById(id, player) {
+            const slot = $('#' + id);
+            if (slot.length) {
+                slot.data('player', player);
+                renderSlot(slot, player);
+            }
+        }
+
+        function saveRoster(gameSeq) {
+             const updates = [];
+
+             // Iterate all slots
+             $('.field-position, .pitcher-slot').each(function() {
+                 const player = $(this).data('player');
+                 if (player) {
+                     const slotId = $(this).attr('id'); // e.g. slot-1B, slot-SP-1, slot-BENCH-1
+                     let assignedPos = slotId.replace('slot-', '');
+
+                     // Normalize Pitchers
+                     if (assignedPos.startsWith('SP-')) assignedPos = 'SP';
+                     if (assignedPos.startsWith('RP-')) assignedPos = 'RP';
+                     if (assignedPos.startsWith('CL-')) assignedPos = 'CL';
+
+                     // Bench kept as BENCH-1, BENCH-2 etc to preserve order if possible
+                     // Or normalize to BENCH?
+                     // Let's keep specific to allow persistence of bench order
+
+                     updates.push({
+                         fantasyPlayerSeq: player.seq,
+                         assignedPosition: assignedPos
+                     });
+                 }
+             });
+
+             $.ajax({
+                 url: `/apis/v1/fantasy/games/${gameSeq}/my-team/save`,
+                 type: 'POST',
+                 contentType: 'application/json',
+                 data: JSON.stringify({ entries: updates }),
+                 success: function() {
+                     alert('Roster saved successfully!');
+                 },
+                 error: function(xhr) {
+                     alert('Failed to save roster: ' + (xhr.responseText || 'Error'));
+                 }
+             });
         }
 
         function isPitcher(pos) {
