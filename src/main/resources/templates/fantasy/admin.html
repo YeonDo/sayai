@@ -69,6 +69,23 @@
                         <label style="font-weight: bold;">Max Participants</label>
                         <input type="number" name="maxParticipants" class="form-control" value="10" style="width: 100%; padding: 8px;">
                     </div>
+
+                    <div style="background: #f9f9f9; padding: 10px; border-radius: 4px; margin-bottom: 15px;">
+                        <h4 style="margin: 0 0 10px 0; font-size: 1rem;">Additional Options</h4>
+                        <div class="form-group" style="margin-bottom: 10px; display: flex; align-items: center;">
+                            <input type="checkbox" name="useFirstPickRule" id="useFirstPickRule" style="margin-right: 8px;">
+                            <label for="useFirstPickRule">1차 지명 룰 사용 (First Pick Rule)</label>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 10px;">
+                            <label style="font-weight: bold; font-size: 0.9rem;">샐러리캡 (Salary Cap)</label>
+                            <input type="number" name="salaryCap" class="form-control" placeholder="Optional (e.g. 1000)" style="width: 100%; padding: 8px;">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0; display: flex; align-items: center;">
+                            <input type="checkbox" name="useTeamRestriction" id="useTeamRestriction" style="margin-right: 8px;">
+                            <label for="useTeamRestriction">팀제한 설정 (Team Restriction)</label>
+                        </div>
+                    </div>
+
                     <div class="form-group" style="margin-bottom: 15px;">
                         <label style="font-weight: bold;">Draft Date</label>
                         <input type="datetime-local" name="draftDate" class="form-control" required style="width: 100%; padding: 8px;">
@@ -186,7 +203,10 @@
                     draftDate: $('input[name="draftDate"]').val(),
                     draftTimeLimit: $('input[name="draftTimeLimit"]').val(),
                     gameDuration: durationStr,
-                    scoringSettings: $('textarea[name="scoringSettings"]').val()
+                    scoringSettings: $('textarea[name="scoringSettings"]').val(),
+                    useFirstPickRule: $('#useFirstPickRule').is(':checked'),
+                    salaryCap: $('input[name="salaryCap"]').val() || null,
+                    useTeamRestriction: $('#useTeamRestriction').is(':checked')
                 };
 
                 $.ajax({

@@ -38,7 +38,9 @@
                             <p><strong>드래프트룰:</strong> <span id="detailRule"></span></p>
                             <p><strong>배점 방식:</strong> <span id="detailScoring"></span></p>
                             <p><strong>상태:</strong> <span id="detailStatus"></span></p>
+                            <p><strong>드래프트 시간:</strong> <span id="detailTimeLimit"></span></p>
                             <p><strong>대회 기간:</strong> <span id="detailDuration"></span></p>
+                            <p id="detailOptions" style="margin-top:10px;"></p>
                         </div>
                         <div>
                             <p><strong>배점 방식:</strong></p>
@@ -204,7 +206,13 @@
                             <h3 style="margin-top:0; border-bottom: 2px solid #eee; padding-bottom: 10px;">${game.title}</h3>
                             <p><strong>드래프트룰:</strong> ${game.ruleType}</p>
                             <p><strong>배점 방식:</strong> ${game.scoringType}</p>
+                            <div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px;">
+                                ${game.useFirstPickRule ? '<span class="status-badge" style="background:#002561; font-size:0.7rem;">1차지명</span>' : ''}
+                                ${game.useTeamRestriction ? '<span class="status-badge" style="background:#d32f2f; font-size:0.7rem;">팀제한</span>' : ''}
+                                ${game.salaryCap ? `<span class="status-badge" style="background:#2e7d32; font-size:0.7rem;">Salary: ${game.salaryCap}</span>` : ''}
+                            </div>
                             <p><strong>참가자수:</strong> ${game.participantCount} / ${game.maxParticipants || 'Unlim.'}</p>
+                            <p><strong>드래프트 시간:</strong> ${game.draftTimeLimit ? game.draftTimeLimit + '분' : '제한없음'}</p>
                             <p><strong>드래프트 일정:</strong> ${game.draftDate ? new Date(game.draftDate).toLocaleString() : 'TBD'}</p>
                             <p><strong>대회 일정:</strong> ${game.gameDuration || 'TBD'}</p>
                             <div style="margin-top: 15px;">
@@ -236,8 +244,16 @@
                 $('#detailRule').text(data.ruleType);
                 $('#detailScoring').text(data.scoringType);
                 $('#detailStatus').text(data.status);
+                $('#detailTimeLimit').text(data.draftTimeLimit ? data.draftTimeLimit + '분' : '제한없음');
                 $('#detailDuration').text(data.gameDuration || 'TBD');
                 $('#detailScoringSettings').text(data.scoringSettings || 'Default Settings');
+
+                // Populate Options
+                let optionsHtml = '';
+                if(data.useFirstPickRule) optionsHtml += '<span class="status-badge" style="background:#002561; margin-right:5px;">1차지명</span>';
+                if(data.useTeamRestriction) optionsHtml += '<span class="status-badge" style="background:#d32f2f; margin-right:5px;">팀제한</span>';
+                if(data.salaryCap) optionsHtml += `<span class="status-badge" style="background:#2e7d32; margin-right:5px;">Salary: ${data.salaryCap}</span>`;
+                $('#detailOptions').html(optionsHtml);
 
                 // Generate Tabs
                 const tabsContainer = $('#rosterTabs');

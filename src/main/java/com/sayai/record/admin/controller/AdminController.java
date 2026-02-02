@@ -30,7 +30,10 @@ public class AdminController {
                 request.getMaxParticipants(),
                 request.getDraftDate(),
                 request.getGameDuration(),
-                request.getDraftTimeLimit()
+                request.getDraftTimeLimit(),
+                request.getUseFirstPickRule(),
+                request.getSalaryCap(),
+                request.getUseTeamRestriction()
         );
 
         return ResponseEntity.ok(game);
@@ -70,5 +73,8 @@ public class AdminController {
         private LocalDateTime draftDate;
         private Integer draftTimeLimit;
         private String gameDuration;
+        private Boolean useFirstPickRule;
+        private Integer salaryCap;
+        private Boolean useTeamRestriction;
     }
 }
