@@ -252,6 +252,9 @@
                 select.val(games[0].seq);
                 loadRoster(games[0].seq);
                 $('#roster-view').show();
+            }).fail(function() {
+                // If API fails or no games
+                select.append('<option value="">Error Loading</option>');
             });
         }
 

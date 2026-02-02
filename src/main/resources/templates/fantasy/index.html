@@ -78,6 +78,11 @@
                                 <div class="field-position pos-cf" id="d-slot-CF"><span class="pos-label">CF</span><span class="player-name">-</span></div>
                                 <div class="field-position pos-rf" id="d-slot-RF"><span class="pos-label">RF</span><span class="player-name">-</span></div>
                                 <div class="field-position pos-dh" id="d-slot-DH"><span class="pos-label">DH</span><span class="player-name">-</span></div>
+
+                                <!-- Bench Slots -->
+                                <div class="field-position pos-bench-1" id="d-slot-BENCH-1"><span class="pos-label">BN</span><span class="player-name">-</span></div>
+                                <div class="field-position pos-bench-2" id="d-slot-BENCH-2"><span class="pos-label">BN</span><span class="player-name">-</span></div>
+                                <div class="field-position pos-bench-3" id="d-slot-BENCH-3"><span class="pos-label">BN</span><span class="player-name">-</span></div>
                             </div>
                         </div>
 
@@ -301,50 +306,30 @@
             $('#rosterEmptyMsg').hide();
 
             if (!roster || roster.length === 0) {
-                // Show empty roster message? Or just empty field
                 return;
             }
 
-            const filledSlots = {};
             const spCount = { count: 1 };
             const rpCount = { count: 1 };
+            const benchCount = { count: 1 };
 
             roster.forEach(p => {
-                const positions = p.position.split(',').map(s => s.trim());
-                let assigned = false;
-
-                // 1. Primary
-                for (const pos of positions) {
-                    if (isPitcher(pos)) continue;
-                    if (!filledSlots[pos]) {
-                        fillDetailSlot(pos, p);
-                        filledSlots[pos] = true;
-                        assigned = true;
-                        break;
+                // Use assignedPosition if available
+                if (p.assignedPosition) {
+                    if (['SP', 'RP', 'CL'].includes(p.assignedPosition)) {
+                         if (p.assignedPosition === 'SP') assignDetailPitcher('SP', spCount, p);
+                         else if (p.assignedPosition === 'RP') assignDetailPitcher('RP', rpCount, p);
+                         else if (p.assignedPosition === 'CL') fillDetailPitcherSlot('CL-1', p);
+                    } else {
+                         fillDetailSlot(p.assignedPosition, p);
                     }
+                    return;
                 }
 
-                // 2. DH
-                if (!assigned && !isPitcher(positions[0])) {
-                    if (!filledSlots['DH']) {
-                        fillDetailSlot('DH', p);
-                        filledSlots['DH'] = true;
-                        assigned = true;
-                    }
-                }
-
-                // 3. Pitchers
-                if (!assigned && isPitcher(positions[0])) {
-                     if (positions.includes('SP')) {
-                         assignDetailPitcher('SP', spCount, p);
-                     } else if (positions.includes('RP')) {
-                         assignDetailPitcher('RP', rpCount, p);
-                     } else if (positions.includes('CL') || positions.includes('CP')) {
-                         if (!filledSlots['CL']) {
-                             fillDetailPitcherSlot('CL-1', p);
-                             filledSlots['CL'] = true;
-                         }
-                     }
+                // Fallback (e.g. unassigned -> Bench)
+                if (benchCount.count <= 3) {
+                    fillDetailSlot('BENCH-' + benchCount.count, p);
+                    benchCount.count++;
                 }
             });
         }

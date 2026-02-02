@@ -3,6 +3,7 @@ package com.sayai.record.fantasy.service;
 import com.sayai.record.fantasy.dto.DraftEventDto;
 import com.sayai.record.fantasy.dto.DraftRequest;
 import com.sayai.record.fantasy.dto.FantasyPlayerDto;
+import com.sayai.record.fantasy.dto.RosterUpdateDto;
 import com.sayai.record.fantasy.entity.DraftPick;
 import com.sayai.record.fantasy.entity.FantasyGame;
 import com.sayai.record.fantasy.entity.FantasyParticipant;
@@ -26,7 +27,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -156,6 +159,9 @@ public class FantasyDraftService {
         draftValidator.validate(game, targetPlayer, currentTeam, participant);
 
         // 4. Save Pick
+        // Auto-Assign Position Logic
+        String assignedPos = determineInitialPosition(userPicks, targetPlayer);
+
         // Calculate pick number
         long count = draftPickRepository.countByFantasyGameSeq(request.getFantasyGameSeq());
         int pickNumber = (int) count + 1;
@@ -165,6 +171,7 @@ public class FantasyDraftService {
                 .playerId(request.getPlayerId())
                 .fantasyPlayerSeq(request.getFantasyPlayerSeq())
                 .pickNumber(pickNumber)
+                .assignedPosition(assignedPos)
                 .build();
 
         draftPickRepository.save(pick);
@@ -271,6 +278,62 @@ public class FantasyDraftService {
                 .map(FantasyPlayerDto::from)
                 .sorted(Comparator.comparingInt(p -> pickOrderMap.getOrDefault(p.getSeq(), 0)))
                 .collect(Collectors.toList());
+    }
+
+    private String determineInitialPosition(List<DraftPick> existingPicks, FantasyPlayer newPlayer) {
+        Set<String> occupied = existingPicks.stream()
+                .map(DraftPick::getAssignedPosition)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        String[] positions = newPlayer.getPosition().split(",");
+        String primaryPos = positions[0].trim();
+
+        if (isPitcher(primaryPos)) {
+            // Pitcher logic: find first open slot (SP-1..SP-4, RP-1..RP-4, CL-1)
+            // Or simple logic: Just store "SP", "RP", "CL". Frontend handles slots.
+            // But if user has 4 SPs, 5th SP -> Bench.
+            long spCount = occupied.stream().filter(p -> p.equals("SP")).count();
+            long rpCount = occupied.stream().filter(p -> p.equals("RP")).count();
+            long clCount = occupied.stream().filter(p -> p.equals("CL") || p.equals("CP")).count();
+
+            if (primaryPos.equals("SP")) return spCount < 4 ? "SP" : null;
+            if (primaryPos.equals("RP")) return rpCount < 4 ? "RP" : null;
+            if (primaryPos.equals("CL") || primaryPos.equals("CP")) return clCount < 1 ? "CL" : null;
+            return null; // Bench
+        } else {
+            // Batter Logic
+            if (!occupied.contains(primaryPos)) {
+                return primaryPos;
+            }
+            // Try DH
+            if (!occupied.contains("DH")) {
+                return "DH";
+            }
+            // Bench
+            return null;
+        }
+    }
+
+    private boolean isPitcher(String pos) {
+        return pos.equals("SP") || pos.equals("RP") || pos.equals("CL") || pos.equals("CP");
+    }
+
+    @Transactional
+    public void updateRoster(Long gameSeq, Long playerId, RosterUpdateDto updateDto) {
+        List<DraftPick> myPicks = draftPickRepository.findByFantasyGameSeqAndPlayerId(gameSeq, playerId);
+        Map<Long, DraftPick> pickMap = myPicks.stream()
+                .collect(Collectors.toMap(DraftPick::getFantasyPlayerSeq, Function.identity()));
+
+        if (updateDto.getEntries() != null) {
+            for (RosterUpdateDto.RosterEntry entry : updateDto.getEntries()) {
+                DraftPick pick = pickMap.get(entry.getFantasyPlayerSeq());
+                if (pick != null) {
+                    pick.setAssignedPosition(entry.getAssignedPosition());
+                }
+            }
+        }
+        draftPickRepository.saveAll(myPicks);
     }
 
     @Transactional

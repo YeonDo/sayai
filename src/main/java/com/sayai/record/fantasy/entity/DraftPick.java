@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
@@ -27,6 +28,8 @@ public class DraftPick {
 
     @Column(name = "pick_number")
     private Integer pickNumber;
+
+    private String assignedPosition;
 
     private LocalDateTime pickedAt;
 

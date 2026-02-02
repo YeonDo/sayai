@@ -270,7 +270,10 @@ public class FantasyGameService {
             List<FantasyPlayerDto> roster = myPicks.stream()
                     .map(pick -> {
                         FantasyPlayer fp = fantasyPlayers.get(pick.getFantasyPlayerSeq());
-                        return fp != null ? FantasyPlayerDto.from(fp) : null;
+                        if (fp == null) return null;
+                        FantasyPlayerDto dto = FantasyPlayerDto.from(fp);
+                        dto.setAssignedPosition(pick.getAssignedPosition());
+                        return dto;
                     })
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
