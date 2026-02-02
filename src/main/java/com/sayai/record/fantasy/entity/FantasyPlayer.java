@@ -25,4 +25,13 @@ public class FantasyPlayer {
     private String stats;
 
     private Integer cost;
+
+    @Enumerated(EnumType.STRING)
+    private ForeignerType foreignerType;
+
+    public enum ForeignerType {
+        TYPE_1, // Foreigner
+        TYPE_2, // Asian Quarter
+        NONE    // Domestic
+    }
 }

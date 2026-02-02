@@ -121,6 +121,7 @@
                             <th>Team</th>
                             <th>Stats</th>
                             <th>Cost</th>
+                            <th>Type</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -387,6 +388,10 @@
                         }
                     }
 
+                    let typeLabel = '-';
+                    if (player.foreignerType === 'TYPE_1') typeLabel = '외국인';
+                    else if (player.foreignerType === 'TYPE_2') typeLabel = '아시아';
+
                     tbody.append(`
                         <tr>
                             <td>${player.name}</td>
@@ -394,6 +399,7 @@
                             <td><span class="team-badge">${player.team}</span></td>
                             <td>${player.stats || '-'}</td>
                             <td>${player.cost || 0}</td>
+                            <td>${typeLabel}</td>
                             <td>
                                 <button class="btn-draft ${disabled ? 'disabled-btn' : ''}"
                                         onclick="draftPlayer(${player.seq})"

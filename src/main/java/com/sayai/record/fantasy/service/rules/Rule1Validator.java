@@ -51,6 +51,21 @@ public class Rule1Validator implements DraftRuleValidator {
         if (!canFit(combinedTeam)) {
             throw new IllegalStateException("Drafting this player violates roster composition rules.");
         }
+
+        // Foreigner Limits Check
+        validateForeignerLimits(combinedTeam);
+    }
+
+    private void validateForeignerLimits(List<FantasyPlayer> team) {
+        long type1Count = team.stream().filter(p -> p.getForeignerType() == FantasyPlayer.ForeignerType.TYPE_1).count();
+        long type2Count = team.stream().filter(p -> p.getForeignerType() == FantasyPlayer.ForeignerType.TYPE_2).count();
+
+        if (type1Count > 3) {
+            throw new IllegalStateException("Cannot draft more than 3 Foreigners (TYPE_1).");
+        }
+        if (type2Count > 1) {
+            throw new IllegalStateException("Cannot draft more than 1 Asian Quarter (TYPE_2).");
+        }
     }
 
     private boolean canFit(List<FantasyPlayer> team) {
