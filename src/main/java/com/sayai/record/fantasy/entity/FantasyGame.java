@@ -41,6 +41,8 @@ public class FantasyGame {
 
     private String gameDuration;
 
+    private Integer rounds;
+
     private Boolean useFirstPickRule;
     private Integer salaryCap;
     private Boolean useTeamRestriction;

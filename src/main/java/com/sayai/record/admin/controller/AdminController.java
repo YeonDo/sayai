@@ -3,10 +3,12 @@ package com.sayai.record.admin.controller;
 import com.sayai.record.auth.entity.Member;
 import com.sayai.record.auth.repository.MemberRepository;
 import com.sayai.record.auth.service.AuthService;
+import com.sayai.record.fantasy.dto.FantasyScoreDto;
 import com.sayai.record.fantasy.entity.FantasyGame;
 import com.sayai.record.fantasy.entity.FantasyParticipant;
 import com.sayai.record.fantasy.repository.FantasyParticipantRepository;
 import com.sayai.record.fantasy.service.FantasyGameService;
+import com.sayai.record.fantasy.service.FantasyScoringService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -28,6 +30,7 @@ public class AdminController {
     private final FantasyParticipantRepository fantasyParticipantRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthService authService;
+    private final FantasyScoringService fantasyScoringService;
 
     // --- Game Management ---
 
@@ -44,7 +47,8 @@ public class AdminController {
                 request.getDraftTimeLimit(),
                 request.getUseFirstPickRule(),
                 request.getSalaryCap(),
-                request.getUseTeamRestriction()
+                request.getUseTeamRestriction(),
+                request.getRounds()
         );
 
         return ResponseEntity.ok(game);
@@ -80,6 +84,22 @@ public class AdminController {
             fantasyParticipantRepository.save(participant);
         }
         return ResponseEntity.ok("Updated");
+    }
+
+    // --- Scoring Endpoints ---
+
+    @GetMapping("/fantasy/games/{gameSeq}/scores/{round}")
+    public ResponseEntity<List<FantasyScoreDto>> getScores(@PathVariable(name = "gameSeq") Long gameSeq,
+                                                           @PathVariable(name = "round") Integer round) {
+        return ResponseEntity.ok(fantasyScoringService.getScores(gameSeq, round));
+    }
+
+    @PostMapping("/fantasy/games/{gameSeq}/scores/{round}")
+    public ResponseEntity<String> saveScores(@PathVariable(name = "gameSeq") Long gameSeq,
+                                             @PathVariable(name = "round") Integer round,
+                                             @RequestBody List<FantasyScoreDto> scores) {
+        fantasyScoringService.saveAndCalculateScores(gameSeq, round, scores);
+        return ResponseEntity.ok("Scores saved and calculated");
     }
 
     // --- User Management ---
@@ -162,6 +182,7 @@ public class AdminController {
         private Boolean useFirstPickRule;
         private Integer salaryCap;
         private Boolean useTeamRestriction;
+        private Integer rounds;
     }
 
     @Data

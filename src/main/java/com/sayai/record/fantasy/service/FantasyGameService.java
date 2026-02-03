@@ -103,7 +103,7 @@ public class FantasyGameService {
     @Transactional
     public FantasyGame createGame(String title, FantasyGame.RuleType ruleType, FantasyGame.ScoringType scoringType,
                                   String scoringSettings, Integer maxParticipants, java.time.LocalDateTime draftDate, String gameDuration, Integer draftTimeLimit,
-                                  Boolean useFirstPickRule, Integer salaryCap, Boolean useTeamRestriction) {
+                                  Boolean useFirstPickRule, Integer salaryCap, Boolean useTeamRestriction, Integer rounds) {
         FantasyGame game = FantasyGame.builder()
                 .title(title)
                 .ruleType(ruleType)
@@ -116,6 +116,7 @@ public class FantasyGameService {
                 .useFirstPickRule(useFirstPickRule)
                 .salaryCap(salaryCap)
                 .useTeamRestriction(useTeamRestriction)
+                .rounds(rounds)
                 .status(FantasyGame.GameStatus.WAITING)
                 .build();
         return fantasyGameRepository.save(game);

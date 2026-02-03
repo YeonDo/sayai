@@ -219,7 +219,7 @@
                             <p><strong>참가자수:</strong> ${game.participantCount} / ${game.maxParticipants || 'Unlim.'}</p>
                             <p><strong>드래프트 시간:</strong> ${game.draftTimeLimit ? game.draftTimeLimit + '분' : '제한없음'}</p>
                             <p><strong>드래프트 일정:</strong> ${game.draftDate ? new Date(game.draftDate).toLocaleString() : 'TBD'}</p>
-                            <p><strong>대회 일정:</strong> ${game.gameDuration || 'TBD'}</p>
+                            <p><strong>대회 일정:</strong> ${(game.gameDuration || 'TBD') + (game.rounds ? ' (' + game.rounds + '주)' : '')}</p>
                             <div style="margin-top: 15px;">
                                 ${actionBtn}
                                 <button class="btn btn-secondary" style="width:100%; margin-top:5px; background:#6c757d; color:white; border:none; padding:8px 16px; border-radius:4px; cursor:pointer;" onclick="openDetailsModal(${game.seq})">Details</button>
