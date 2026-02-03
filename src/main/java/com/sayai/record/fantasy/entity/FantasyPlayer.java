@@ -13,7 +13,6 @@ import jakarta.persistence.*;
 public class FantasyPlayer {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long seq;
 
     private String name;

@@ -52,21 +52,30 @@ public class FantasyPlayerService {
                 if (row == null) continue;
 
                 // Assuming columns: Seq(0), Name(1), Position(2), Team(3), Stats(4)
+                Long seq = Long.valueOf(getCellValueAsString(row.getCell(0)));
                 String name = getCellValueAsString(row.getCell(2));
                 String position = getCellValueAsString(row.getCell(3));
                 String team = getCellValueAsString(row.getCell(1));
                 String stats = getCellValueAsString(row.getCell(4));
+                int cost = Integer.parseInt(getCellValueAsString(row.getCell(5)));
+                String isForeign = getCellValueAsString(row.getCell(6));
 
                 // If name is empty, skip (or handle as end of data)
                 if (name == null || name.trim().isEmpty()) {
                     continue;
                 }
+                FantasyPlayer.ForeignerType foreignerType = FantasyPlayer.ForeignerType.NONE;
+                if(!isForeign.isEmpty())
+                    foreignerType = FantasyPlayer.ForeignerType.valueOf(isForeign);
 
                 FantasyPlayer player = FantasyPlayer.builder()
+                        .seq(seq)
                         .name(name)
                         .position(position)
                         .team(team)
                         .stats(stats)
+                        .cost(cost)
+                        .foreignerType(foreignerType)
                         .build();
 
                 players.add(player);

@@ -31,23 +31,25 @@
                     <option value="KT">KT</option>
                     <option value="SSG">SSG</option>
                     <option value="NC">NC</option>
-                    <option value="DOOSAN">DOOSAN</option>
-                    <option value="LOTTE">LOTTE</option>
-                    <option value="SAMSUNG">SAMSUNG</option>
-                    <option value="HANWHA">HANWHA</option>
-                    <option value="KIWOOM">KIWOOM</option>
+                    <option value="두산">두산</option>
+                    <option value="롯데">롯데</option>
+                    <option value="삼성">삼성</option>
+                    <option value="한화">한화</option>
+                    <option value="키움">키움</option>
                 </select>
                 <select id="posFilter" class="form-control" style="padding: 8px; width: 120px;">
                     <option value="">All Pos</option>
-                    <option value="P">Pitcher (All)</option>
                     <option value="SP">SP</option>
                     <option value="RP">RP</option>
+                    <option value="CL">CL</option>
                     <option value="C">C</option>
                     <option value="1B">1B</option>
                     <option value="2B">2B</option>
                     <option value="3B">3B</option>
                     <option value="SS">SS</option>
-                    <option value="OF">OF</option>
+                    <option value="LF">LF</option>
+                    <option value="CF">CF</option>
+                    <option value="RF">RF</option>
                     <option value="DH">DH</option>
                 </select>
                 <input type="text" id="searchInput" placeholder="Search Player" class="form-control" style="padding: 8px; width: 150px;">
@@ -119,27 +121,9 @@
         }
 
         function loadGames() {
-            $.get('/apis/v1/fantasy/games', function(games) {
-                const select = $('#gameSelector');
-                select.empty();
-
-                // Also add "All Games" or similar?
-                // Available players logic usually requires gameSeq to filter out picked ones (if we reuse draft API).
-                // Or we can just pick the first active one.
-
-                if (games.length === 0) {
-                    select.append('<option value="">No Games</option>');
-                    return;
-                }
-
-                games.forEach(g => {
-                     select.append(`<option value="${g.seq}">${g.title}</option>`);
-                });
-
-                // Select first
-                select.val(games[0].seq);
-                loadPlayers();
-            });
+            const select = $('#gameSelector');
+            select.val(0);
+            loadPlayers();
         }
 
         function loadPlayers() {
@@ -151,7 +135,7 @@
             const search = $('#searchInput').val();
             const sort = $('#sortOrder').val();
 
-            $.get(`/apis/v1/fantasy/games/${gameSeq}/available-players`, {
+            $.get(`/apis/v1/fantasy/games/0/available-players`, {
                 team: team,
                 position: pos,
                 search: search,
