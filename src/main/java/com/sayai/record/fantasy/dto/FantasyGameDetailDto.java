@@ -27,6 +27,7 @@ public class FantasyGameDetailDto {
     private Boolean useFirstPickRule;
     private Integer salaryCap;
     private Boolean useTeamRestriction;
+    private Integer rounds;
     private Integer participantCount;
     private Integer maxParticipants;
     private Long nextPickerId;

@@ -300,6 +300,7 @@ public class FantasyGameService {
                 .useFirstPickRule(game.getUseFirstPickRule())
                 .salaryCap(game.getSalaryCap())
                 .useTeamRestriction(game.getUseTeamRestriction())
+                .rounds(game.getRounds())
                 .participantCount(participants.size())
                 .maxParticipants(game.getMaxParticipants())
                 .nextPickerId(nextPickerId)

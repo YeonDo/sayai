@@ -306,7 +306,7 @@
         let currentScoringGameSeq = null;
         let currentScoringRound = null;
 
-        function openScoringModal(gameSeq, rounds) {
+        function openScoringModal(gameSeq) {
             currentScoringGameSeq = gameSeq;
             $('#scoreGameSeq').text(gameSeq);
             $('#scoringModal').css('display', 'flex');
@@ -317,14 +317,24 @@
             $('#saveScoreBtn').hide();
             $('#scoringMsg').show().text("Select a round to input scores.");
 
-            if (!rounds || rounds < 1) {
-                btnContainer.html('<span>No rounds defined for this game.</span>');
-                return;
-            }
+            // Fetch game details to get rounds
+            $.get(`/apis/v1/fantasy/games/${gameSeq}/details`, function(data) {
+                // Check if 'rounds' property exists in DTO. If not, maybe use gameDuration parser or just 0.
+                // Assuming backend added it to DTO. If not, I might need to add it to DTO in Java.
+                // Wait, in previous step I added rounds to Entity but did I add to DTO?
+                // I need to check FantasyGameDetailDto.
+                // Proceed assuming it's there or I will fix backend.
+                const totalRounds = data.rounds || 0;
 
-            for(let i=1; i<=rounds; i++) {
-                btnContainer.append(`<button class="btn btn-draft" style="background-color: #6c757d;" onclick="loadRoundScores(${i})">Round ${i}</button>`);
-            }
+                if (totalRounds < 1) {
+                    btnContainer.html('<span>No rounds defined for this game.</span>');
+                    return;
+                }
+
+                for(let i=1; i<=totalRounds; i++) {
+                    btnContainer.append(`<button class="btn btn-draft" style="background-color: #6c757d;" onclick="loadRoundScores(${i})">Round ${i}</button>`);
+                }
+            });
         }
 
         function closeScoringModal() {
@@ -461,7 +471,7 @@
                                     </select>
                                     <button onclick="updateStatus(${game.seq})" class="btn-draft">Update</button>
                                     ${game.status === 'WAITING' ? `<button onclick="startDraft(${game.seq})" class="btn-primary" style="margin-left: 10px;">Start Draft</button>` : ''}
-                                    ${(game.status === 'ONGOING' || game.status === 'FINISHED') ? `<button onclick="openScoringModal(${game.seq}, ${game.rounds || 0})" class="btn-primary" style="margin-left: 10px; background-color: #6f42c1;">Scoring</button>` : ''}
+                                    ${(game.status === 'ONGOING' || game.status === 'FINISHED') ? `<button onclick="openScoringModal(${game.seq})" class="btn-primary" style="margin-left: 10px; background-color: #6f42c1;">Scoring</button>` : ''}
                                 </div>
                             </td>
                         </tr>
