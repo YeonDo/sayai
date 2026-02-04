@@ -47,38 +47,52 @@ public class FantasyPlayerService {
             List<FantasyPlayer> players = new ArrayList<>();
 
             // Skip header row (index 0)
+            // Columns: Seq(0), Team(1), Name(2), Position(3), Stats(4), Cost(5), Foreign(6)
             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
                 if (row == null) continue;
 
-                // Assuming columns: Seq(0), Name(1), Position(2), Team(3), Stats(4)
-                Long seq = Long.valueOf(getCellValueAsString(row.getCell(0)));
-                String name = getCellValueAsString(row.getCell(2));
-                String position = getCellValueAsString(row.getCell(3));
-                String team = getCellValueAsString(row.getCell(1));
-                String stats = getCellValueAsString(row.getCell(4));
-                int cost = Integer.parseInt(getCellValueAsString(row.getCell(5)));
-                String isForeign = getCellValueAsString(row.getCell(6));
+                try {
+                    Long seq = parseLongSafe(getCellValueAsString(row.getCell(0)), "Seq", i);
+                    String team = getCellValueAsString(row.getCell(1));
+                    String name = getCellValueAsString(row.getCell(2));
+                    String position = getCellValueAsString(row.getCell(3));
+                    String stats = getCellValueAsString(row.getCell(4));
+                    int cost = parseIntSafe(getCellValueAsString(row.getCell(5)), "Cost", i);
+                    String isForeign = getCellValueAsString(row.getCell(6));
 
-                // If name is empty, skip (or handle as end of data)
-                if (name == null || name.trim().isEmpty()) {
-                    continue;
+                    // If name is empty, skip (or handle as end of data)
+                    if (name == null || name.trim().isEmpty()) {
+                        continue;
+                    }
+
+                    FantasyPlayer.ForeignerType foreignerType = FantasyPlayer.ForeignerType.NONE;
+                    if (isForeign != null && !isForeign.trim().isEmpty()) {
+                        try {
+                            foreignerType = FantasyPlayer.ForeignerType.valueOf(isForeign.trim());
+                        } catch (IllegalArgumentException e) {
+                            log.warn("Row {}: Invalid ForeignerType '{}', defaulting to NONE", i, isForeign);
+                            // default to NONE
+                        }
+                    }
+
+                    FantasyPlayer player = FantasyPlayer.builder()
+                            .seq(seq)
+                            .name(name)
+                            .position(position)
+                            .team(team)
+                            .stats(stats)
+                            .cost(cost)
+                            .foreignerType(foreignerType)
+                            .build();
+
+                    players.add(player);
+                } catch (NumberFormatException e) {
+                    log.error("Row {}: Parsing error - {}", i, e.getMessage());
+                    // continue to next row
+                } catch (Exception e) {
+                    log.error("Row {}: Error processing player - {}", i, e.getMessage());
                 }
-                FantasyPlayer.ForeignerType foreignerType = FantasyPlayer.ForeignerType.NONE;
-                if(!isForeign.isEmpty())
-                    foreignerType = FantasyPlayer.ForeignerType.valueOf(isForeign);
-
-                FantasyPlayer player = FantasyPlayer.builder()
-                        .seq(seq)
-                        .name(name)
-                        .position(position)
-                        .team(team)
-                        .stats(stats)
-                        .cost(cost)
-                        .foreignerType(foreignerType)
-                        .build();
-
-                players.add(player);
             }
 
             // Delete existing and save new
@@ -116,6 +130,29 @@ public class FantasyPlayerService {
                 }
             default:
                 return "";
+        }
+    }
+
+    private Long parseLongSafe(String value, String fieldName, int rowNum) {
+        if (value == null || value.trim().isEmpty()) {
+            throw new NumberFormatException("Empty value for " + fieldName);
+        }
+        try {
+            return Long.parseLong(value.trim());
+        } catch (NumberFormatException e) {
+            throw new NumberFormatException("Invalid " + fieldName + ": " + value);
+        }
+    }
+
+    private int parseIntSafe(String value, String fieldName, int rowNum) {
+        if (value == null || value.trim().isEmpty()) {
+            return 0; // Default or throw? Cost usually 0 default is safer than crash, or throw if required.
+                      // Prompt says "provide a clear... error or fallback". Cost 0 is a reasonable fallback.
+        }
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException e) {
+            throw new NumberFormatException("Invalid " + fieldName + ": " + value);
         }
     }
 }

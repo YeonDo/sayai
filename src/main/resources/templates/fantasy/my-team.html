@@ -98,10 +98,9 @@
                     <div class="pitcher-slot" id="slot-CL-1"><span class="pitcher-role">CP</span><span class="player-name">-</span></div>
                 </div>
             </div>
-        </div>
-
-        <div style="text-align: right; margin-bottom: 20px;">
-            <button id="saveRosterBtn" class="btn btn-primary">Save Roster</button>
+            <div style="text-align: right; margin-bottom: 20px;">
+                <button id="saveRosterBtn" class="btn btn-primary">Save Roster</button>
+            </div>
         </div>
 
         <div id="no-game-msg" style="display:none; text-align: center; padding: 50px;">
@@ -253,8 +252,8 @@
         }
 
         function loadMyGames() {
+            const select = $('#gameSelector');
             $.get('/apis/v1/fantasy/my-games', function(games) {
-                const select = $('#gameSelector');
                 select.empty();
 
                 if (games.length === 0) {

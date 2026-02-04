@@ -34,7 +34,7 @@ class FantasyDraftServiceFilterTest {
         String pos = "P";
         String search = "Kim";
 
-        FantasyPlayer p1 = FantasyPlayer.builder().seq(1L).name("Kim").team("Doosan").position("P").build();
+        FantasyPlayer p1 = FantasyPlayer.builder().seq(1L).name("Kim").team("Doosan").position("P").cost(10).build();
 
         when(draftPickRepository.findByFantasyGameSeq(gameSeq)).thenReturn(Collections.emptyList());
         when(fantasyPlayerRepository.findPlayers(team, pos, search)).thenReturn(Collections.singletonList(p1));

@@ -296,7 +296,12 @@ public class FantasyDraftService {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
-        String[] positions = newPlayer.getPosition().split(",");
+        String positionStr = newPlayer.getPosition() != null ? newPlayer.getPosition() : "";
+        if (positionStr.trim().isEmpty()) {
+            return null; // Bench
+        }
+
+        String[] positions = positionStr.split(",");
         String primaryPos = positions[0].trim();
 
         if (isPitcher(primaryPos)) {
@@ -331,11 +336,39 @@ public class FantasyDraftService {
 
     @Transactional
     public void updateRoster(Long gameSeq, Long playerId, RosterUpdateDto updateDto) {
+        FantasyGame game = fantasyGameRepository.findById(gameSeq)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid Game Seq"));
+
+        if (game.getStatus() == FantasyGame.GameStatus.DRAFTING || game.getStatus() == FantasyGame.GameStatus.FINISHED) {
+            throw new IllegalStateException("Cannot update roster during DRAFTING or when FINISHED.");
+        }
+
         List<DraftPick> myPicks = draftPickRepository.findByFantasyGameSeqAndPlayerId(gameSeq, playerId);
         Map<Long, DraftPick> pickMap = myPicks.stream()
                 .collect(Collectors.toMap(DraftPick::getFantasyPlayerSeq, Function.identity()));
 
+        // Check validation first
         if (updateDto.getEntries() != null) {
+            Set<String> newPositions = new java.util.HashSet<>();
+            // Populate with existing positions NOT being updated
+            Set<Long> updatingSeqs = updateDto.getEntries().stream().map(RosterUpdateDto.RosterEntry::getFantasyPlayerSeq).collect(Collectors.toSet());
+            for (DraftPick pick : myPicks) {
+                if (!updatingSeqs.contains(pick.getFantasyPlayerSeq()) && pick.getAssignedPosition() != null) {
+                    if (!newPositions.add(pick.getAssignedPosition())) {
+                        // Data integrity error in DB? Or just conflict
+                    }
+                }
+            }
+
+            for (RosterUpdateDto.RosterEntry entry : updateDto.getEntries()) {
+                if (entry.getAssignedPosition() != null) {
+                    if (!newPositions.add(entry.getAssignedPosition())) {
+                        throw new IllegalArgumentException("Duplicate assigned position: " + entry.getAssignedPosition());
+                    }
+                }
+            }
+
+            // Apply updates
             for (RosterUpdateDto.RosterEntry entry : updateDto.getEntries()) {
                 DraftPick pick = pickMap.get(entry.getFantasyPlayerSeq());
                 if (pick != null) {
@@ -397,9 +430,22 @@ public class FantasyDraftService {
         // Optimize: we have allPlayers, can find from there
         List<FantasyPlayer> currentTeam = allPlayers.stream().filter(p -> userPickedSeqs.contains(p.getSeq())).collect(Collectors.toList());
 
+        int currentCost = 0;
+        if (game.getSalaryCap() != null && game.getSalaryCap() > 0) {
+            currentCost = currentTeam.stream().mapToInt(p -> p.getCost() == null ? 0 : p.getCost()).sum();
+        }
+
         FantasyPlayer selected = null;
         for (FantasyPlayer p : candidates) {
             try {
+                // Salary Cap Check
+                if (game.getSalaryCap() != null && game.getSalaryCap() > 0) {
+                    int newCost = p.getCost() == null ? 0 : p.getCost();
+                    if (currentCost + newCost > game.getSalaryCap()) {
+                        continue;
+                    }
+                }
+
                 draftValidator.validate(game, p, currentTeam, participant);
                 selected = p;
                 break;
