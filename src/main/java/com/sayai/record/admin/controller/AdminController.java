@@ -105,8 +105,12 @@ public class AdminController {
     // --- User Management ---
 
     @GetMapping("/users")
-    public ResponseEntity<List<Member>> listUsers() {
-        return ResponseEntity.ok(memberRepository.findAll());
+    public ResponseEntity<List<MemberDto>> listUsers() {
+        List<Member> members = memberRepository.findAll();
+        List<MemberDto> dtos = members.stream()
+                .map(MemberDto::new)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
     }
 
     @PostMapping("/users")
@@ -215,5 +219,20 @@ public class AdminController {
         private String userId;
         private String password; // Optional, only if changing
         private String name;
+    }
+
+    @Data
+    public static class MemberDto {
+        private Long playerId;
+        private String userId;
+        private String name;
+        private Member.Role role;
+
+        public MemberDto(Member member) {
+            this.playerId = member.getPlayerId();
+            this.userId = member.getUserId();
+            this.name = member.getName();
+            this.role = member.getRole();
+        }
     }
 }
