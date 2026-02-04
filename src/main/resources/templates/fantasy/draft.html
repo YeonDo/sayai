@@ -60,6 +60,7 @@
                 <span>Round: <span id="current-round">-</span></span>
                 <span>Turn: <strong id="current-turn-name">-</strong></span>
                 <span>Time Left: <span id="timer" class="timer">--:--</span></span>
+                <span id="salary-info" style="display:none; margin-left: 10px; font-weight: bold; color: #2e7d32;">Salary: <span id="current-cost">0</span> / <span id="salary-cap"></span></span>
             </div>
         </div>
 
@@ -103,6 +104,11 @@
                         <option value="RP">RP</option>
                         <option value="CL">CL</option>
                     </select>
+                    <select id="sort-order" style="padding: 5px;">
+                        <option value="">기본 정렬</option>
+                        <option value="cost_desc">Cost (High-Low)</option>
+                        <option value="cost_asc">Cost (Low-High)</option>
+                    </select>
                     <input type="text" id="search-player" placeholder="Search player..." style="padding: 5px; flex-grow: 1;">
                     <button class="btn-primary" onclick="loadAvailablePlayers()">검색</button>
                 </div>
@@ -114,6 +120,7 @@
                             <th>Pos</th>
                             <th>Team</th>
                             <th>Stats</th>
+                            <th>Cost</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -153,7 +160,8 @@
             nextPickDeadline: null,
             ruleType: 'RULE_1',
             myPreferredTeam: null,
-            round: 1 // Default
+            round: 1, // Default
+            salaryCap: null
         };
 
         $(document).ready(function() {
@@ -169,7 +177,7 @@
                 }
             });
 
-            $('#filter-team, #filter-position').change(function() {
+            $('#filter-team, #filter-position, #sort-order').change(function() {
                 loadAvailablePlayers();
             });
             $('#search-player').on('keyup', function(e) {
@@ -198,6 +206,7 @@
                 gameState.nextPickDeadline = data.nextPickDeadline;
                 gameState.ruleType = data.ruleType; // RULE_1 or RULE_2
                 gameState.round = data.roundNum;
+                gameState.salaryCap = data.salaryCap;
 
                 // Determine My Info
                 const myPart = gameState.participants.find(p => String(p.participantId) === String(userId));
@@ -205,8 +214,11 @@
                     gameState.myPreferredTeam = myPart.preferredTeam;
                 }
 
-                // Determine Round: Backend doesn't send round in details yet, default 1 or calculate if needed.
-                // For MVP, if picking events happen, round will update.
+                if (gameState.salaryCap && gameState.salaryCap > 0) {
+                    $('#salary-info').show();
+                    $('#salary-cap').text(gameState.salaryCap);
+                }
+
                 updateUI();
                 loadAvailablePlayers();
                 loadMyPicks();
@@ -331,11 +343,13 @@
             const team = $('#filter-team').val();
             const position = $('#filter-position').val();
             const search = $('#search-player').val();
+            const sort = $('#sort-order').val();
 
             let query = `?`;
             if (team) query += `team=${encodeURIComponent(team)}&`;
             if (position) query += `position=${encodeURIComponent(position)}&`;
             if (search) query += `search=${encodeURIComponent(search)}&`;
+            if (sort) query += `sort=${encodeURIComponent(sort)}&`;
 
             $.get(`/apis/v1/fantasy/games/${gameSeq}/available-players${query}`, function(data) {
                 const tbody = $('#available-players-body');
@@ -363,7 +377,15 @@
                          }
                     }
 
-                    // Also disable if already picked (API should filter, but double check handled by disabled Draft button logic if needed, but API filters already)
+                    // Salary Cap Check
+                    if (isMyTurn && gameState.salaryCap && gameState.salaryCap > 0) {
+                        const currentCost = parseInt($('#current-cost').text()) || 0;
+                        const playerCost = player.cost || 0;
+                        if (currentCost + playerCost > gameState.salaryCap) {
+                            disabled = true;
+                            btnText = "Over Cap";
+                        }
+                    }
 
                     tbody.append(`
                         <tr>
@@ -371,6 +393,7 @@
                             <td><span class="position-badge ${cssClass}">${player.position}</span></td>
                             <td><span class="team-badge">${player.team}</span></td>
                             <td>${player.stats || '-'}</td>
+                            <td>${player.cost || 0}</td>
                             <td>
                                 <button class="btn-draft ${disabled ? 'disabled-btn' : ''}"
                                         onclick="draftPlayer(${player.seq})"
@@ -388,17 +411,26 @@
             $.get(`/apis/v1/fantasy/games/${gameSeq}/players/${userId}/picks`, function(data) {
                 const list = $('#my-picks-list');
                 list.empty();
+                let totalCost = 0;
                 data.forEach(player => {
                     const firstPos = player.position ? player.position.split(',')[0].trim().toLowerCase() : '';
                     let cssClass = 'pos-' + firstPos;
                     if(firstPos === 'cl') cssClass = 'pos-cp';
+                    totalCost += (player.cost || 0);
 
                     list.append(`
                         <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
                             <strong>${player.name}</strong> <span class="position-badge ${cssClass}">${player.position}</span>
+                            <span style="float:right; font-size:0.9rem; color:#666;">${player.cost || 0}</span>
                         </li>
                     `);
                 });
+                $('#current-cost').text(totalCost);
+                // Reload available players to update Over Cap buttons if cost changed
+                // Avoid infinite loop if calling from within init? init calls both.
+                // But loadAvailablePlayers doesn't call loadMyPicks.
+                // We call loadAvailablePlayers here to refresh buttons state
+                loadAvailablePlayers();
             });
         }
 

@@ -38,7 +38,9 @@
                             <p><strong>드래프트룰:</strong> <span id="detailRule"></span></p>
                             <p><strong>배점 방식:</strong> <span id="detailScoring"></span></p>
                             <p><strong>상태:</strong> <span id="detailStatus"></span></p>
+                            <p><strong>드래프트 시간:</strong> <span id="detailTimeLimit"></span></p>
                             <p><strong>대회 기간:</strong> <span id="detailDuration"></span></p>
+                            <p id="detailOptions" style="margin-top:10px;"></p>
                         </div>
                         <div>
                             <p><strong>배점 방식:</strong></p>
@@ -76,6 +78,11 @@
                                 <div class="field-position pos-cf" id="d-slot-CF"><span class="pos-label">CF</span><span class="player-name">-</span></div>
                                 <div class="field-position pos-rf" id="d-slot-RF"><span class="pos-label">RF</span><span class="player-name">-</span></div>
                                 <div class="field-position pos-dh" id="d-slot-DH"><span class="pos-label">DH</span><span class="player-name">-</span></div>
+
+                                <!-- Bench Slots -->
+                                <div class="field-position pos-bench-1" id="d-slot-BENCH-1"><span class="pos-label">BN</span><span class="player-name">-</span></div>
+                                <div class="field-position pos-bench-2" id="d-slot-BENCH-2"><span class="pos-label">BN</span><span class="player-name">-</span></div>
+                                <div class="field-position pos-bench-3" id="d-slot-BENCH-3"><span class="pos-label">BN</span><span class="player-name">-</span></div>
                             </div>
                         </div>
 
@@ -204,9 +211,15 @@
                             <h3 style="margin-top:0; border-bottom: 2px solid #eee; padding-bottom: 10px;">${game.title}</h3>
                             <p><strong>드래프트룰:</strong> ${game.ruleType}</p>
                             <p><strong>배점 방식:</strong> ${game.scoringType}</p>
+                            <div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px;">
+                                ${game.useFirstPickRule ? '<span class="status-badge" style="background:#002561; font-size:0.7rem;">1차지명</span>' : ''}
+                                ${game.useTeamRestriction ? '<span class="status-badge" style="background:#d32f2f; font-size:0.7rem;">팀제한</span>' : ''}
+                                ${game.salaryCap ? `<span class="status-badge" style="background:#2e7d32; font-size:0.7rem;">Salary: ${game.salaryCap}</span>` : ''}
+                            </div>
                             <p><strong>참가자수:</strong> ${game.participantCount} / ${game.maxParticipants || 'Unlim.'}</p>
+                            <p><strong>드래프트 시간:</strong> ${game.draftTimeLimit ? game.draftTimeLimit + '분' : '제한없음'}</p>
                             <p><strong>드래프트 일정:</strong> ${game.draftDate ? new Date(game.draftDate).toLocaleString() : 'TBD'}</p>
-                            <p><strong>대회 일정:</strong> ${game.gameDuration || 'TBD'}</p>
+                            <p><strong>대회 일정:</strong> ${(game.gameDuration || 'TBD') + (game.rounds ? ' (' + game.rounds + '주)' : '')}</p>
                             <div style="margin-top: 15px;">
                                 ${actionBtn}
                                 <button class="btn btn-secondary" style="width:100%; margin-top:5px; background:#6c757d; color:white; border:none; padding:8px 16px; border-radius:4px; cursor:pointer;" onclick="openDetailsModal(${game.seq})">Details</button>
@@ -236,8 +249,16 @@
                 $('#detailRule').text(data.ruleType);
                 $('#detailScoring').text(data.scoringType);
                 $('#detailStatus').text(data.status);
+                $('#detailTimeLimit').text(data.draftTimeLimit ? data.draftTimeLimit + '분' : '제한없음');
                 $('#detailDuration').text(data.gameDuration || 'TBD');
                 $('#detailScoringSettings').text(data.scoringSettings || 'Default Settings');
+
+                // Populate Options
+                let optionsHtml = '';
+                if(data.useFirstPickRule) optionsHtml += '<span class="status-badge" style="background:#002561; margin-right:5px;">1차지명</span>';
+                if(data.useTeamRestriction) optionsHtml += '<span class="status-badge" style="background:#d32f2f; margin-right:5px;">팀제한</span>';
+                if(data.salaryCap) optionsHtml += `<span class="status-badge" style="background:#2e7d32; margin-right:5px;">Salary: ${data.salaryCap}</span>`;
+                $('#detailOptions').html(optionsHtml);
 
                 // Generate Tabs
                 const tabsContainer = $('#rosterTabs');
@@ -285,50 +306,30 @@
             $('#rosterEmptyMsg').hide();
 
             if (!roster || roster.length === 0) {
-                // Show empty roster message? Or just empty field
                 return;
             }
 
-            const filledSlots = {};
             const spCount = { count: 1 };
             const rpCount = { count: 1 };
+            const benchCount = { count: 1 };
 
             roster.forEach(p => {
-                const positions = p.position.split(',').map(s => s.trim());
-                let assigned = false;
-
-                // 1. Primary
-                for (const pos of positions) {
-                    if (isPitcher(pos)) continue;
-                    if (!filledSlots[pos]) {
-                        fillDetailSlot(pos, p);
-                        filledSlots[pos] = true;
-                        assigned = true;
-                        break;
+                // Use assignedPosition if available
+                if (p.assignedPosition) {
+                    if (['SP', 'RP', 'CL'].includes(p.assignedPosition)) {
+                         if (p.assignedPosition === 'SP') assignDetailPitcher('SP', spCount, p);
+                         else if (p.assignedPosition === 'RP') assignDetailPitcher('RP', rpCount, p);
+                         else if (p.assignedPosition === 'CL') fillDetailPitcherSlot('CL-1', p);
+                    } else {
+                         fillDetailSlot(p.assignedPosition, p);
                     }
+                    return;
                 }
 
-                // 2. DH
-                if (!assigned && !isPitcher(positions[0])) {
-                    if (!filledSlots['DH']) {
-                        fillDetailSlot('DH', p);
-                        filledSlots['DH'] = true;
-                        assigned = true;
-                    }
-                }
-
-                // 3. Pitchers
-                if (!assigned && isPitcher(positions[0])) {
-                     if (positions.includes('SP')) {
-                         assignDetailPitcher('SP', spCount, p);
-                     } else if (positions.includes('RP')) {
-                         assignDetailPitcher('RP', rpCount, p);
-                     } else if (positions.includes('CL') || positions.includes('CP')) {
-                         if (!filledSlots['CL']) {
-                             fillDetailPitcherSlot('CL-1', p);
-                             filledSlots['CL'] = true;
-                         }
-                     }
+                // Fallback (e.g. unassigned -> Bench)
+                if (benchCount.count <= 3) {
+                    fillDetailSlot('BENCH-' + benchCount.count, p);
+                    benchCount.count++;
                 }
             });
         }

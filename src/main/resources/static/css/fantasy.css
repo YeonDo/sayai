@@ -369,6 +369,11 @@
 .pos-dh { bottom: 10%; right: 5%; }
 .pos-p { display: none; } /* Hide if any script tries to use it */
 
+/* Bench Slots - Below 3B (bottom: 40%, left: 12%) */
+.pos-bench-1 { bottom: 25%; left: 12%; transform: translate(-50%, 0); }
+.pos-bench-2 { bottom: 15%; left: 12%; transform: translate(-50%, 0); }
+.pos-bench-3 { bottom: 5%; left: 12%; transform: translate(-50%, 0); }
+
 .selected-player {
     border: 3px solid #007bff !important; /* Blue */
     box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);

@@ -4,6 +4,7 @@ import com.sayai.record.auth.entity.Member;
 import com.sayai.record.auth.repository.MemberRepository;
 import com.sayai.record.fantasy.dto.DraftRequest;
 import com.sayai.record.fantasy.dto.FantasyPlayerDto;
+import com.sayai.record.fantasy.dto.RosterUpdateDto;
 import com.sayai.record.fantasy.service.FantasyDraftService;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -29,8 +30,9 @@ public class FantasyDraftController {
             @PathVariable(name = "gameSeq") Long gameSeq,
             @RequestParam(name = "team", required = false) String team,
             @RequestParam(name = "position", required = false) String position,
-            @RequestParam(name = "search", required = false) String search) {
-        return ResponseEntity.ok(fantasyDraftService.getAvailablePlayers(gameSeq, team, position, search));
+            @RequestParam(name = "search", required = false) String search,
+            @RequestParam(name = "sort", required = false) String sort) {
+        return ResponseEntity.ok(fantasyDraftService.getAvailablePlayers(gameSeq, team, position, search, sort));
     }
 
     @PostMapping("/games/{gameSeq}/join")
@@ -78,6 +80,19 @@ public class FantasyDraftController {
             @AuthenticationPrincipal UserDetails userDetails) {
         Long playerId = getPlayerIdFromUserDetails(userDetails);
         return ResponseEntity.ok(fantasyDraftService.getPickedPlayers(gameSeq, playerId));
+    }
+
+    @PostMapping("/games/{gameSeq}/my-team/save")
+    public ResponseEntity<String> saveRoster(@PathVariable(name = "gameSeq") Long gameSeq,
+                                             @RequestBody RosterUpdateDto request,
+                                             @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            Long playerId = getPlayerIdFromUserDetails(userDetails);
+            fantasyDraftService.updateRoster(gameSeq, playerId, request);
+            return ResponseEntity.ok("Roster saved");
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Save failed: " + e.getMessage());
+        }
     }
 
     private Long getPlayerIdFromUserDetails(UserDetails userDetails) {

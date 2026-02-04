@@ -23,6 +23,11 @@ public class FantasyGameDetailDto {
     private String scoringSettings;
     private String status;
     private String gameDuration;
+    private Integer draftTimeLimit;
+    private Boolean useFirstPickRule;
+    private Integer salaryCap;
+    private Boolean useTeamRestriction;
+    private Integer rounds;
     private Integer participantCount;
     private Integer maxParticipants;
     private Long nextPickerId;

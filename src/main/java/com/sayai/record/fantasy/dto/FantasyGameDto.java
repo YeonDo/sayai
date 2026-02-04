@@ -19,6 +19,9 @@ public class FantasyGameDto {
     private LocalDateTime draftDate;
     private Integer draftTimeLimit;
     private String gameDuration;
+    private Boolean useFirstPickRule;
+    private Integer salaryCap;
+    private Boolean useTeamRestriction;
     private LocalDateTime createdAt;
 
     // Additional fields for Dashboard
@@ -38,6 +41,9 @@ public class FantasyGameDto {
                 .draftDate(game.getDraftDate())
                 .draftTimeLimit(game.getDraftTimeLimit())
                 .gameDuration(game.getGameDuration())
+                .useFirstPickRule(game.getUseFirstPickRule())
+                .salaryCap(game.getSalaryCap())
+                .useTeamRestriction(game.getUseTeamRestriction())
                 .createdAt(game.getCreatedAt())
                 .build();
     }

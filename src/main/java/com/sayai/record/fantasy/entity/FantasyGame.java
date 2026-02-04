@@ -41,6 +41,12 @@ public class FantasyGame {
 
     private String gameDuration;
 
+    private Integer rounds;
+
+    private Boolean useFirstPickRule;
+    private Integer salaryCap;
+    private Boolean useTeamRestriction;
+
     private LocalDateTime createdAt;
 
     public void setStatus(GameStatus status) {
@@ -61,6 +67,12 @@ public class FantasyGame {
         }
         if (this.draftTimeLimit == null) {
             this.draftTimeLimit = 10;
+        }
+        if (this.useFirstPickRule == null) {
+            this.useFirstPickRule = false;
+        }
+        if (this.useTeamRestriction == null) {
+            this.useTeamRestriction = false;
         }
     }
 

@@ -102,7 +102,8 @@ public class FantasyGameService {
 
     @Transactional
     public FantasyGame createGame(String title, FantasyGame.RuleType ruleType, FantasyGame.ScoringType scoringType,
-                                  String scoringSettings, Integer maxParticipants, java.time.LocalDateTime draftDate, String gameDuration, Integer draftTimeLimit) {
+                                  String scoringSettings, Integer maxParticipants, java.time.LocalDateTime draftDate, String gameDuration, Integer draftTimeLimit,
+                                  Boolean useFirstPickRule, Integer salaryCap, Boolean useTeamRestriction, Integer rounds) {
         FantasyGame game = FantasyGame.builder()
                 .title(title)
                 .ruleType(ruleType)
@@ -112,6 +113,10 @@ public class FantasyGameService {
                 .draftDate(draftDate)
                 .gameDuration(gameDuration)
                 .draftTimeLimit(draftTimeLimit != null ? draftTimeLimit : 10)
+                .useFirstPickRule(useFirstPickRule)
+                .salaryCap(salaryCap)
+                .useTeamRestriction(useTeamRestriction)
+                .rounds(rounds)
                 .status(FantasyGame.GameStatus.WAITING)
                 .build();
         return fantasyGameRepository.save(game);
@@ -266,7 +271,10 @@ public class FantasyGameService {
             List<FantasyPlayerDto> roster = myPicks.stream()
                     .map(pick -> {
                         FantasyPlayer fp = fantasyPlayers.get(pick.getFantasyPlayerSeq());
-                        return fp != null ? FantasyPlayerDto.from(fp) : null;
+                        if (fp == null) return null;
+                        FantasyPlayerDto dto = FantasyPlayerDto.from(fp);
+                        dto.setAssignedPosition(pick.getAssignedPosition());
+                        return dto;
                     })
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
@@ -288,6 +296,11 @@ public class FantasyGameService {
                 .scoringSettings(game.getScoringSettings())
                 .status(game.getStatus().name())
                 .gameDuration(game.getGameDuration())
+                .draftTimeLimit(game.getDraftTimeLimit())
+                .useFirstPickRule(game.getUseFirstPickRule())
+                .salaryCap(game.getSalaryCap())
+                .useTeamRestriction(game.getUseTeamRestriction())
+                .rounds(game.getRounds())
                 .participantCount(participants.size())
                 .maxParticipants(game.getMaxParticipants())
                 .nextPickerId(nextPickerId)

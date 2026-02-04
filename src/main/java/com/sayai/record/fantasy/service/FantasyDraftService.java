@@ -3,6 +3,7 @@ package com.sayai.record.fantasy.service;
 import com.sayai.record.fantasy.dto.DraftEventDto;
 import com.sayai.record.fantasy.dto.DraftRequest;
 import com.sayai.record.fantasy.dto.FantasyPlayerDto;
+import com.sayai.record.fantasy.dto.RosterUpdateDto;
 import com.sayai.record.fantasy.entity.DraftPick;
 import com.sayai.record.fantasy.entity.FantasyGame;
 import com.sayai.record.fantasy.entity.FantasyParticipant;
@@ -26,7 +27,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -67,7 +70,7 @@ public class FantasyDraftService {
     }
 
     @Transactional(readOnly = true)
-    public List<FantasyPlayerDto> getAvailablePlayers(Long gameSeq, String team, String position, String search) {
+    public List<FantasyPlayerDto> getAvailablePlayers(Long gameSeq, String team, String position, String search, String sort) {
         // 1. Get all picks for this game
         List<DraftPick> picks = draftPickRepository.findByFantasyGameSeq(gameSeq);
         Set<Long> pickedPlayerSeqs = picks.stream()
@@ -76,6 +79,23 @@ public class FantasyDraftService {
 
         // 2. Get filtered players from DB
         List<FantasyPlayer> filteredPlayers = fantasyPlayerRepository.findPlayers(team, position, search);
+
+        // Sort
+        if (sort != null) {
+            if ("cost_desc".equals(sort)) {
+                filteredPlayers.sort((p1, p2) -> {
+                    int c1 = p1.getCost() == null ? 0 : p1.getCost();
+                    int c2 = p2.getCost() == null ? 0 : p2.getCost();
+                    return Integer.compare(c2, c1);
+                });
+            } else if ("cost_asc".equals(sort)) {
+                filteredPlayers.sort((p1, p2) -> {
+                    int c1 = p1.getCost() == null ? 0 : p1.getCost();
+                    int c2 = p2.getCost() == null ? 0 : p2.getCost();
+                    return Integer.compare(c1, c2);
+                });
+            }
+        }
 
         return filteredPlayers.stream()
                 .filter(p -> !pickedPlayerSeqs.contains(p.getSeq()))
@@ -121,6 +141,15 @@ public class FantasyDraftService {
                 .collect(Collectors.toSet());
         List<FantasyPlayer> currentTeam = fantasyPlayerRepository.findAllById(pickedSeqs);
 
+        // Salary Cap Check
+        if (game.getSalaryCap() != null && game.getSalaryCap() > 0) {
+            int currentCost = currentTeam.stream().mapToInt(p -> p.getCost() == null ? 0 : p.getCost()).sum();
+            int newPlayerCost = targetPlayer.getCost() == null ? 0 : targetPlayer.getCost();
+            if (currentCost + newPlayerCost > game.getSalaryCap()) {
+                throw new IllegalStateException("Salary Cap Exceeded: " + (currentCost + newPlayerCost) + " / " + game.getSalaryCap());
+            }
+        }
+
         // Get Participant Info (needed for Rule 2)
         FantasyParticipant participant = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(
                 request.getFantasyGameSeq(), request.getPlayerId())
@@ -130,6 +159,9 @@ public class FantasyDraftService {
         draftValidator.validate(game, targetPlayer, currentTeam, participant);
 
         // 4. Save Pick
+        // Auto-Assign Position Logic
+        String assignedPos = determineInitialPosition(userPicks, targetPlayer);
+
         // Calculate pick number
         long count = draftPickRepository.countByFantasyGameSeq(request.getFantasyGameSeq());
         int pickNumber = (int) count + 1;
@@ -139,6 +171,7 @@ public class FantasyDraftService {
                 .playerId(request.getPlayerId())
                 .fantasyPlayerSeq(request.getFantasyPlayerSeq())
                 .pickNumber(pickNumber)
+                .assignedPosition(assignedPos)
                 .build();
 
         draftPickRepository.save(pick);
@@ -234,17 +267,83 @@ public class FantasyDraftService {
         // Fetch picks
         List<DraftPick> picks = draftPickRepository.findByFantasyGameSeqAndPlayerId(gameSeq, playerId);
 
-        // Map Player Seq to Pick Number for sorting
-        Map<Long, Integer> pickOrderMap = picks.stream()
-                .collect(Collectors.toMap(DraftPick::getFantasyPlayerSeq, DraftPick::getPickNumber));
+        // Map Player Seq to DraftPick for easy access
+        Map<Long, DraftPick> pickMap = picks.stream()
+                .collect(Collectors.toMap(DraftPick::getFantasyPlayerSeq, Function.identity()));
 
-        Set<Long> pickedSeqs = pickOrderMap.keySet();
+        Set<Long> pickedSeqs = pickMap.keySet();
         List<FantasyPlayer> players = fantasyPlayerRepository.findAllById(pickedSeqs);
 
         return players.stream()
-                .map(FantasyPlayerDto::from)
-                .sorted(Comparator.comparingInt(p -> pickOrderMap.getOrDefault(p.getSeq(), 0)))
+                .map(p -> {
+                    FantasyPlayerDto dto = FantasyPlayerDto.from(p);
+                    DraftPick pick = pickMap.get(p.getSeq());
+                    if (pick != null) {
+                        dto.setAssignedPosition(pick.getAssignedPosition());
+                    }
+                    return dto;
+                })
+                .sorted(Comparator.comparingInt(p -> {
+                    DraftPick pick = pickMap.get(p.getSeq());
+                    return pick != null ? pick.getPickNumber() : 0;
+                }))
                 .collect(Collectors.toList());
+    }
+
+    private String determineInitialPosition(List<DraftPick> existingPicks, FantasyPlayer newPlayer) {
+        Set<String> occupied = existingPicks.stream()
+                .map(DraftPick::getAssignedPosition)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        String[] positions = newPlayer.getPosition().split(",");
+        String primaryPos = positions[0].trim();
+
+        if (isPitcher(primaryPos)) {
+            // Pitcher logic: find first open slot (SP-1..SP-4, RP-1..RP-4, CL-1)
+            // Or simple logic: Just store "SP", "RP", "CL". Frontend handles slots.
+            // But if user has 4 SPs, 5th SP -> Bench.
+            long spCount = occupied.stream().filter(p -> p.equals("SP")).count();
+            long rpCount = occupied.stream().filter(p -> p.equals("RP")).count();
+            long clCount = occupied.stream().filter(p -> p.equals("CL") || p.equals("CP")).count();
+
+            if (primaryPos.equals("SP")) return spCount < 4 ? "SP" : null;
+            if (primaryPos.equals("RP")) return rpCount < 4 ? "RP" : null;
+            if (primaryPos.equals("CL") || primaryPos.equals("CP")) return clCount < 1 ? "CL" : null;
+            return null; // Bench
+        } else {
+            // Batter Logic
+            if (!occupied.contains(primaryPos)) {
+                return primaryPos;
+            }
+            // Try DH
+            if (!occupied.contains("DH")) {
+                return "DH";
+            }
+            // Bench
+            return null;
+        }
+    }
+
+    private boolean isPitcher(String pos) {
+        return pos.equals("SP") || pos.equals("RP") || pos.equals("CL") || pos.equals("CP");
+    }
+
+    @Transactional
+    public void updateRoster(Long gameSeq, Long playerId, RosterUpdateDto updateDto) {
+        List<DraftPick> myPicks = draftPickRepository.findByFantasyGameSeqAndPlayerId(gameSeq, playerId);
+        Map<Long, DraftPick> pickMap = myPicks.stream()
+                .collect(Collectors.toMap(DraftPick::getFantasyPlayerSeq, Function.identity()));
+
+        if (updateDto.getEntries() != null) {
+            for (RosterUpdateDto.RosterEntry entry : updateDto.getEntries()) {
+                DraftPick pick = pickMap.get(entry.getFantasyPlayerSeq());
+                if (pick != null) {
+                    pick.setAssignedPosition(entry.getAssignedPosition());
+                }
+            }
+        }
+        draftPickRepository.saveAll(myPicks);
     }
 
     @Transactional

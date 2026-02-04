@@ -39,7 +39,7 @@ class FantasyDraftServiceFilterTest {
         when(draftPickRepository.findByFantasyGameSeq(gameSeq)).thenReturn(Collections.emptyList());
         when(fantasyPlayerRepository.findPlayers(team, pos, search)).thenReturn(Collections.singletonList(p1));
 
-        List<FantasyPlayerDto> result = fantasyDraftService.getAvailablePlayers(gameSeq, team, pos, search);
+        List<FantasyPlayerDto> result = fantasyDraftService.getAvailablePlayers(gameSeq, team, pos, search, null);
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getName()).isEqualTo("Kim");

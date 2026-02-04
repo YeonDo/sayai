@@ -2,15 +2,23 @@ package com.sayai.record.admin.controller;
 
 import com.sayai.record.auth.entity.Member;
 import com.sayai.record.auth.repository.MemberRepository;
+import com.sayai.record.auth.service.AuthService;
+import com.sayai.record.fantasy.dto.FantasyScoreDto;
 import com.sayai.record.fantasy.entity.FantasyGame;
+import com.sayai.record.fantasy.entity.FantasyParticipant;
+import com.sayai.record.fantasy.repository.FantasyParticipantRepository;
 import com.sayai.record.fantasy.service.FantasyGameService;
+import com.sayai.record.fantasy.service.FantasyScoringService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/apis/v1/admin")
@@ -19,6 +27,12 @@ public class AdminController {
 
     private final FantasyGameService fantasyGameService;
     private final MemberRepository memberRepository;
+    private final FantasyParticipantRepository fantasyParticipantRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final AuthService authService;
+    private final FantasyScoringService fantasyScoringService;
+
+    // --- Game Management ---
 
     @PostMapping("/games")
     public ResponseEntity<FantasyGame> createGame(@RequestBody GameCreateRequest request) {
@@ -30,7 +44,11 @@ public class AdminController {
                 request.getMaxParticipants(),
                 request.getDraftDate(),
                 request.getGameDuration(),
-                request.getDraftTimeLimit()
+                request.getDraftTimeLimit(),
+                request.getUseFirstPickRule(),
+                request.getSalaryCap(),
+                request.getUseTeamRestriction(),
+                request.getRounds()
         );
 
         return ResponseEntity.ok(game);
@@ -43,9 +61,100 @@ public class AdminController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/fantasy/games/{gameSeq}/participants")
+    public ResponseEntity<List<ParticipantDto>> getGameParticipants(@PathVariable(name = "gameSeq") Long gameSeq) {
+        List<FantasyParticipant> participants = fantasyParticipantRepository.findByFantasyGameSeq(gameSeq);
+        List<ParticipantDto> dtos = participants.stream().map(p -> {
+            String userName = memberRepository.findById(p.getPlayerId())
+                    .map(Member::getName)
+                    .orElse("Unknown");
+            return new ParticipantDto(p.getSeq(), p.getPlayerId(), userName, p.getTeamName(), p.getPreferredTeam());
+        }).collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
+    }
+
+    @PutMapping("/fantasy/participants/{seq}")
+    public ResponseEntity<String> updateParticipantTeamName(@PathVariable(name = "seq") Long seq,
+                                                            @RequestBody Map<String, String> body) {
+        FantasyParticipant participant = fantasyParticipantRepository.findById(seq)
+                .orElseThrow(() -> new IllegalArgumentException("Participant not found"));
+
+        if (body.containsKey("teamName")) {
+            participant.setTeamName(body.get("teamName"));
+            fantasyParticipantRepository.save(participant);
+        }
+        return ResponseEntity.ok("Updated");
+    }
+
+    // --- Scoring Endpoints ---
+
+    @GetMapping("/fantasy/games/{gameSeq}/scores/{round}")
+    public ResponseEntity<List<FantasyScoreDto>> getScores(@PathVariable(name = "gameSeq") Long gameSeq,
+                                                           @PathVariable(name = "round") Integer round) {
+        return ResponseEntity.ok(fantasyScoringService.getScores(gameSeq, round));
+    }
+
+    @PostMapping("/fantasy/games/{gameSeq}/scores/{round}")
+    public ResponseEntity<String> saveScores(@PathVariable(name = "gameSeq") Long gameSeq,
+                                             @PathVariable(name = "round") Integer round,
+                                             @RequestBody List<FantasyScoreDto> scores) {
+        fantasyScoringService.saveAndCalculateScores(gameSeq, round, scores);
+        return ResponseEntity.ok("Scores saved and calculated");
+    }
+
+    // --- User Management ---
+
     @GetMapping("/users")
     public ResponseEntity<List<Member>> listUsers() {
         return ResponseEntity.ok(memberRepository.findAll());
+    }
+
+    @PostMapping("/users")
+    public ResponseEntity<String> createUser(@RequestBody UserCreateRequest request) {
+        if (memberRepository.existsById(request.getPlayerId())) {
+            return ResponseEntity.badRequest().body("Player ID already exists");
+        }
+        if (memberRepository.findByUserId(request.getUserId()).isPresent()) {
+            return ResponseEntity.badRequest().body("User ID already exists");
+        }
+
+        Member member = Member.builder()
+                .playerId(request.getPlayerId())
+                .userId(request.getUserId())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .name(request.getName())
+                .role(Member.Role.USER) // Default
+                .build();
+
+        memberRepository.save(member);
+        return ResponseEntity.ok("User created");
+    }
+
+    @PutMapping("/users/{playerId}")
+    public ResponseEntity<String> updateUser(@PathVariable(name = "playerId") Long playerId,
+                                             @RequestBody UserUpdateRequest request) {
+        Member member = memberRepository.findById(playerId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        if (request.getUserId() != null && !request.getUserId().isEmpty()) {
+            if (!request.getUserId().equals(member.getUserId())) {
+                if (memberRepository.findByUserId(request.getUserId()).isPresent()) {
+                    return ResponseEntity.badRequest().body("User ID already exists");
+                }
+                member.setUserId(request.getUserId());
+            }
+        }
+
+        if (request.getName() != null && !request.getName().isEmpty()) {
+            member.setName(request.getName());
+        }
+
+        if (request.getPassword() != null && !request.getPassword().isEmpty()) {
+            member.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
+
+        memberRepository.save(member);
+        return ResponseEntity.ok("User updated");
     }
 
     @PutMapping("/users/{id}/role")
@@ -70,5 +179,41 @@ public class AdminController {
         private LocalDateTime draftDate;
         private Integer draftTimeLimit;
         private String gameDuration;
+        private Boolean useFirstPickRule;
+        private Integer salaryCap;
+        private Boolean useTeamRestriction;
+        private Integer rounds;
+    }
+
+    @Data
+    public static class ParticipantDto {
+        private Long seq;
+        private Long playerId;
+        private String userName;
+        private String teamName;
+        private String preferredTeam;
+
+        public ParticipantDto(Long seq, Long playerId, String userName, String teamName, String preferredTeam) {
+            this.seq = seq;
+            this.playerId = playerId;
+            this.userName = userName;
+            this.teamName = teamName;
+            this.preferredTeam = preferredTeam;
+        }
+    }
+
+    @Data
+    public static class UserCreateRequest {
+        private Long playerId;
+        private String userId;
+        private String password;
+        private String name;
+    }
+
+    @Data
+    public static class UserUpdateRequest {
+        private String userId;
+        private String password; // Optional, only if changing
+        private String name;
     }
 }
