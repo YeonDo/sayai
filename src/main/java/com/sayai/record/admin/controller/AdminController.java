@@ -14,6 +14,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.BindingResult;
@@ -226,6 +227,7 @@ public class AdminController {
         private String userId;
 
         @NotBlank(message = "Password is required")
+        @ToString.Exclude
         private String password;
 
         @NotBlank(message = "Name is required")

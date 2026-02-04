@@ -294,6 +294,8 @@
                 let benchCount = 1;
 
                 players.forEach(p => {
+                    let placed = false;
+
                     // Try to use assignedPosition first
                     if (p.assignedPosition) {
                         const ap = p.assignedPosition;
@@ -301,49 +303,29 @@
                         if (ap.startsWith('BENCH')) {
                             // ap might be BENCH-1, BENCH-2 or just BENCH
                             // If BENCH-X, try exact match
-                            // If just BENCH, assign sequentially
                             if (ap.includes('-')) {
-                                let slot = $('#slot-' + ap);
-                                if(slot.length && !slot.data('player')) {
-                                     fillSlotById(slot.attr('id'), p);
-                                     return;
+                                if (fillSlotById('slot-' + ap, p)) {
+                                    placed = true;
                                 }
                             }
-                            // Fallback for BENCH or collision
-                            if (benchCount <= 3) {
-                                fillSlotById('slot-BENCH-' + benchCount, p);
-                                benchCount++;
+                            // If exact match failed or was generic 'BENCH', fall through to heuristic below
+                        } else if (ap === 'SP') {
+                            if (assignPitcher('SP', spCount, p)) placed = true;
+                        } else if (ap === 'RP') {
+                            if (assignPitcher('RP', rpCount, p)) placed = true;
+                        } else if (ap === 'CL' || ap === 'CP') {
+                            if (fillSlotById('slot-CL-1', p)) placed = true;
+                        } else {
+                            // Handle Specific Field (1B, C, etc)
+                            // Only if slot is free
+                            if (fillSlotById('slot-' + ap, p)) {
+                                placed = true;
                             }
-                            return;
-                        }
-
-                        // Handle Generic SP/RP
-                        if (ap === 'SP') {
-                            assignPitcher('SP', spCount, p);
-                            return;
-                        }
-                        if (ap === 'RP') {
-                            assignPitcher('RP', rpCount, p);
-                            return;
-                        }
-                        if (ap === 'CL' || ap === 'CP') {
-                            fillSlotById('slot-CL-1', p);
-                            return;
-                        }
-
-                        // Handle Specific Field (1B, C, etc)
-                        let slot = $('#slot-' + ap);
-                        if (slot.length && !slot.data('player')) {
-                            fillSlotById('slot-' + ap, p);
-                            return;
                         }
                     }
 
-                    // Fallback: Use Heuristic (e.g. initial load or no assignment)
-                    // (Same logic as before but with Bench fallback)
-                    // This is only if assignedPosition is null (should only happen for Bench in draft logic)
-                    // But our logic says null = Bench
-                    if (!p.assignedPosition) {
+                    // Fallback: If not placed yet (null assignedPosition, full slots, or collision)
+                    if (!placed) {
                          if (benchCount <= 3) {
                              fillSlotById('slot-BENCH-' + benchCount, p);
                              benchCount++;
@@ -355,10 +337,13 @@
 
         function fillSlotById(id, player) {
             const slot = $('#' + id);
-            if (slot.length) {
+            // Only fill if exists and empty
+            if (slot.length && !slot.data('player')) {
                 slot.data('player', player);
                 renderSlot(slot, player);
+                return true;
             }
+            return false;
         }
 
         function saveRoster(gameSeq) {
@@ -416,17 +401,23 @@
 
         function assignPitcher(type, counterObj, player) {
             if (counterObj.count <= 4) {
-                fillPitcherSlot(`${type}-${counterObj.count}`, player);
-                counterObj.count++;
+                // Try to fill next slot
+                if (fillPitcherSlot(`${type}-${counterObj.count}`, player)) {
+                    counterObj.count++;
+                    return true;
+                }
             }
+            return false;
         }
 
         function fillPitcherSlot(idSuffix, player) {
             const slot = $(`#slot-${idSuffix}`);
-            if (slot.length) {
+            if (slot.length && !slot.data('player')) {
                 slot.data('player', player);
                 renderSlot(slot, player);
+                return true;
             }
+            return false;
         }
         /*]]>*/
     </script>

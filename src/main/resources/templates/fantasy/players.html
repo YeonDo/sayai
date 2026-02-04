@@ -150,22 +150,35 @@
                 }
 
                 players.forEach(p => {
-                    const row = `
-                        <tr>
-                            <td>
-                                <div>${p.name}</div>
-                                <div style="font-size:0.8rem; color:#888;">${p.team}</div>
-                            </td>
-                            <td>
-                                <span class="position-badge">${p.position}</span>
-                            </td>
-                            <td>${p.team}</td>
-                            <td>
-                                <span style="font-weight:bold; color:#007bff;">${p.cost || 0}</span>
-                            </td>
-                            <td style="font-size:0.9rem;">${p.stats || '-'}</td>
-                        </tr>
-                    `;
+                    const row = $('<tr>');
+
+                    // Name & Team (small)
+                    const nameCell = $('<td>');
+                    const nameDiv = $('<div>').text(p.name);
+                    const teamDiv = $('<div>').css({'font-size':'0.8rem', 'color':'#888'}).text(p.team);
+                    nameCell.append(nameDiv).append(teamDiv);
+                    row.append(nameCell);
+
+                    // Position
+                    const posCell = $('<td>');
+                    const posBadge = $('<span>').addClass('position-badge').text(p.position);
+                    posCell.append(posBadge);
+                    row.append(posCell);
+
+                    // Team
+                    const teamCell = $('<td>').text(p.team);
+                    row.append(teamCell);
+
+                    // Cost
+                    const costCell = $('<td>');
+                    const costSpan = $('<span>').css({'font-weight':'bold', 'color':'#007bff'}).text(p.cost || 0);
+                    costCell.append(costSpan);
+                    row.append(costCell);
+
+                    // Stats
+                    const statsCell = $('<td>').css('font-size', '0.9rem').text(p.stats || '-');
+                    row.append(statsCell);
+
                     tbody.append(row);
                 });
             });
