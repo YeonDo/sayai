@@ -34,24 +34,24 @@
             <div style="overflow-x: auto;">
                 <table class="table table-hover fantasy-table">
                     <thead>
-                        <tr>
-                            <th class="ranking-header">Team Name</th>
-                            <th class="ranking-header">Total Point</th>
-                            <th class="ranking-header">Point</th>
-                            <th class="ranking-header">AVG</th>
-                            <th class="ranking-header">HR</th>
-                            <th class="ranking-header">RBI</th>
-                            <th class="ranking-header">SO (Bat)</th>
-                            <th class="ranking-header">SB</th>
-                            <th class="ranking-header">W</th>
-                            <th class="ranking-header">K (Pitch)</th>
-                            <th class="ranking-header">ERA</th>
-                            <th class="ranking-header">WHIP</th>
-                            <th class="ranking-header">SV</th>
-                        </tr>
+                    <tr>
+                        <th class="ranking-header">Team Name</th>
+                        <th class="ranking-header">Total Point</th>
+                        <th class="ranking-header">Point</th>
+                        <th class="ranking-header">AVG</th>
+                        <th class="ranking-header">HR</th>
+                        <th class="ranking-header">RBI</th>
+                        <th class="ranking-header">SO (Bat)</th>
+                        <th class="ranking-header">SB</th>
+                        <th class="ranking-header">W</th>
+                        <th class="ranking-header">K (Pitch)</th>
+                        <th class="ranking-header">ERA</th>
+                        <th class="ranking-header">WHIP</th>
+                        <th class="ranking-header">SV</th>
+                    </tr>
                     </thead>
                     <tbody id="ranking-body">
-                        <!-- Filled by JS -->
+                    <!-- Filled by JS -->
                     </tbody>
                 </table>
             </div>
@@ -198,7 +198,9 @@
                             tbody.append(subHtml);
                         }
                     }
+
                 });
+                $('#ranking-view').show();
 
                 function renderRoundCells(stats, rankMap, teamName) {
                     // rankMap is for a specific round: { category: { teamName: rank } }
@@ -274,9 +276,6 @@
             return ranks;
         }
 
-                $('#ranking-view').show();
-            });
-        }
         /*]]>*/
     </script>
 </div>
