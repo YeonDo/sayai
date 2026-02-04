@@ -8,10 +8,8 @@ import com.sayai.record.fantasy.entity.DraftPick;
 import com.sayai.record.fantasy.entity.FantasyGame;
 import com.sayai.record.fantasy.entity.FantasyParticipant;
 import com.sayai.record.fantasy.entity.FantasyPlayer;
-import com.sayai.record.fantasy.repository.DraftPickRepository;
-import com.sayai.record.fantasy.repository.FantasyGameRepository;
-import com.sayai.record.fantasy.repository.FantasyParticipantRepository;
-import com.sayai.record.fantasy.repository.FantasyPlayerRepository;
+import com.sayai.record.fantasy.entity.FantasyRotisserieScore;
+import com.sayai.record.fantasy.repository.*;
 import com.sayai.record.model.Player;
 import com.sayai.record.repository.PitchRepository;
 import com.sayai.record.repository.PlayerRepository;
@@ -38,6 +36,7 @@ public class FantasyRankingService {
     private final PlayerRepository playerRepository;
     private final HitService hitService;
     private final PitchRepository pitchRepository;
+    private final FantasyRotisserieScoreRepository rotisserieScoreRepository;
 
     public RankingTableDto getRanking(Long gameSeq) {
         FantasyGame game = fantasyGameRepository.findById(gameSeq)
@@ -48,11 +47,99 @@ public class FantasyRankingService {
         response.setScoringType(game.getScoringType().name());
 
         if (game.getScoringType() == FantasyGame.ScoringType.POINTS) {
-            // Return empty list or handle as per requirement (frontend hides it)
             response.setRankings(Collections.emptyList());
             return response;
         }
 
+        if (game.getScoringType() == FantasyGame.ScoringType.ROTISSERIE) {
+            return getRotisserieRanking(game, response);
+        }
+
+        // Fallback for simulation (legacy logic)
+        return getSimulationRanking(game, response);
+    }
+
+    private RankingTableDto getRotisserieRanking(FantasyGame game, RankingTableDto response) {
+        List<FantasyParticipant> participants = participantRepository.findByFantasyGameSeq(game.getSeq());
+        List<FantasyRotisserieScore> scores = rotisserieScoreRepository.findByFantasyGameSeq(game.getSeq());
+
+        // Group by PlayerId
+        Map<Long, List<FantasyRotisserieScore>> scoresByPlayer = scores.stream()
+                .collect(Collectors.groupingBy(FantasyRotisserieScore::getPlayerId));
+
+        List<ParticipantStatsDto> statsList = new ArrayList<>();
+
+        for (FantasyParticipant fp : participants) {
+            ParticipantStatsDto dto = new ParticipantStatsDto();
+            dto.setParticipantId(fp.getPlayerId());
+            dto.setTeamName(fp.getTeamName());
+
+            List<FantasyRotisserieScore> myScores = scoresByPlayer.getOrDefault(fp.getPlayerId(), Collections.emptyList());
+
+            if (myScores.isEmpty()) {
+                dto.setTotalPoints(0.0);
+                statsList.add(dto);
+                continue;
+            }
+
+            // Aggregate
+            double totalPoints = 0;
+            // Sum counting stats
+            long hr = 0, rbi = 0, sb = 0, soBat = 0;
+            long wins = 0, soPitch = 0, saves = 0;
+
+            // For ratios, we average them (not perfect but standard if raw data missing)
+            // Or sum? Ratios shouldn't be summed. Weighted average needs denominator.
+            // Since we don't have denominator, simple average is best effort.
+            double sumAvg = 0, sumEra = 0, sumWhip = 0;
+            int countAvg = 0, countEra = 0, countWhip = 0;
+
+            for (FantasyRotisserieScore s : myScores) {
+                totalPoints += safeDouble(s.getTotalPoints());
+
+                hr += safeInt(s.getHr());
+                rbi += safeInt(s.getRbi());
+                sb += safeInt(s.getSb());
+                soBat += safeInt(s.getSoBatter());
+
+                wins += safeInt(s.getWins());
+                soPitch += safeInt(s.getSoPitcher());
+                saves += safeInt(s.getSaves());
+
+                if (s.getAvg() != null) { sumAvg += s.getAvg(); countAvg++; }
+                if (s.getEra() != null) { sumEra += s.getEra(); countEra++; }
+                if (s.getWhip() != null) { sumWhip += s.getWhip(); countWhip++; }
+            }
+
+            dto.setTotalPoints(totalPoints);
+            dto.setHomeruns(hr);
+            dto.setRbi((int) rbi);
+            dto.setStolenBases((int) sb);
+            dto.setBatterStrikeOuts(soBat);
+
+            dto.setWins(wins);
+            dto.setPitcherStrikeOuts(soPitch);
+            dto.setSaves(saves);
+
+            dto.setBattingAvg(countAvg > 0 ? sumAvg / countAvg : 0.0);
+            dto.setEra(countEra > 0 ? sumEra / countEra : 0.0);
+            dto.setWhip(countWhip > 0 ? sumWhip / countWhip : 0.0);
+
+            statsList.add(dto);
+        }
+
+        // Sort by Total Points DESC
+        statsList.sort((a, b) -> Double.compare(
+                b.getTotalPoints() != null ? b.getTotalPoints() : 0.0,
+                a.getTotalPoints() != null ? a.getTotalPoints() : 0.0
+        ));
+
+        response.setRankings(statsList);
+        return response;
+    }
+
+    private RankingTableDto getSimulationRanking(FantasyGame game, RankingTableDto response) {
+        Long gameSeq = game.getSeq();
         // 1. Get Participants
         List<FantasyParticipant> participants = participantRepository.findByFantasyGameSeq(gameSeq);
 
@@ -176,6 +263,10 @@ public class FantasyRankingService {
 
         response.setRankings(statsList);
         return response;
+    }
+
+    private double safeDouble(Double val) {
+        return val == null ? 0.0 : val;
     }
 
     private long safeLong(Long val) {

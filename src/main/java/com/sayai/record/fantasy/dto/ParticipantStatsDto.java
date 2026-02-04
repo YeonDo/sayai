@@ -29,4 +29,7 @@ public class ParticipantStatsDto {
     private Double era;
     private Double whip;
     private Long saves;
+
+    // Total
+    private Double totalPoints;
 }
