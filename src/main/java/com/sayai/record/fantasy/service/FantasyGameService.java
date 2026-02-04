@@ -252,12 +252,13 @@ public class FantasyGameService {
 
         Map<Long, List<DraftPick>> picksByPart = allPicks.stream().collect(Collectors.groupingBy(DraftPick::getPlayerId));
 
-        StringBuilder sb = new StringBuilder();
-        // Header (Optional, but good for context)
-        // sb.append("Participant\tBatters(1-9)\tPitchers(1-9)\n");
+        // Prepare data grid: Participant -> { Batters, Pitchers }
+        List<List<String>> allBatters = new ArrayList<>();
+        List<List<String>> allPitchers = new ArrayList<>();
+        List<String> teamNames = new ArrayList<>();
 
         for (FantasyParticipant p : participants) {
-            sb.append(p.getTeamName());
+            teamNames.add(p.getTeamName());
 
             List<DraftPick> picks = picksByPart.getOrDefault(p.getPlayerId(), Collections.emptyList());
             List<FantasyPlayer> roster = picks.stream()
@@ -269,14 +270,7 @@ public class FantasyGameService {
             List<String> pitchers = new ArrayList<>();
 
             for (FantasyPlayer fp : roster) {
-                // Determine logic from position string or assigned position (but draftPick assignedPosition might be null if bench)
-                // Use simple heuristic: if position contains P, it's pitcher?
-                // Or check explicit types. KBO data usually "SP", "RP", "P" etc.
-                // Rule1Validator uses specific codes.
                 String pos = fp.getPosition();
-                // Better to rely on assignedPosition if available, but for export we might just use player's primary pos.
-                // Let's use simple logic: if (SP, RP, CP, CL, P) -> Pitcher.
-
                 boolean isPitcher = pos.contains("SP") || pos.contains("RP") || pos.contains("CP") || pos.contains("CL") || pos.equals("P");
                 if (isPitcher) {
                     pitchers.add(fp.getName());
@@ -284,18 +278,40 @@ public class FantasyGameService {
                     batters.add(fp.getName());
                 }
             }
+            allBatters.add(batters);
+            allPitchers.add(pitchers);
+        }
 
-            // Fill slots (9 batters, 9 pitchers as per request template hint)
-            for (int i = 0; i < 9; i++) {
+        StringBuilder sb = new StringBuilder();
+
+        // Header Row: Team Names
+        for (String name : teamNames) {
+            sb.append(name).append("\t");
+        }
+        sb.append("\n");
+
+        // Batters (9 rows)
+        for (int i = 0; i < 9; i++) {
+            for (List<String> teamBatters : allBatters) {
+                if (i < teamBatters.size()) {
+                    sb.append(teamBatters.get(i));
+                }
                 sb.append("\t");
-                if (i < batters.size()) sb.append(batters.get(i));
-            }
-            for (int i = 0; i < 9; i++) {
-                sb.append("\t");
-                if (i < pitchers.size()) sb.append(pitchers.get(i));
             }
             sb.append("\n");
         }
+
+        // Pitchers (9 rows)
+        for (int i = 0; i < 9; i++) {
+            for (List<String> teamPitchers : allPitchers) {
+                if (i < teamPitchers.size()) {
+                    sb.append(teamPitchers.get(i));
+                }
+                sb.append("\t");
+            }
+            sb.append("\n");
+        }
+
         return sb.toString();
     }
 
