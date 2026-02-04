@@ -9,7 +9,9 @@ import jakarta.persistence.*;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-@Table(name = "ft_score_rotisserie")
+@Table(name = "ft_score_rotisserie", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"fantasy_game_seq", "player_id", "round"})
+})
 @Entity
 public class FantasyRotisserieScore {
 
