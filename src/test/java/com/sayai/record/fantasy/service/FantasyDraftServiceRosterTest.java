@@ -34,7 +34,7 @@ class FantasyDraftServiceRosterTest {
     void updateRoster_shouldAllowMultiplePitchers() {
         Long gameSeq = 1L;
         Long playerId = 100L;
-        FantasyGame game = FantasyGame.builder().status(FantasyGame.GameStatus.ONGOING).build();
+        FantasyGame game = FantasyGame.builder().status(FantasyGame.GameStatus.DRAFTING).build(); // Allowed now
 
         // Existing picks: SP, SP (total 2 SPs)
         DraftPick pick1 = DraftPick.builder().fantasyPlayerSeq(1L).playerId(playerId).assignedPosition("SP").build();

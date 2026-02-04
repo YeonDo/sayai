@@ -116,11 +116,16 @@
                 const tbody = $('#ranking-body');
                 tbody.empty();
 
-                data.rankings.forEach(r => {
+                data.rankings.forEach((r, index) => {
+                    let rankEmoji = '';
+                    if (index === 0) rankEmoji = '🥇 ';
+                    else if (index === 1) rankEmoji = '🥈 ';
+                    else if (index === 2) rankEmoji = '🥉 ';
+
                     const row = `
                         <tr>
                             <td style="font-weight:bold;">${r.teamName}</td>
-                            <td class="ranking-value" style="font-weight:bold; color: #007bff;">${r.totalPoints ? r.totalPoints.toFixed(1) : '0.0'}</td>
+                            <td class="ranking-value" style="font-weight:bold; color: #007bff;">${rankEmoji}${r.totalPoints ? r.totalPoints.toFixed(1) : '0.0'}</td>
                             <td class="ranking-value">${r.battingAvg ? r.battingAvg.toFixed(3) : '0.000'}</td>
                             <td class="ranking-value">${r.homeruns}</td>
                             <td class="ranking-value">${r.rbi}</td>

@@ -339,8 +339,8 @@ public class FantasyDraftService {
         FantasyGame game = fantasyGameRepository.findById(gameSeq)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid Game Seq"));
 
-        if (game.getStatus() == FantasyGame.GameStatus.DRAFTING || game.getStatus() == FantasyGame.GameStatus.FINISHED) {
-            throw new IllegalStateException("Cannot update roster during DRAFTING or when FINISHED.");
+        if (game.getStatus() == FantasyGame.GameStatus.FINISHED) {
+            throw new IllegalStateException("Cannot update roster when FINISHED.");
         }
 
         List<DraftPick> myPicks = draftPickRepository.findByFantasyGameSeqAndPlayerId(gameSeq, playerId);

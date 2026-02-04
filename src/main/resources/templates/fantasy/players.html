@@ -12,9 +12,6 @@
         <header class="fantasy-header" style="justify-content: space-between;">
             <div style="display:flex; align-items:center; gap: 20px;">
                 <h1>Player List</h1>
-                <select id="gameSelector" class="form-control" style="width: 200px; padding: 5px;">
-                    <option value="">Select Game...</option>
-                </select>
             </div>
             <button onclick="openPatchLog()" class="btn btn-primary" style="background-color: #6c757d;">Patch Log</button>
         </header>
@@ -121,14 +118,11 @@
         }
 
         function loadGames() {
-            const select = $('#gameSelector');
-            select.val(0);
             loadPlayers();
         }
 
         function loadPlayers() {
-            const gameSeq = $('#gameSelector').val();
-            if (!gameSeq) return;
+            const gameSeq = 0; // Always 0 to show all available players
 
             const team = $('#teamFilter').val();
             const pos = $('#posFilter').val();
@@ -186,10 +180,6 @@
 
         $(document).ready(function() {
             loadGames();
-
-            $('#gameSelector').change(function() {
-                loadPlayers();
-            });
 
             // Trigger search on enter in search input
             $('#searchInput').keypress(function(e) {

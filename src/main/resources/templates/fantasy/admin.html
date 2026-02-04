@@ -382,31 +382,6 @@
             });
         }
 
-        function openExportModal(gameSeq) {
-            $('#exportModal').css('display', 'flex');
-            $('#exportText').val("Loading...");
-            $.get(`/apis/v1/admin/fantasy/games/${gameSeq}/export-players`, function(data) {
-                $('#exportText').val(data);
-            }).fail(function() {
-                $('#exportText').val("Failed to load export data.");
-            });
-        }
-
-        function closeExportModal() {
-            $('#exportModal').hide();
-        }
-
-        function copyExportText() {
-            const copyText = document.getElementById("exportText");
-            copyText.select();
-            copyText.setSelectionRange(0, 99999); // Mobile
-            navigator.clipboard.writeText(copyText.value).then(function() {
-                alert("Copied to clipboard!");
-            }, function(err) {
-                alert("Failed to copy: " + err);
-            });
-        }
-
         function loadRoundScores(round) {
             currentScoringRound = round;
             $('#scoringMsg').text("Loading...");
