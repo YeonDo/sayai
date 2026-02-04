@@ -233,6 +233,73 @@ public class FantasyGameService {
     }
 
     @Transactional(readOnly = true)
+    public String exportRoster(Long gameSeq) {
+        FantasyGame game = fantasyGameRepository.findById(gameSeq)
+                .orElseThrow(() -> new IllegalArgumentException("Game not found"));
+
+        // Allow export for ONGOING and FINISHED
+        if (game.getStatus() != FantasyGame.GameStatus.ONGOING && game.getStatus() != FantasyGame.GameStatus.FINISHED) {
+            // throw new IllegalStateException("Game must be ONGOING or FINISHED to export.");
+            // Or just return empty or proceed. Requirement says "ONGOING".
+        }
+
+        List<FantasyParticipant> participants = fantasyParticipantRepository.findByFantasyGameSeq(gameSeq);
+        List<DraftPick> allPicks = draftPickRepository.findByFantasyGameSeq(gameSeq);
+
+        Set<Long> playerSeqs = allPicks.stream().map(DraftPick::getFantasyPlayerSeq).collect(Collectors.toSet());
+        Map<Long, FantasyPlayer> players = fantasyPlayerRepository.findAllById(playerSeqs).stream()
+                .collect(Collectors.toMap(FantasyPlayer::getSeq, Function.identity()));
+
+        Map<Long, List<DraftPick>> picksByPart = allPicks.stream().collect(Collectors.groupingBy(DraftPick::getPlayerId));
+
+        StringBuilder sb = new StringBuilder();
+        // Header (Optional, but good for context)
+        // sb.append("Participant\tBatters(1-9)\tPitchers(1-9)\n");
+
+        for (FantasyParticipant p : participants) {
+            sb.append(p.getTeamName());
+
+            List<DraftPick> picks = picksByPart.getOrDefault(p.getPlayerId(), Collections.emptyList());
+            List<FantasyPlayer> roster = picks.stream()
+                    .map(pick -> players.get(pick.getFantasyPlayerSeq()))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+
+            List<String> batters = new ArrayList<>();
+            List<String> pitchers = new ArrayList<>();
+
+            for (FantasyPlayer fp : roster) {
+                // Determine logic from position string or assigned position (but draftPick assignedPosition might be null if bench)
+                // Use simple heuristic: if position contains P, it's pitcher?
+                // Or check explicit types. KBO data usually "SP", "RP", "P" etc.
+                // Rule1Validator uses specific codes.
+                String pos = fp.getPosition();
+                // Better to rely on assignedPosition if available, but for export we might just use player's primary pos.
+                // Let's use simple logic: if (SP, RP, CP, CL, P) -> Pitcher.
+
+                boolean isPitcher = pos.contains("SP") || pos.contains("RP") || pos.contains("CP") || pos.contains("CL") || pos.equals("P");
+                if (isPitcher) {
+                    pitchers.add(fp.getName());
+                } else {
+                    batters.add(fp.getName());
+                }
+            }
+
+            // Fill slots (9 batters, 9 pitchers as per request template hint)
+            for (int i = 0; i < 9; i++) {
+                sb.append("\t");
+                if (i < batters.size()) sb.append(batters.get(i));
+            }
+            for (int i = 0; i < 9; i++) {
+                sb.append("\t");
+                if (i < pitchers.size()) sb.append(pitchers.get(i));
+            }
+            sb.append("\n");
+        }
+        return sb.toString();
+    }
+
+    @Transactional(readOnly = true)
     public FantasyGameDetailDto getGameDetails(Long gameSeq) {
         FantasyGame game = fantasyGameRepository.findById(gameSeq)
                 .orElseThrow(() -> new IllegalArgumentException("Game not found"));

@@ -341,6 +341,31 @@
             $('#scoringModal').hide();
         }
 
+        function openExportModal(gameSeq) {
+            $('#exportModal').css('display', 'flex');
+            $('#exportText').val("Loading...");
+            $.get(`/apis/v1/admin/fantasy/games/${gameSeq}/export-players`, function(data) {
+                $('#exportText').val(data);
+            }).fail(function() {
+                $('#exportText').val("Failed to load export data.");
+            });
+        }
+
+        function closeExportModal() {
+            $('#exportModal').hide();
+        }
+
+        function copyExportText() {
+            const copyText = document.getElementById("exportText");
+            copyText.select();
+            copyText.setSelectionRange(0, 99999); // Mobile
+            navigator.clipboard.writeText(copyText.value).then(function() {
+                alert("Copied to clipboard!");
+            }, function(err) {
+                alert("Failed to copy: " + err);
+            });
+        }
+
         function loadRoundScores(round) {
             currentScoringRound = round;
             $('#scoringMsg').text("Loading...");
@@ -471,7 +496,8 @@
                                     </select>
                                     <button onclick="updateStatus(${game.seq})" class="btn-draft">Update</button>
                                     ${game.status === 'WAITING' ? `<button onclick="startDraft(${game.seq})" class="btn-primary" style="margin-left: 10px;">Start Draft</button>` : ''}
-                                    ${(game.status === 'ONGOING' || game.status === 'FINISHED') ? `<button onclick="openScoringModal(${game.seq})" class="btn-primary" style="margin-left: 10px; background-color: #6f42c1;">Scoring</button>` : ''}
+                                    ${(game.status === 'ONGOING' || game.status === 'FINISHED') ? `<button onclick="openScoringModal(${game.seq})" class="btn-primary" style="margin-left: 10px; background-color: #6f42c1;">Scoring</button>
+                                    <button onclick="openExportModal(${game.seq})" class="btn-primary" style="margin-left: 10px; background-color: #28a745;">Export</button>` : ''}
                                 </div>
                             </td>
                         </tr>

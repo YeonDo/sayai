@@ -91,6 +91,12 @@ public class AdminController {
         return ResponseEntity.ok("Updated");
     }
 
+    @GetMapping("/fantasy/games/{gameSeq}/export-players")
+    public ResponseEntity<String> exportPlayers(@PathVariable(name = "gameSeq") Long gameSeq) {
+        String data = fantasyGameService.exportRoster(gameSeq);
+        return ResponseEntity.ok(data);
+    }
+
     // --- Scoring Endpoints ---
 
     @GetMapping("/fantasy/games/{gameSeq}/scores/{round}")
