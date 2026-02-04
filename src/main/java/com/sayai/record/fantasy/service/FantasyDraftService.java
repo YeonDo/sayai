@@ -349,22 +349,33 @@ public class FantasyDraftService {
 
         // Check validation first
         if (updateDto.getEntries() != null) {
-            Set<String> newPositions = new java.util.HashSet<>();
+            Map<String, Integer> positionCounts = new java.util.HashMap<>();
+
+            // Helper to increment and check
+            java.util.function.BiConsumer<String, String> checkLimit = (pos, source) -> {
+                int count = positionCounts.getOrDefault(pos, 0) + 1;
+                positionCounts.put(pos, count);
+
+                int limit = 1;
+                if ("SP".equals(pos) || "RP".equals(pos)) limit = 4;
+                // CL usually 1, others 1
+
+                if (count > limit) {
+                    throw new IllegalArgumentException("Position limit exceeded for " + pos + " (Max " + limit + ")");
+                }
+            };
+
             // Populate with existing positions NOT being updated
             Set<Long> updatingSeqs = updateDto.getEntries().stream().map(RosterUpdateDto.RosterEntry::getFantasyPlayerSeq).collect(Collectors.toSet());
             for (DraftPick pick : myPicks) {
                 if (!updatingSeqs.contains(pick.getFantasyPlayerSeq()) && pick.getAssignedPosition() != null) {
-                    if (!newPositions.add(pick.getAssignedPosition())) {
-                        // Data integrity error in DB? Or just conflict
-                    }
+                    checkLimit.accept(pick.getAssignedPosition(), "Existing");
                 }
             }
 
             for (RosterUpdateDto.RosterEntry entry : updateDto.getEntries()) {
                 if (entry.getAssignedPosition() != null) {
-                    if (!newPositions.add(entry.getAssignedPosition())) {
-                        throw new IllegalArgumentException("Duplicate assigned position: " + entry.getAssignedPosition());
-                    }
+                    checkLimit.accept(entry.getAssignedPosition(), "New");
                 }
             }
 
