@@ -36,7 +36,8 @@
                     <thead>
                         <tr>
                             <th class="ranking-header">Team Name</th>
-                            <th class="ranking-header">Total Points</th>
+                            <th class="ranking-header">Total Point</th>
+                            <th class="ranking-header">Point</th>
                             <th class="ranking-header">AVG</th>
                             <th class="ranking-header">HR</th>
                             <th class="ranking-header">RBI</th>
@@ -116,20 +117,45 @@
                 const tbody = $('#ranking-body');
                 tbody.empty();
 
-                // Calculate ranks for each category
-                const rankMaps = {
-                    totalPoints: calculateRanks(data.rankings, 'totalPoints', false),
-                    battingAvg: calculateRanks(data.rankings, 'battingAvg', false),
-                    homeruns: calculateRanks(data.rankings, 'homeruns', false),
-                    rbi: calculateRanks(data.rankings, 'rbi', false),
-                    batterStrikeOuts: calculateRanks(data.rankings, 'batterStrikeOuts', true), // Low is better
-                    stolenBases: calculateRanks(data.rankings, 'stolenBases', false),
-                    wins: calculateRanks(data.rankings, 'wins', false),
-                    pitcherStrikeOuts: calculateRanks(data.rankings, 'pitcherStrikeOuts', false),
-                    era: calculateRanks(data.rankings, 'era', true), // Low is better
-                    whip: calculateRanks(data.rankings, 'whip', true), // Low is better
-                    saves: calculateRanks(data.rankings, 'saves', false)
-                };
+                // Pre-process: Group per-round stats to calculate per-round ranks
+                // roundsData[roundNum] = [ { teamName, stats... }, ... ]
+                const roundsData = {};
+                data.rankings.forEach(r => {
+                    if (r.rounds) {
+                        r.rounds.forEach(roundStat => {
+                            if (!roundsData[roundStat.round]) {
+                                roundsData[roundStat.round] = [];
+                            }
+                            roundsData[roundStat.round].push({
+                                teamName: r.teamName,
+                                ...roundStat
+                            });
+                        });
+                    }
+                });
+
+                // Calculate ranks for each round
+                // roundRanks[roundNum] = { category: { teamName: rank } }
+                const roundRanks = {};
+                Object.keys(roundsData).forEach(roundNum => {
+                    const rData = roundsData[roundNum];
+                    roundRanks[roundNum] = {
+                        totalPoints: calculateRanks(rData, 'totalPoints', false),
+                        avg: calculateRanks(rData, 'avg', false),
+                        hr: calculateRanks(rData, 'hr', false),
+                        rbi: calculateRanks(rData, 'rbi', false),
+                        soBatter: calculateRanks(rData, 'soBatter', true), // Low is better
+                        sb: calculateRanks(rData, 'sb', false),
+                        wins: calculateRanks(rData, 'wins', false),
+                        soPitcher: calculateRanks(rData, 'soPitcher', false),
+                        era: calculateRanks(rData, 'era', true), // Low is better
+                        whip: calculateRanks(rData, 'whip', true), // Low is better
+                        saves: calculateRanks(rData, 'saves', false)
+                    };
+                });
+
+                // Also calculate Total Point Rank for the main column
+                const totalRankMap = calculateRanks(data.rankings, 'totalPoints', false);
 
                 function getEmoji(rank) {
                     if (rank === 1) return '🥇 ';
@@ -139,24 +165,89 @@
                 }
 
                 data.rankings.forEach(r => {
-                    const row = `
-                        <tr>
-                            <td style="font-weight:bold;">${r.teamName}</td>
-                            <td class="ranking-value" style="font-weight:bold; color: #007bff;">${getEmoji(rankMaps.totalPoints[r.teamName])}${r.totalPoints ? r.totalPoints.toFixed(1) : '0.0'}</td>
-                            <td class="ranking-value">${getEmoji(rankMaps.battingAvg[r.teamName])}${r.battingAvg ? r.battingAvg.toFixed(3) : '0.000'}</td>
-                            <td class="ranking-value">${getEmoji(rankMaps.homeruns[r.teamName])}${r.homeruns}</td>
-                            <td class="ranking-value">${getEmoji(rankMaps.rbi[r.teamName])}${r.rbi}</td>
-                            <td class="ranking-value">${getEmoji(rankMaps.batterStrikeOuts[r.teamName])}${r.batterStrikeOuts}</td>
-                            <td class="ranking-value">${getEmoji(rankMaps.stolenBases[r.teamName])}${r.stolenBases}</td>
-                            <td class="ranking-value">${getEmoji(rankMaps.wins[r.teamName])}${r.wins}</td>
-                            <td class="ranking-value">${getEmoji(rankMaps.pitcherStrikeOuts[r.teamName])}${r.pitcherStrikeOuts}</td>
-                            <td class="ranking-value">${getEmoji(rankMaps.era[r.teamName])}${r.era ? r.era.toFixed(2) : '0.00'}</td>
-                            <td class="ranking-value">${getEmoji(rankMaps.whip[r.teamName])}${r.whip ? r.whip.toFixed(2) : '0.00'}</td>
-                            <td class="ranking-value">${getEmoji(rankMaps.saves[r.teamName])}${r.saves}</td>
-                        </tr>
-                    `;
-                    tbody.append(row);
+                    const rowCount = (r.rounds && r.rounds.length > 0) ? r.rounds.length : 1;
+                    const totalEmoji = getEmoji(totalRankMap[r.teamName]);
+
+                    // First Row (Main + First Round)
+                    let html = '<tr>';
+
+                    // Merged Cells
+                    html += `<td rowspan="${rowCount}" style="font-weight:bold; vertical-align:middle; background:#fff;">${r.teamName}</td>`;
+                    html += `<td rowspan="${rowCount}" class="ranking-value" style="font-weight:bold; color:#007bff; vertical-align:middle; background:#fff; font-size:1.1rem;">${totalEmoji}${r.totalPoints ? r.totalPoints.toFixed(1) : '0.0'}</td>`;
+
+                    // First Round Data
+                    if (r.rounds && r.rounds.length > 0) {
+                        const first = r.rounds[0];
+                        const rk = roundRanks[first.round];
+                        html += renderRoundCells(first, rk, r.teamName);
+                    } else {
+                        // Empty cells if no round data
+                        html += '<td colspan="11" class="ranking-value">-</td>';
+                    }
+                    html += '</tr>';
+                    tbody.append(html);
+
+                    // Subsequent Rows
+                    if (r.rounds && r.rounds.length > 1) {
+                        for(let i=1; i<r.rounds.length; i++) {
+                            const sub = r.rounds[i];
+                            const subRk = roundRanks[sub.round];
+                            let subHtml = '<tr>';
+                            subHtml += renderRoundCells(sub, subRk, r.teamName);
+                            subHtml += '</tr>';
+                            tbody.append(subHtml);
+                        }
+                    }
                 });
+
+                function renderRoundCells(stats, rankMap, teamName) {
+                    // rankMap is for a specific round: { category: { teamName: rank } }
+                    // We need to pass teamName to look up rank
+
+                    const p = (key) => {
+                        const rank = rankMap[key][teamName];
+                        const val = stats[key];
+                        const fixed = (key === 'avg') ? 3 : (key === 'era' || key === 'whip' || key === 'totalPoints') ? 2 : 0; // Point usually integer? But totalPoints in DTO is double.
+                        // Wait, 'Point' column in image is round point. In DTO it's 'totalPoints' field of FantasyScoreDto.
+                        // And image shows 120, 110 (integers?). Let's use 1 decimal for points.
+                        if (val === null || val === undefined) return '';
+
+                        let displayVal = val;
+                        if (key === 'avg') displayVal = val.toFixed(3);
+                        else if (key === 'era' || key === 'whip') displayVal = val.toFixed(2);
+                        else if (key === 'totalPoints') displayVal = val.toFixed(1); // Round Point
+
+                        return `<td class="ranking-value">${getEmoji(rank)}${displayVal}</td>`;
+                    };
+
+                    // Mappings:
+                    // DTO field -> Table Column
+                    // Point -> totalPoints
+                    // AVG -> avg
+                    // HR -> hr
+                    // RBI -> rbi
+                    // SO(Bat) -> soBatter
+                    // SB -> sb
+                    // W -> wins
+                    // K(Pitch) -> soPitcher
+                    // ERA -> era
+                    // WHIP -> whip
+                    // SV -> saves
+
+                    let s = '';
+                    s += p('totalPoints');
+                    s += p('avg');
+                    s += p('hr');
+                    s += p('rbi');
+                    s += p('soBatter');
+                    s += p('sb');
+                    s += p('wins');
+                    s += p('soPitcher');
+                    s += p('era');
+                    s += p('whip');
+                    s += p('saves');
+                    return s;
+                }
             });
         }
 

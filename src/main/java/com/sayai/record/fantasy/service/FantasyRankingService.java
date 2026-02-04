@@ -2,6 +2,7 @@ package com.sayai.record.fantasy.service;
 
 import com.sayai.record.dto.PitcherDto;
 import com.sayai.record.dto.PlayerDto;
+import com.sayai.record.fantasy.dto.FantasyScoreDto;
 import com.sayai.record.fantasy.dto.ParticipantStatsDto;
 import com.sayai.record.fantasy.dto.RankingTableDto;
 import com.sayai.record.fantasy.entity.DraftPick;
@@ -94,6 +95,8 @@ public class FantasyRankingService {
             double sumAvg = 0, sumEra = 0, sumWhip = 0;
             int countAvg = 0, countEra = 0, countWhip = 0;
 
+            List<FantasyScoreDto> roundDtos = new ArrayList<>();
+
             for (FantasyRotisserieScore s : myScores) {
                 totalPoints += safeDouble(s.getTotalPoints());
 
@@ -109,7 +112,13 @@ public class FantasyRankingService {
                 if (s.getAvg() != null) { sumAvg += s.getAvg(); countAvg++; }
                 if (s.getEra() != null) { sumEra += s.getEra(); countEra++; }
                 if (s.getWhip() != null) { sumWhip += s.getWhip(); countWhip++; }
+
+                roundDtos.add(convertToScoreDto(s));
             }
+
+            // Sort rounds
+            roundDtos.sort(Comparator.comparingInt(FantasyScoreDto::getRound));
+            dto.setRounds(roundDtos);
 
             dto.setTotalPoints(totalPoints);
             dto.setHomeruns(hr);
@@ -263,6 +272,26 @@ public class FantasyRankingService {
 
         response.setRankings(statsList);
         return response;
+    }
+
+    private FantasyScoreDto convertToScoreDto(FantasyRotisserieScore entity) {
+        return FantasyScoreDto.builder()
+                .seq(entity.getSeq())
+                .fantasyGameSeq(entity.getFantasyGameSeq())
+                .playerId(entity.getPlayerId())
+                .round(entity.getRound())
+                .avg(entity.getAvg())
+                .rbi(entity.getRbi())
+                .hr(entity.getHr())
+                .soBatter(entity.getSoBatter())
+                .sb(entity.getSb())
+                .wins(entity.getWins())
+                .era(entity.getEra())
+                .soPitcher(entity.getSoPitcher())
+                .whip(entity.getWhip())
+                .saves(entity.getSaves())
+                .totalPoints(entity.getTotalPoints())
+                .build();
     }
 
     private double safeDouble(Double val) {

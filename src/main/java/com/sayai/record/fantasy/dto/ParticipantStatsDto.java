@@ -32,4 +32,7 @@ public class ParticipantStatsDto {
 
     // Total
     private Double totalPoints;
+
+    // Per Round Stats
+    private java.util.List<FantasyScoreDto> rounds;
 }
