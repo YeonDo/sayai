@@ -9,10 +9,14 @@ import com.sayai.record.fantasy.entity.FantasyParticipant;
 import com.sayai.record.fantasy.repository.FantasyParticipantRepository;
 import com.sayai.record.fantasy.service.FantasyGameService;
 import com.sayai.record.fantasy.service.FantasyScoringService;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -114,7 +118,14 @@ public class AdminController {
     }
 
     @PostMapping("/users")
-    public ResponseEntity<String> createUser(@RequestBody UserCreateRequest request) {
+    public ResponseEntity<String> createUser(@RequestBody @Valid UserCreateRequest request, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            String errorMessage = bindingResult.getAllErrors().stream()
+                    .map(error -> error.getDefaultMessage())
+                    .collect(Collectors.joining(", "));
+            return ResponseEntity.badRequest().body(errorMessage);
+        }
+
         if (memberRepository.existsById(request.getPlayerId())) {
             return ResponseEntity.badRequest().body("Player ID already exists");
         }
@@ -208,9 +219,16 @@ public class AdminController {
 
     @Data
     public static class UserCreateRequest {
+        @NotNull(message = "Player ID is required")
         private Long playerId;
+
+        @NotBlank(message = "User ID is required")
         private String userId;
+
+        @NotBlank(message = "Password is required")
         private String password;
+
+        @NotBlank(message = "Name is required")
         private String name;
     }
 
