@@ -65,6 +65,9 @@ public class AuthController {
     public ResponseEntity<String> changePassword(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody ChangePasswordRequest request) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
         try {
             authService.changePassword(userDetails.getPlayerId(), request.getCurrentPassword(), request.getNewPassword());
             return ResponseEntity.ok("Password changed successfully");

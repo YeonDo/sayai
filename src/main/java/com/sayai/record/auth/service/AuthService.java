@@ -54,6 +54,14 @@ public class AuthService {
 
     @Transactional
     public void changePassword(Long playerId, String currentPassword, String newPassword) {
+        if (currentPassword == null || currentPassword.isBlank() || newPassword == null || newPassword.isBlank()) {
+            throw new IllegalArgumentException("Password cannot be empty");
+        }
+
+        if (!newPassword.matches("^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{8,}$")) {
+            throw new IllegalArgumentException("Password must be at least 8 characters long and contain both letters and numbers");
+        }
+
         Member member = memberRepository.findById(playerId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 

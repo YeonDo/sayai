@@ -38,4 +38,15 @@ class AuthControllerPasswordTest {
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         assertThat(response.getBody()).isEqualTo("Password changed successfully");
     }
+
+    @Test
+    void changePassword_shouldReturnUnauthorized_whenUserDetailsIsNull() {
+        AuthController.ChangePasswordRequest request = new AuthController.ChangePasswordRequest();
+        request.setCurrentPassword("oldPass");
+        request.setNewPassword("newPass");
+
+        ResponseEntity<String> response = authController.changePassword(null, request);
+
+        assertThat(response.getStatusCodeValue()).isEqualTo(401);
+    }
 }
