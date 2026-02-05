@@ -47,6 +47,25 @@ public class Rule1Validator implements DraftRuleValidator {
 
     @Override
     public void validate(FantasyGame game, FantasyPlayer newPlayer, List<FantasyPlayer> currentTeam, FantasyParticipant participant) {
+        // Check First Pick Rule Option
+        if (Boolean.TRUE.equals(game.getUseFirstPickRule())) {
+            if (currentTeam.isEmpty()) {
+                if (participant == null || participant.getPreferredTeam() == null) {
+                    throw new IllegalStateException("Preferred team not set for participant");
+                }
+
+                String pref = participant.getPreferredTeam().trim();
+                String playerTeam = newPlayer.getTeam().trim();
+
+                boolean match = playerTeam.toLowerCase().contains(pref.toLowerCase()) ||
+                        pref.toLowerCase().contains(playerTeam.toLowerCase());
+
+                if (!match) {
+                    throw new IllegalStateException("First pick must be from preferred team: " + participant.getPreferredTeam());
+                }
+            }
+        }
+
         // Rule 1 Checks (Composition)
         List<FantasyPlayer> combinedTeam = new ArrayList<>(currentTeam);
         combinedTeam.add(newPlayer);
