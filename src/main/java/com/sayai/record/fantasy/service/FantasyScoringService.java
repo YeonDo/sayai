@@ -25,15 +25,23 @@ public class FantasyScoringService {
 
     @Transactional
     public void saveAndCalculateScores(Long gameSeq, Integer round, List<FantasyScoreDto> inputScores) {
-        // 1. Save or Update Raw Scores
+        // 1. Bulk Fetch Existing Scores
+        Map<Long, FantasyRotisserieScore> existingScores = scoreRepository.findByFantasyGameSeqAndRound(gameSeq, round)
+                .stream()
+                .collect(Collectors.toMap(FantasyRotisserieScore::getPlayerId, Function.identity()));
+
         List<FantasyRotisserieScore> entities = new ArrayList<>();
+
         for (FantasyScoreDto dto : inputScores) {
-            FantasyRotisserieScore entity = scoreRepository.findByFantasyGameSeqAndPlayerIdAndRound(gameSeq, dto.getPlayerId(), round)
-                    .orElse(FantasyRotisserieScore.builder()
-                            .fantasyGameSeq(gameSeq)
-                            .playerId(dto.getPlayerId())
-                            .round(round)
-                            .build());
+            FantasyRotisserieScore entity = existingScores.get(dto.getPlayerId());
+
+            if (entity == null) {
+                entity = FantasyRotisserieScore.builder()
+                        .fantasyGameSeq(gameSeq)
+                        .playerId(dto.getPlayerId())
+                        .round(round)
+                        .build();
+            }
 
             // Update stats
             entity.setAvg(dto.getAvg());
