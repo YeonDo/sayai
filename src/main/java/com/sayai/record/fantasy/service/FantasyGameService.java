@@ -271,7 +271,7 @@ public class FantasyGameService {
 
             for (FantasyPlayer fp : roster) {
                 String pos = fp.getPosition();
-                boolean isPitcher = pos.contains("SP") || pos.contains("RP") || pos.contains("CP") || pos.contains("CL") || pos.equals("P");
+                boolean isPitcher = pos.contains("SP") || pos.contains("RP") || pos.contains("CL") || pos.equals("P");
                 if (isPitcher) {
                     pitchers.add(fp.getName());
                 } else {

@@ -386,7 +386,7 @@
                     // Or exact match? Server was exact for 'C', LIKE for others.
                     // Let's implement robust check similar to server
                     if (posFilter === 'C') {
-                        // Must be exactly C or start with C, but not CF/CL/CP?
+                        // Must be exactly C or start with C, but not CF/CL?
                         // Server logic: "C" -> exact "C".
                         // Client logic: p.position is "C" or "C, 1B".
                         const positions = p.position.split(',').map(s => s.trim());
@@ -419,7 +419,7 @@
             renderList.forEach(player => {
                 const firstPos = player.position ? player.position.split(',')[0].trim().toLowerCase() : '';
                 let cssClass = 'pos-' + firstPos;
-                if(firstPos === 'cl') cssClass = 'pos-cp';
+                if(firstPos === 'cl') cssClass = 'pos-cl';
 
                 let disabled = !isMyTurn;
                 let btnText = "Draft";
@@ -479,7 +479,7 @@
                 data.forEach(player => {
                     const firstPos = player.position ? player.position.split(',')[0].trim().toLowerCase() : '';
                     let cssClass = 'pos-' + firstPos;
-                    if(firstPos === 'cl') cssClass = 'pos-cp';
+                    if(firstPos === 'cl') cssClass = 'pos-cl';
                     totalCost += (player.cost || 0);
 
                     list.append(`

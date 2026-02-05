@@ -67,7 +67,7 @@ public class Rule1Validator implements DraftRuleValidator {
                         pref.toLowerCase().contains(playerTeam.toLowerCase());
 
                 if (!match) {
-                    throw new IllegalStateException("First pick must be from preferred team: " + participant.getPreferredTeam());
+                    throw new IllegalStateException("1차 지명 룰 위반: " + participant.getPreferredTeam());
                 }
             }
         }
@@ -77,7 +77,7 @@ public class Rule1Validator implements DraftRuleValidator {
         combinedTeam.add(newPlayer);
 
         if (!canFit(combinedTeam)) {
-            throw new IllegalStateException("Drafting this player violates roster composition rules.");
+            throw new IllegalStateException("이 선수를 뽑으면 로스터 포지션을 채울 수 없습니다.");
         }
 
         // Foreigner Limits Check
@@ -138,7 +138,7 @@ public class Rule1Validator implements DraftRuleValidator {
              List<String> sortedMissing = new ArrayList<>(missingTeamsSet);
              Collections.sort(sortedMissing);
              String missingStr = String.join(", ", sortedMissing);
-             throw new IllegalStateException("Must pick players from all 10 teams. Missing: [" + missingStr + "]");
+             throw new IllegalStateException("10개 구단에서 각각 한명씩 뽑아야합니다. 빠진 팀 : [" + missingStr + "]");
         }
     }
 
@@ -154,10 +154,10 @@ public class Rule1Validator implements DraftRuleValidator {
         }).count();
 
         if (type1Count > MAX_TYPE1_FOREIGNERS) {
-            throw new IllegalStateException("Cannot draft more than " + MAX_TYPE1_FOREIGNERS + " Foreigners (TYPE_1).");
+            throw new IllegalStateException("외국인 용병 제한 " + MAX_TYPE1_FOREIGNERS + " 명을 넘게 선발할 수 없습니다.");
         }
         if (type2Count > MAX_TYPE2_FOREIGNERS) {
-            throw new IllegalStateException("Cannot draft more than " + MAX_TYPE2_FOREIGNERS + " Asian Quarter (TYPE_2).");
+            throw new IllegalStateException("아시아 쿼터 제한" + MAX_TYPE2_FOREIGNERS + " 명을 넘게 선발할 수 없습니다.");
         }
     }
 

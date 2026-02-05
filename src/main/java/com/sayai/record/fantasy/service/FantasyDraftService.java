@@ -56,7 +56,7 @@ public class FantasyDraftService {
 
         // Check if already joined
         if (fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(gameSeq, playerId).isPresent()) {
-            throw new IllegalStateException("Player already joined this game");
+            throw new IllegalStateException("이미 참여 신청을 완료했습니다");
         }
 
         FantasyParticipant participant = FantasyParticipant.builder()
@@ -119,13 +119,13 @@ public class FantasyDraftService {
                 .orElseThrow(() -> new IllegalArgumentException("Invalid Game Seq"));
 
         if (game.getStatus() != FantasyGame.GameStatus.DRAFTING) {
-            throw new IllegalStateException("Game is not in DRAFTING status");
+            throw new IllegalStateException("드래프트 중이 아닙니다");
         }
 
         // Check Turn
         NextPickInfo nextPick = getNextPickInfo(game);
         if (!nextPick.pickerId.equals(request.getPlayerId())) {
-            throw new IllegalStateException("It is not your turn. Current turn: " + nextPick.pickerId);
+            throw new IllegalStateException("당신의 차례가 아닙니다: " + nextPick.pickerId);
         }
 
         // 2. Check availability
@@ -134,7 +134,7 @@ public class FantasyDraftService {
                 request.getFantasyPlayerSeq()
         );
         if (isPicked) {
-            throw new IllegalStateException("Player already picked");
+            throw new IllegalStateException("이미 뽑힌 선수입니다");
         }
 
         // 3. Validate Rules
@@ -155,7 +155,7 @@ public class FantasyDraftService {
             int currentCost = currentTeam.stream().mapToInt(p -> p.getCost() == null ? 0 : p.getCost()).sum();
             int newPlayerCost = targetPlayer.getCost() == null ? 0 : targetPlayer.getCost();
             if (currentCost + newPlayerCost > game.getSalaryCap()) {
-                throw new IllegalStateException("Salary Cap Exceeded: " + (currentCost + newPlayerCost) + " / " + game.getSalaryCap());
+                throw new IllegalStateException("샐캡 초과: " + (currentCost + newPlayerCost) + " / " + game.getSalaryCap());
             }
         }
 
@@ -319,11 +319,11 @@ public class FantasyDraftService {
             // But if user has 4 SPs, 5th SP -> Bench.
             long spCount = occupied.stream().filter(p -> p.equals("SP")).count();
             long rpCount = occupied.stream().filter(p -> p.equals("RP")).count();
-            long clCount = occupied.stream().filter(p -> p.equals("CL") || p.equals("CP")).count();
+            long clCount = occupied.stream().filter(p -> p.equals("CL")).count();
 
             if (primaryPos.equals("SP")) return spCount < 4 ? "SP" : null;
             if (primaryPos.equals("RP")) return rpCount < 4 ? "RP" : null;
-            if (primaryPos.equals("CL") || primaryPos.equals("CP")) return clCount < 1 ? "CL" : null;
+            if (primaryPos.equals("CL")) return clCount < 1 ? "CL" : null;
             return null; // Bench
         } else {
             // Batter Logic
@@ -340,7 +340,7 @@ public class FantasyDraftService {
     }
 
     private boolean isPitcher(String pos) {
-        return pos.equals("SP") || pos.equals("RP") || pos.equals("CL") || pos.equals("CP");
+        return pos.equals("SP") || pos.equals("RP") || pos.equals("CL");
     }
 
     @Transactional

@@ -95,7 +95,7 @@
                     <div class="pitcher-slot" id="slot-RP-4"><span class="pitcher-role">RP</span><span class="player-name">-</span></div>
 
                     <!-- CL Slot -->
-                    <div class="pitcher-slot" id="slot-CL-1"><span class="pitcher-role">CP</span><span class="player-name">-</span></div>
+                    <div class="pitcher-slot" id="slot-CL-1"><span class="pitcher-role">CL</span><span class="player-name">-</span></div>
                 </div>
             </div>
             <div style="text-align: right; margin-bottom: 20px;">
@@ -202,9 +202,6 @@
             const validPositions = player.position.split(',').map(s => s.trim());
 
             // Map requiredPos to equivalents
-            if (requiredPos === 'CL' && validPositions.includes('CP')) return true;
-            if (requiredPos === 'CP' && validPositions.includes('CL')) return true;
-
             if (validPositions.includes(requiredPos)) return true;
 
             // DH Check
@@ -214,7 +211,7 @@
         }
 
         function isPitcher(pos) {
-            return ['SP', 'RP', 'CP', 'CL'].includes(pos);
+            return ['SP', 'RP', 'CL'].includes(pos);
         }
 
         function swapSlots(slotA, slotB) {
@@ -329,7 +326,7 @@
                             if (assignPitcher('SP', spCount, p)) placed = true;
                         } else if (ap === 'RP') {
                             if (assignPitcher('RP', rpCount, p)) placed = true;
-                        } else if (ap === 'CL' || ap === 'CP') {
+                        } else if (ap === 'CL') {
                             if (fillSlotById('slot-CL-1', p)) placed = true;
                         } else {
                             // Handle Specific Field (1B, C, etc)
@@ -403,7 +400,7 @@
         }
 
         function isPitcher(pos) {
-            return ['SP', 'RP', 'CP', 'CL'].includes(pos);
+            return ['SP', 'RP', 'CL'].includes(pos);
         }
 
         function fillSlot(pos, player) {

@@ -1,5 +1,6 @@
 package com.sayai.record.fantasy.entity;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import jakarta.persistence.*;
@@ -22,7 +23,7 @@ public class FantasyPlayer {
 
     private String stats;
 
-    @jakarta.validation.constraints.NotNull(message = "Cost must be non-negative")
+    @NotNull(message = "Cost must be non-negative")
     @Min(value = 0, message = "Cost must be non-negative")
     @Column(columnDefinition = "integer check (cost >= 0)")
     private Integer cost;
