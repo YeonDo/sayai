@@ -11,7 +11,7 @@
     <div class="container">
         <header class="fantasy-header" style="justify-content: space-between;">
             <div style="display:flex; align-items:center; gap: 20px;">
-                <h1>Player List</h1>
+                <h1>선수 공시</h1>
             </div>
             <button onclick="openPatchLog()" class="btn btn-primary" style="background-color: #6c757d;">Patch Log</button>
         </header>
@@ -84,21 +84,21 @@
                 <button onclick="closePatchLog()" style="background:none; border:none; font-size: 1.5rem; cursor: pointer;">&times;</button>
             </div>
             <div class="modal-body" style="overflow-y: auto; flex-grow: 1; line-height: 1.6;">
-                <h4>v1.2.0 - Fantasy Update</h4>
+                <h4>v1.1.0 - 샐러리캡 기능 추가</h4>
                 <ul>
-                    <li>Added Salary Cap Mode</li>
-                    <li>Implemented First Pick Rule (Team Priority)</li>
-                    <li>Added Bench Slots (3 slots)</li>
-                    <li>Fixed UI scrolling issues on Admin page</li>
-                    <li>Improved Draft Room Mobile Layout</li>
+                    <li>모든 선수 코스트 산정</li>
+                    <li>신입 FA 계약 반영</li>
+                    <li>최근 3년 평균 WAR 을 기반으로 코스트 산정</li>
+                    <li>최근 3년 외인 평균 WAR 을 기반으로 신규 외인 코스트 산정</li>
+                    <li>이전 선수 데이터 초기화로 인한 드래프트 로그 조회 불가</li>
                 </ul>
                 <hr>
-                <h4>v1.1.0 - Initial Release</h4>
+                <h4>v1.0.0 - 최초 공시</h4>
                 <p>
-                    Launched basic Fantasy Draft features.<br>
-                    - Snake Draft<br>
-                    - Real-time WebSocket connection<br>
-                    - Admin Management Tools
+                    2025 규정타석/이닝 30% 플레이한 이력이 있는 모든 선수 등록<br>
+                    - 야수 수비포지션은 100이닝 이상 플레이한 포지션만 선정<br>
+                    - 너무 적은 이닝을 소화한 투수는 제외<br>
+                    - 몇몇 선수들을 특별히 추가
                 </p>
                 <!-- Add more dummy content to test scroll -->
                 <br><br><br><br><br><br><br><br><br><br><br><br>
