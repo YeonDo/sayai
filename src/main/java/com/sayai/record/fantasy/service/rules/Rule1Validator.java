@@ -15,6 +15,11 @@ public class Rule1Validator implements DraftRuleValidator {
     private static final int MAX_TYPE2_FOREIGNERS = 1;
     private static final int MIN_REQUIRED_TEAMS = 10;
 
+    // KBO Teams
+    private static final Set<String> KBO_TEAMS = Set.of(
+            "KIA", "LG", "KT", "SSG", "NC", "두산", "롯데", "삼성", "한화", "키움"
+    );
+
     private static final Map<String, Integer> BASE_SLOTS = new HashMap<>();
 
     static {
@@ -85,23 +90,55 @@ public class Rule1Validator implements DraftRuleValidator {
     }
 
     private void validateTeamRestriction(List<FantasyPlayer> team) {
-        long distinctTeams = team.stream()
+        Set<String> distinctTeams = team.stream()
                 .map(FantasyPlayer::getTeam)
                 .filter(Objects::nonNull)
                 .map(String::trim)
-                .distinct()
-                .count();
+                .collect(Collectors.toSet());
 
         // Total roster size is determined by total slots
         int totalSlots = getTotalPlayerCount();
         int currentSize = team.size(); // After this pick
 
         int remainingSlots = totalSlots - currentSize;
-        long missingTeams = Math.max(0, MIN_REQUIRED_TEAMS - distinctTeams);
+
+        // Count ONLY KBO teams for the requirement? Or any distinct team?
+        // Assuming user means the 10 KBO teams.
+        // If the rule is strictly "pick from 10 teams", usually means cover all 10.
+        // Let's identify missing KBO teams.
+        Set<String> missingTeamsSet = new HashSet<>(KBO_TEAMS);
+        // Normalize comparison (case insensitive or exact?)
+        // Assuming data is consistent, but let's be safe if possible.
+        // Actually the team names in DB are Korean/English mix as per Set.of above.
+        // Let's assume exact match for now based on previous code.
+
+        // Remove picked teams from missing set
+        // Handle potential minor differences? For now exact match against KBO_TEAMS
+        // If a player has "KIA Tigers", we need to know. Assuming "KIA", "LG" etc.
+        // If existing logic used simple distinct count, it didn't enforce SPECIFIC teams, just count.
+        // "10개 구단의 선수를 적어도 한명씩 픽해야하는 규칙" -> Must pick at least one from EACH of the 10 teams.
+        // So we should track specific coverage.
+
+        // Filter distinctTeams to only those in KBO_TEAMS to be safe
+        for (String picked : distinctTeams) {
+            // Check if picked matches any KBO team (contains or exact)
+            // If data is clean "KIA", "LG", then remove.
+            if (KBO_TEAMS.contains(picked)) {
+                missingTeamsSet.remove(picked);
+            } else {
+                 // Try partial match if needed? "KIA Tigers" -> "KIA"
+                 // If not matching, it's a team not in the list (e.g. military/indie? unlikely in KBO fantasy)
+            }
+        }
+
+        int missingCount = missingTeamsSet.size();
 
         // If we don't have enough remaining slots to pick a new team for each missing team
-        if (remainingSlots < missingTeams) {
-            throw new IllegalStateException("Must pick players from at least " + MIN_REQUIRED_TEAMS + " different teams. Not enough slots left to satisfy this rule.");
+        if (remainingSlots < missingCount) {
+             List<String> sortedMissing = new ArrayList<>(missingTeamsSet);
+             Collections.sort(sortedMissing);
+             String missingStr = String.join(", ", sortedMissing);
+             throw new IllegalStateException("Must pick players from all 10 teams. Missing: [" + missingStr + "]");
         }
     }
 

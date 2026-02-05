@@ -28,44 +28,14 @@ class Rule1ValidatorTeamRestrictionTest {
                 .build();
         FantasyParticipant participant = FantasyParticipant.builder().build();
 
-        // Fill team with 9 players from "TeamA"
+        // Fill team with 9 players from "KIA" (4 SP, 4 RP, 1 CL)
         List<FantasyPlayer> currentTeam = new ArrayList<>();
-        for (int i = 0; i < 9; i++) {
-            currentTeam.add(FantasyPlayer.builder()
-                    .seq((long) i)
-                    .team("TeamA")
-                    .position("P") // Use generic position to pass composition check if possible, or assume mock works
-                    .cost(10)
-                    .build());
-        }
+        for(int i=0; i<4; i++) currentTeam.add(createPlayer("KIA", "SP"));
+        for(int i=0; i<4; i++) currentTeam.add(createPlayer("KIA", "RP"));
+        currentTeam.add(createPlayer("KIA", "CL"));
 
-        // Try to pick 10th player from "TeamA"
-        // Remaining slots: 18 - 10 = 8.
-        // Distinct teams: 1. Missing: 9.
-        // 8 < 9. Would fail if enabled.
-        FantasyPlayer player = FantasyPlayer.builder()
-                .team("TeamA")
-                .position("C")
-                .cost(10)
-                .build();
-
-        // Note: We need to ensure composition check passes.
-        // With 9 P and 1 C, it might fail composition if not careful.
-        // Rule1Validator checks backtracking.
-        // 18 slots total. 4 SP, 4 RP, 1 CL = 9 Pitchers.
-        // So 9 "P" might be parsed as SP/RP?
-        // Let's rely on the fact that Rule1Validator checks this.
-        // We should construct a valid team composition-wise.
-        // 4 SP, 4 RP, 1 CL = 9 Players. All from TeamA.
-        // 10th Player: C from TeamA.
-        // This is valid composition.
-
-        currentTeam.clear();
-        for(int i=0; i<4; i++) currentTeam.add(createPlayer("TeamA", "SP"));
-        for(int i=0; i<4; i++) currentTeam.add(createPlayer("TeamA", "RP"));
-        currentTeam.add(createPlayer("TeamA", "CL"));
-
-        FantasyPlayer finalPlayer = createPlayer("TeamA", "C");
+        // Try to pick 10th player from "KIA"
+        FantasyPlayer finalPlayer = createPlayer("KIA", "C");
 
         assertThatCode(() -> validator.validate(game, finalPlayer, currentTeam, participant))
                 .doesNotThrowAnyException();
@@ -78,22 +48,24 @@ class Rule1ValidatorTeamRestrictionTest {
                 .build();
         FantasyParticipant participant = FantasyParticipant.builder().build();
 
-        // 9 Players from TeamA (4 SP, 4 RP, 1 CL)
+        // 9 Players from KIA
         List<FantasyPlayer> currentTeam = new ArrayList<>();
-        for(int i=0; i<4; i++) currentTeam.add(createPlayer("TeamA", "SP"));
-        for(int i=0; i<4; i++) currentTeam.add(createPlayer("TeamA", "RP"));
-        currentTeam.add(createPlayer("TeamA", "CL"));
+        for(int i=0; i<4; i++) currentTeam.add(createPlayer("KIA", "SP"));
+        for(int i=0; i<4; i++) currentTeam.add(createPlayer("KIA", "RP"));
+        currentTeam.add(createPlayer("KIA", "CL"));
 
-        // Try to pick 10th player from TeamA
+        // Try to pick 10th player from KIA
         // Remaining after this pick: 18 - 10 = 8.
-        // Distinct Teams: 1 (TeamA).
-        // Missing Teams: 9.
+        // Distinct Teams: 1 (KIA). Missing: 9.
         // 8 < 9 -> FAIL
-        FantasyPlayer player = createPlayer("TeamA", "C");
+        FantasyPlayer finalPlayer = createPlayer("KIA", "C");
 
-        assertThatThrownBy(() -> validator.validate(game, player, currentTeam, participant))
+        assertThatThrownBy(() -> validator.validate(game, finalPlayer, currentTeam, participant))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("Must pick players from at least 10 different teams");
+                .hasMessageContaining("Must pick players from all 10 teams")
+                .hasMessageContaining("Missing: [")
+                .hasMessageContaining("LG")
+                .hasMessageContaining("SSG");
     }
 
     @Test
@@ -103,18 +75,17 @@ class Rule1ValidatorTeamRestrictionTest {
                 .build();
         FantasyParticipant participant = FantasyParticipant.builder().build();
 
-        // 9 Players from TeamA
+        // 9 Players from KIA
         List<FantasyPlayer> currentTeam = new ArrayList<>();
-        for(int i=0; i<4; i++) currentTeam.add(createPlayer("TeamA", "SP"));
-        for(int i=0; i<4; i++) currentTeam.add(createPlayer("TeamA", "RP"));
-        currentTeam.add(createPlayer("TeamA", "CL"));
+        for(int i=0; i<4; i++) currentTeam.add(createPlayer("KIA", "SP"));
+        for(int i=0; i<4; i++) currentTeam.add(createPlayer("KIA", "RP"));
+        currentTeam.add(createPlayer("KIA", "CL"));
 
-        // Try to pick 10th player from TeamB
+        // Try to pick 10th player from LG
         // Remaining after this pick: 8.
-        // Distinct Teams: 2 (TeamA, TeamB).
-        // Missing Teams: 8.
+        // Distinct Teams: 2 (KIA, LG). Missing: 8 (SSG, NC, etc).
         // 8 >= 8 -> PASS
-        FantasyPlayer player = createPlayer("TeamB", "C");
+        FantasyPlayer player = createPlayer("LG", "C");
 
         assertThatCode(() -> validator.validate(game, player, currentTeam, participant))
                 .doesNotThrowAnyException();
