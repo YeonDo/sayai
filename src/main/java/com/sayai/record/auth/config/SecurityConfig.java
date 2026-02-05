@@ -49,6 +49,7 @@ public class SecurityConfig {
                         .requestMatchers("/apis/v1/admin/**").hasRole("ADMIN")
                         // Require auth for Fantasy APIs and Views
                         .requestMatchers("/apis/v1/fantasy/**", "/fantasy/**").authenticated()
+                        .requestMatchers("/apis/v1/auth/password").authenticated()
                         .anyRequest().permitAll()
                 )
                 .exceptionHandling(e -> e

@@ -6,6 +6,90 @@
     </div>
     <div class="gnb-right">
         <span id="gnb-user-name" style="margin-right: 15px; font-weight: bold; display: none;"></span>
+        <button id="gnb-member-info-btn" type="button" class="btn-primary" style="padding: 5px 10px; font-size: 0.9rem; margin-right: 10px; display: none; background-color: #6c757d; border-color: #6c757d;" onclick="openMemberInfoModal()">회원정보 변경</button>
         <button id="gnb-login-btn" type="button" class="btn-primary" style="padding: 5px 10px; font-size: 0.9rem;" onclick="openLoginModal()">로그인</button>
     </div>
+
+    <div id="member-info-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeMemberInfoModal()">&times;</span>
+            <h2 style="border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 20px;">회원정보 변경</h2>
+
+            <div class="member-tab" style="margin-bottom: 20px;">
+                <div style="border-bottom: 2px solid #007bff; display: inline-block; padding: 5px 10px; font-weight: bold; color: #007bff;">비밀번호 변경</div>
+            </div>
+
+            <div class="form-group">
+                <label for="current-password">현재 비밀번호</label>
+                <input type="password" id="current-password" placeholder="현재 비밀번호 입력">
+            </div>
+            <div class="form-group">
+                <label for="new-password">새로운 비밀번호</label>
+                <input type="password" id="new-password" placeholder="새로운 비밀번호 입력">
+                <div style="color: #888; font-size: 0.8rem; margin-top: 5px;">영문, 숫자 포함 8자 이상</div>
+            </div>
+            <div class="form-group">
+                <label for="confirm-password">새로운 비밀번호 확인</label>
+                <input type="password" id="confirm-password" placeholder="새로운 비밀번호 확인">
+            </div>
+
+            <div style="text-align: right; margin-top: 20px;">
+                <button class="btn-primary" style="background-color: #6c757d; border-color: #6c757d; margin-right: 5px;" onclick="closeMemberInfoModal()">취소</button>
+                <button class="btn-primary" onclick="submitChangePassword()">변경</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            if (localStorage.getItem('isLoggedIn')) {
+                $('#gnb-member-info-btn').show();
+            } else {
+                $('#gnb-member-info-btn').hide();
+            }
+        });
+
+        function openMemberInfoModal() {
+            $('#member-info-modal').css('display', 'flex');
+            $('#current-password').val('');
+            $('#new-password').val('');
+            $('#confirm-password').val('');
+        }
+
+        function closeMemberInfoModal() {
+            $('#member-info-modal').css('display', 'none');
+        $('#member-info-modal input[type="password"]').val('');
+        }
+
+        function submitChangePassword() {
+            const currentPassword = $('#current-password').val();
+            const newPassword = $('#new-password').val();
+            const confirmPassword = $('#confirm-password').val();
+
+            if (newPassword !== confirmPassword) {
+                alert('새로운 비밀번호가 일치하지 않습니다.');
+                return;
+            }
+
+            const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+            if (!passwordRegex.test(newPassword)) {
+                alert('비밀번호는 영문과 숫자를 포함하여 8자 이상이어야 합니다.');
+                return;
+            }
+
+            $.ajax({
+                url: '/apis/v1/auth/password',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ currentPassword: currentPassword, newPassword: newPassword }),
+                success: function(response) {
+                    alert('비밀번호가 변경되었습니다.');
+                    closeMemberInfoModal();
+                },
+                error: function(xhr) {
+                    alert('비밀번호 변경에 실패했습니다: ' + (xhr.responseText || '오류 발생'));
+                }
+            });
+        }
+    </script>
 </div>
