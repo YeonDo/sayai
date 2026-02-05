@@ -29,6 +29,10 @@ public class Member {
     @Setter
     private Role role;
 
+    public void changePassword(String password) {
+        this.password = password;
+    }
+
     @PrePersist
     public void prePersist() {
         if (this.role == null) {
