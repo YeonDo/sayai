@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -43,5 +44,20 @@ class FantasyDraftServiceFilterTest {
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getName()).isEqualTo("Kim");
+    }
+
+    @Test
+    void getAvailablePlayers_shouldTreatEmptyStringsAsNull() {
+        Long gameSeq = 0L;
+        String team = "";
+        String pos = "";
+        String search = "";
+
+        // Expect findPlayers to be called with nulls
+        when(fantasyPlayerRepository.findPlayers(null, null, null)).thenReturn(Collections.emptyList());
+
+        fantasyDraftService.getAvailablePlayers(gameSeq, team, pos, search, null);
+
+        verify(fantasyPlayerRepository).findPlayers(null, null, null);
     }
 }

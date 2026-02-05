@@ -98,7 +98,7 @@
                                 <div class="pitcher-slot" id="d-slot-RP-2"><span class="pitcher-role">RP</span><span class="player-name">-</span></div>
                                 <div class="pitcher-slot" id="d-slot-RP-3"><span class="pitcher-role">RP</span><span class="player-name">-</span></div>
                                 <div class="pitcher-slot" id="d-slot-RP-4"><span class="pitcher-role">RP</span><span class="player-name">-</span></div>
-                                <div class="pitcher-slot" id="d-slot-CL-1"><span class="pitcher-role">CP</span><span class="player-name">-</span></div>
+                                <div class="pitcher-slot" id="d-slot-CL-1"><span class="pitcher-role">CL</span><span class="player-name">-</span></div>
                             </div>
                         </div>
                     </div>
@@ -316,10 +316,10 @@
             roster.forEach(p => {
                 // Use assignedPosition if available
                 if (p.assignedPosition) {
-                    if (['SP', 'RP', 'CL', 'CP'].includes(p.assignedPosition)) {
+                    if (['SP', 'RP', 'CL'].includes(p.assignedPosition)) {
                          if (p.assignedPosition === 'SP') assignDetailPitcher('SP', spCount, p);
                          else if (p.assignedPosition === 'RP') assignDetailPitcher('RP', rpCount, p);
-                         else if (p.assignedPosition === 'CL' || p.assignedPosition === 'CP') fillDetailPitcherSlot('CL-1', p);
+                         else if (p.assignedPosition === 'CL') fillDetailPitcherSlot('CL-1', p);
                     } else {
                          fillDetailSlot(p.assignedPosition, p);
                     }
@@ -335,7 +335,7 @@
         }
 
         function isPitcher(pos) {
-            return ['SP', 'RP', 'CP', 'CL'].includes(pos);
+            return ['SP', 'RP', 'CL'].includes(pos);
         }
 
         function fillDetailSlot(pos, player) {

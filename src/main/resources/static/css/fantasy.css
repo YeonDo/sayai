@@ -278,6 +278,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    position: relative; /* Anchor for tooltip */
 }
 
 .pitcher-slot.filled {
@@ -344,7 +345,7 @@
 /* Position Colors */
 .pos-sp { color: #D60C0C; font-weight: bold; } /* Red */
 .pos-rp { color: #FF9800; font-weight: bold; } /* Orange */
-.pos-cp { color: #9C27B0; font-weight: bold; } /* Purple */
+.pos-cl { color: #9C27B0; font-weight: bold; } /* Purple */
 .pos-c  { color: #795548; font-weight: bold; } /* Brown */
 .pos-if { color: #007bff; font-weight: bold; } /* Blue */
 .pos-of { color: #28a745; font-weight: bold; } /* Green */
@@ -379,6 +380,54 @@
     box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
     cursor: pointer;
 }
+
+/* Player Card Tooltip */
+.player-card-tooltip {
+    display: none;
+    position: absolute;
+    top: 100%; /* Show below the element */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 200px;
+    background-color: white;
+    border: 1px solid #ccc;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    padding: 10px;
+    border-radius: 6px;
+    z-index: 1000;
+    text-align: left;
+    pointer-events: none; /* Prevent flickering on hover */
+    margin-top: 5px;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    color: #333;
+}
+
+/* Adjust position for field players to be above if low on screen?
+   For now standard bottom is fine, but maybe add arrow? */
+.player-card-tooltip::after {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent transparent white transparent;
+}
+
+.field-position:hover .player-card-tooltip,
+.pitcher-slot:hover .player-card-tooltip {
+    display: block;
+}
+
+.field-position:hover {
+    z-index: 1100; /* Ensure hovered card is on top of others */
+}
+
+/* Special adjustment for tooltip inside field positions to override transforms if needed.
+   The field-position uses transform: translate(-50%, -50%).
+   The tooltip's left:50% + translateX(-50%) centers it relative to the field-position's box. */
 
 /* Modal Specifics */
 .details-section {

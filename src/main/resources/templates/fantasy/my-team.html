@@ -95,7 +95,7 @@
                     <div class="pitcher-slot" id="slot-RP-4"><span class="pitcher-role">RP</span><span class="player-name">-</span></div>
 
                     <!-- CL Slot -->
-                    <div class="pitcher-slot" id="slot-CL-1"><span class="pitcher-role">CP</span><span class="player-name">-</span></div>
+                    <div class="pitcher-slot" id="slot-CL-1"><span class="pitcher-role">CL</span><span class="player-name">-</span></div>
                 </div>
             </div>
             <div style="text-align: right; margin-bottom: 20px;">
@@ -202,9 +202,6 @@
             const validPositions = player.position.split(',').map(s => s.trim());
 
             // Map requiredPos to equivalents
-            if (requiredPos === 'CL' && validPositions.includes('CP')) return true;
-            if (requiredPos === 'CP' && validPositions.includes('CL')) return true;
-
             if (validPositions.includes(requiredPos)) return true;
 
             // DH Check
@@ -214,7 +211,7 @@
         }
 
         function isPitcher(pos) {
-            return ['SP', 'RP', 'CP', 'CL'].includes(pos);
+            return ['SP', 'RP', 'CL'].includes(pos);
         }
 
         function swapSlots(slotA, slotB) {
@@ -239,6 +236,7 @@
             if (isField) slot.find('.player-team').remove();
             else slot.removeClass('filled');
             slot.removeClass('invalid-position'); // Reset validation state
+            slot.find('.player-card-tooltip').remove(); // Clear tooltip
 
             if (player) {
                 if (isField) {
@@ -248,6 +246,21 @@
                     nameElem.text(`${player.name} (${player.team})`);
                     slot.addClass('filled');
                 }
+
+                // Add Tooltip
+                const tooltipHtml = `
+                    <div class="player-card-tooltip">
+                        <div style="font-weight:bold; border-bottom:1px solid #eee; margin-bottom:5px; padding-bottom:3px;">
+                            ${player.name} <span style="font-weight:normal; font-size:0.8rem; color:#666;">(${player.team})</span>
+                        </div>
+                        <div><strong>Pos:</strong> ${player.position}</div>
+                        <div><strong>Cost:</strong> ${player.cost || 0}</div>
+                        <div style="margin-top:5px; font-size:0.8rem; color:#555;">
+                            <strong>Stats:</strong><br>${player.stats || '-'}
+                        </div>
+                    </div>
+                `;
+                slot.append(tooltipHtml);
             }
         }
 
@@ -313,7 +326,7 @@
                             if (assignPitcher('SP', spCount, p)) placed = true;
                         } else if (ap === 'RP') {
                             if (assignPitcher('RP', rpCount, p)) placed = true;
-                        } else if (ap === 'CL' || ap === 'CP') {
+                        } else if (ap === 'CL') {
                             if (fillSlotById('slot-CL-1', p)) placed = true;
                         } else {
                             // Handle Specific Field (1B, C, etc)
@@ -387,7 +400,7 @@
         }
 
         function isPitcher(pos) {
-            return ['SP', 'RP', 'CP', 'CL'].includes(pos);
+            return ['SP', 'RP', 'CL'].includes(pos);
         }
 
         function fillSlot(pos, player) {
