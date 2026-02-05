@@ -13,6 +13,7 @@ public class Rule1Validator implements DraftRuleValidator {
 
     private static final int MAX_TYPE1_FOREIGNERS = 3;
     private static final int MAX_TYPE2_FOREIGNERS = 1;
+    private static final int MIN_REQUIRED_TEAMS = 10;
 
     private static final Map<String, Integer> BASE_SLOTS = new HashMap<>();
 
@@ -76,6 +77,32 @@ public class Rule1Validator implements DraftRuleValidator {
 
         // Foreigner Limits Check
         validateForeignerLimits(combinedTeam);
+
+        // Team Restriction Check (Optional)
+        if (Boolean.TRUE.equals(game.getUseTeamRestriction())) {
+            validateTeamRestriction(combinedTeam);
+        }
+    }
+
+    private void validateTeamRestriction(List<FantasyPlayer> team) {
+        long distinctTeams = team.stream()
+                .map(FantasyPlayer::getTeam)
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .distinct()
+                .count();
+
+        // Total roster size is determined by total slots
+        int totalSlots = getTotalPlayerCount();
+        int currentSize = team.size(); // After this pick
+
+        int remainingSlots = totalSlots - currentSize;
+        long missingTeams = Math.max(0, MIN_REQUIRED_TEAMS - distinctTeams);
+
+        // If we don't have enough remaining slots to pick a new team for each missing team
+        if (remainingSlots < missingTeams) {
+            throw new IllegalStateException("Must pick players from at least " + MIN_REQUIRED_TEAMS + " different teams. Not enough slots left to satisfy this rule.");
+        }
     }
 
     private void validateForeignerLimits(List<FantasyPlayer> team) {
