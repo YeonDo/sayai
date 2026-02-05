@@ -161,7 +161,8 @@
             ruleType: 'RULE_1',
             myPreferredTeam: null,
             round: 1, // Default
-            salaryCap: null
+            salaryCap: null,
+            currentCost: 0
         };
 
         $(document).ready(function() {
@@ -379,7 +380,7 @@
 
                     // Salary Cap Check
                     if (isMyTurn && gameState.salaryCap && gameState.salaryCap > 0) {
-                        const currentCost = parseInt($('#current-cost').text()) || 0;
+                        const currentCost = gameState.currentCost || 0;
                         const playerCost = player.cost || 0;
                         if (currentCost + playerCost > gameState.salaryCap) {
                             disabled = true;
@@ -426,6 +427,7 @@
                     `);
                 });
                 $('#current-cost').text(totalCost);
+                gameState.currentCost = totalCost;
                 // Reload available players to update Over Cap buttons if cost changed
                 // Avoid infinite loop if calling from within init? init calls both.
                 // But loadAvailablePlayers doesn't call loadMyPicks.

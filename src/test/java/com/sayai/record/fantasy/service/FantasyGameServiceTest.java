@@ -74,6 +74,7 @@ class FantasyGameServiceTest {
                 .name("Player 1")
                 .position("1B")
                 .team("KIA")
+                .cost(10)
                 .build();
         when(fantasyPlayerRepository.findAllById(any())).thenReturn(List.of(fantasyPlayer));
 

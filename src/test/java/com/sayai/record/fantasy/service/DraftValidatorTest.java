@@ -27,7 +27,7 @@ class DraftValidatorTest {
     @Test
     void validate_shouldDelegateToRule1() {
         FantasyGame game = FantasyGame.builder().ruleType(FantasyGame.RuleType.RULE_1).build();
-        FantasyPlayer p1 = FantasyPlayer.builder().position("1B").build();
+        FantasyPlayer p1 = FantasyPlayer.builder().position("1B").cost(10).build();
 
         assertThatCode(() -> draftValidator.validate(game, p1, Collections.emptyList(), null))
                 .doesNotThrowAnyException();
@@ -37,7 +37,7 @@ class DraftValidatorTest {
     void validate_shouldDelegateToRule2() {
         FantasyGame game = FantasyGame.builder().ruleType(FantasyGame.RuleType.RULE_2).build();
         FantasyParticipant participant = FantasyParticipant.builder().preferredTeam("TeamA").build();
-        FantasyPlayer p1 = FantasyPlayer.builder().team("TeamB").position("C").build(); // Wrong Team
+        FantasyPlayer p1 = FantasyPlayer.builder().team("TeamB").position("C").cost(10).build(); // Wrong Team
 
         assertThatThrownBy(() -> draftValidator.validate(game, p1, Collections.emptyList(), participant))
                 .isInstanceOf(IllegalStateException.class)

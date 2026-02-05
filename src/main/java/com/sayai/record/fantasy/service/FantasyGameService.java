@@ -233,6 +233,89 @@ public class FantasyGameService {
     }
 
     @Transactional(readOnly = true)
+    public String exportRoster(Long gameSeq) {
+        FantasyGame game = fantasyGameRepository.findById(gameSeq)
+                .orElseThrow(() -> new IllegalArgumentException("Game not found"));
+
+        // Allow export for ONGOING and FINISHED
+        if (game.getStatus() != FantasyGame.GameStatus.ONGOING && game.getStatus() != FantasyGame.GameStatus.FINISHED) {
+            // throw new IllegalStateException("Game must be ONGOING or FINISHED to export.");
+            // Or just return empty or proceed. Requirement says "ONGOING".
+        }
+
+        List<FantasyParticipant> participants = fantasyParticipantRepository.findByFantasyGameSeq(gameSeq);
+        List<DraftPick> allPicks = draftPickRepository.findByFantasyGameSeq(gameSeq);
+
+        Set<Long> playerSeqs = allPicks.stream().map(DraftPick::getFantasyPlayerSeq).collect(Collectors.toSet());
+        Map<Long, FantasyPlayer> players = fantasyPlayerRepository.findAllById(playerSeqs).stream()
+                .collect(Collectors.toMap(FantasyPlayer::getSeq, Function.identity()));
+
+        Map<Long, List<DraftPick>> picksByPart = allPicks.stream().collect(Collectors.groupingBy(DraftPick::getPlayerId));
+
+        // Prepare data grid: Participant -> { Batters, Pitchers }
+        List<List<String>> allBatters = new ArrayList<>();
+        List<List<String>> allPitchers = new ArrayList<>();
+        List<String> teamNames = new ArrayList<>();
+
+        for (FantasyParticipant p : participants) {
+            teamNames.add(p.getTeamName());
+
+            List<DraftPick> picks = picksByPart.getOrDefault(p.getPlayerId(), Collections.emptyList());
+            List<FantasyPlayer> roster = picks.stream()
+                    .map(pick -> players.get(pick.getFantasyPlayerSeq()))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+
+            List<String> batters = new ArrayList<>();
+            List<String> pitchers = new ArrayList<>();
+
+            for (FantasyPlayer fp : roster) {
+                String pos = fp.getPosition();
+                boolean isPitcher = pos.contains("SP") || pos.contains("RP") || pos.contains("CP") || pos.contains("CL") || pos.equals("P");
+                if (isPitcher) {
+                    pitchers.add(fp.getName());
+                } else {
+                    batters.add(fp.getName());
+                }
+            }
+            allBatters.add(batters);
+            allPitchers.add(pitchers);
+        }
+
+        StringBuilder sb = new StringBuilder();
+
+        // Header Row: Team Names
+        for (String name : teamNames) {
+            sb.append(name).append("\t");
+        }
+        sb.append("\n");
+
+        // Batters (9 rows)
+        for (int i = 0; i < 9; i++) {
+            for (List<String> teamBatters : allBatters) {
+                if (i < teamBatters.size()) {
+                    sb.append(teamBatters.get(i));
+                }
+                sb.append("\t");
+            }
+            sb.append("\n");
+        }
+
+        // Pitchers (9 rows)
+        for (int i = 0; i < 9; i++) {
+            for (List<String> teamPitchers : allPitchers) {
+                if (i < teamPitchers.size()) {
+                    sb.append(teamPitchers.get(i));
+                }
+                sb.append("\t");
+            }
+            sb.append("\n");
+        }
+
+        return sb.toString();
+    }
+
+    @Transactional(readOnly = true)
     public FantasyGameDetailDto getGameDetails(Long gameSeq) {
         FantasyGame game = fantasyGameRepository.findById(gameSeq)
                 .orElseThrow(() -> new IllegalArgumentException("Game not found"));

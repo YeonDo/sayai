@@ -11,6 +11,9 @@ import java.util.stream.Collectors;
 @Component
 public class Rule1Validator implements DraftRuleValidator {
 
+    private static final int MAX_TYPE1_FOREIGNERS = 3;
+    private static final int MAX_TYPE2_FOREIGNERS = 1;
+
     private static final Map<String, Integer> BASE_SLOTS = new HashMap<>();
 
     static {
@@ -57,14 +60,21 @@ public class Rule1Validator implements DraftRuleValidator {
     }
 
     private void validateForeignerLimits(List<FantasyPlayer> team) {
-        long type1Count = team.stream().filter(p -> p.getForeignerType() == FantasyPlayer.ForeignerType.TYPE_1).count();
-        long type2Count = team.stream().filter(p -> p.getForeignerType() == FantasyPlayer.ForeignerType.TYPE_2).count();
+        long type1Count = team.stream().filter(p -> {
+            FantasyPlayer.ForeignerType type = Optional.ofNullable(p.getForeignerType()).orElse(FantasyPlayer.ForeignerType.NONE);
+            return type == FantasyPlayer.ForeignerType.TYPE_1;
+        }).count();
 
-        if (type1Count > 3) {
-            throw new IllegalStateException("Cannot draft more than 3 Foreigners (TYPE_1).");
+        long type2Count = team.stream().filter(p -> {
+            FantasyPlayer.ForeignerType type = Optional.ofNullable(p.getForeignerType()).orElse(FantasyPlayer.ForeignerType.NONE);
+            return type == FantasyPlayer.ForeignerType.TYPE_2;
+        }).count();
+
+        if (type1Count > MAX_TYPE1_FOREIGNERS) {
+            throw new IllegalStateException("Cannot draft more than " + MAX_TYPE1_FOREIGNERS + " Foreigners (TYPE_1).");
         }
-        if (type2Count > 1) {
-            throw new IllegalStateException("Cannot draft more than 1 Asian Quarter (TYPE_2).");
+        if (type2Count > MAX_TYPE2_FOREIGNERS) {
+            throw new IllegalStateException("Cannot draft more than " + MAX_TYPE2_FOREIGNERS + " Asian Quarter (TYPE_2).");
         }
     }
 

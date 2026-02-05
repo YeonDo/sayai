@@ -316,10 +316,10 @@
             roster.forEach(p => {
                 // Use assignedPosition if available
                 if (p.assignedPosition) {
-                    if (['SP', 'RP', 'CL'].includes(p.assignedPosition)) {
+                    if (['SP', 'RP', 'CL', 'CP'].includes(p.assignedPosition)) {
                          if (p.assignedPosition === 'SP') assignDetailPitcher('SP', spCount, p);
                          else if (p.assignedPosition === 'RP') assignDetailPitcher('RP', rpCount, p);
-                         else if (p.assignedPosition === 'CL') fillDetailPitcherSlot('CL-1', p);
+                         else if (p.assignedPosition === 'CL' || p.assignedPosition === 'CP') fillDetailPitcherSlot('CL-1', p);
                     } else {
                          fillDetailSlot(p.assignedPosition, p);
                     }
