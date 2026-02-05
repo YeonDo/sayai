@@ -71,11 +71,20 @@ public class FantasyDraftService {
 
     @Transactional(readOnly = true)
     public List<FantasyPlayerDto> getAvailablePlayers(Long gameSeq, String team, String position, String search, String sort) {
+        if (team != null && team.isEmpty()) team = null;
+        if (position != null && position.isEmpty()) position = null;
+        if (search != null && search.isEmpty()) search = null;
+
         // 1. Get all picks for this game
-        List<DraftPick> picks = draftPickRepository.findByFantasyGameSeq(gameSeq);
-        Set<Long> pickedPlayerSeqs = picks.stream()
-                .map(DraftPick::getFantasyPlayerSeq)
-                .collect(Collectors.toSet());
+        Set<Long> pickedPlayerSeqs;
+        if (gameSeq == null || gameSeq == 0L) {
+            pickedPlayerSeqs = Collections.emptySet();
+        } else {
+            List<DraftPick> picks = draftPickRepository.findByFantasyGameSeq(gameSeq);
+            pickedPlayerSeqs = picks.stream()
+                    .map(DraftPick::getFantasyPlayerSeq)
+                    .collect(Collectors.toSet());
+        }
 
         // 2. Get filtered players from DB
         List<FantasyPlayer> filteredPlayers = fantasyPlayerRepository.findPlayers(team, position, search);
