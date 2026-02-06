@@ -69,10 +69,17 @@ public class AdminController {
     @GetMapping("/fantasy/games/{gameSeq}/participants")
     public ResponseEntity<List<ParticipantDto>> getGameParticipants(@PathVariable(name = "gameSeq") Long gameSeq) {
         List<FantasyParticipant> participants = fantasyParticipantRepository.findByFantasyGameSeq(gameSeq);
+
+        java.util.Set<Long> playerIds = participants.stream()
+                .map(FantasyParticipant::getPlayerId)
+                .filter(java.util.Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        Map<Long, String> memberNames = memberRepository.findAllById(playerIds).stream()
+                .collect(Collectors.toMap(Member::getPlayerId, m -> m.getName() != null ? m.getName() : "Unknown"));
+
         List<ParticipantDto> dtos = participants.stream().map(p -> {
-            String userName = memberRepository.findById(p.getPlayerId())
-                    .map(Member::getName)
-                    .orElse("Unknown");
+            String userName = memberNames.getOrDefault(p.getPlayerId(), "Unknown");
             return new ParticipantDto(p.getSeq(), p.getPlayerId(), userName, p.getTeamName(), p.getPreferredTeam());
         }).collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
