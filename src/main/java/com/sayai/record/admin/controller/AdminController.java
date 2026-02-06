@@ -76,7 +76,7 @@ public class AdminController {
                 .collect(Collectors.toSet());
 
         Map<Long, String> memberNames = memberRepository.findAllById(playerIds).stream()
-                .collect(Collectors.toMap(Member::getPlayerId, Member::getName));
+                .collect(Collectors.toMap(Member::getPlayerId, m -> m.getName() != null ? m.getName() : "Unknown"));
 
         List<ParticipantDto> dtos = participants.stream().map(p -> {
             String userName = memberNames.getOrDefault(p.getPlayerId(), "Unknown");
