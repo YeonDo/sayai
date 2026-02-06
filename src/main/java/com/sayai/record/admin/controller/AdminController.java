@@ -9,6 +9,8 @@ import com.sayai.record.fantasy.entity.FantasyParticipant;
 import com.sayai.record.fantasy.repository.FantasyParticipantRepository;
 import com.sayai.record.fantasy.service.FantasyGameService;
 import com.sayai.record.fantasy.service.FantasyScoringService;
+import com.sayai.record.fantasy.service.PostService;
+import com.sayai.record.fantasy.dto.PostDto;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -36,6 +38,14 @@ public class AdminController {
     private final PasswordEncoder passwordEncoder;
     private final AuthService authService;
     private final FantasyScoringService fantasyScoringService;
+    private final PostService postService;
+
+    // --- Post Management ---
+
+    @PostMapping("/posts")
+    public ResponseEntity<PostDto> createPost(@RequestBody PostDto dto) {
+        return ResponseEntity.ok(postService.createPost(dto));
+    }
 
     // --- Game Management ---
 
