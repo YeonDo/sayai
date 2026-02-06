@@ -422,10 +422,12 @@ public class FantasyDraftService {
                 .map(DraftPick::getFantasyPlayerSeq)
                 .collect(Collectors.toSet());
 
-        List<FantasyPlayer> allPlayers = fantasyPlayerRepository.findAll();
-        List<FantasyPlayer> available = allPlayers.stream()
-                .filter(p -> !pickedPlayerSeqs.contains(p.getSeq()))
-                .collect(Collectors.toList());
+        List<FantasyPlayer> available;
+        if (pickedPlayerSeqs.isEmpty()) {
+            available = fantasyPlayerRepository.findAll();
+        } else {
+            available = fantasyPlayerRepository.findBySeqNotIn(pickedPlayerSeqs);
+        }
 
         FantasyParticipant participant = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(gameSeq, playerId).orElseThrow();
         List<FantasyPlayer> candidates = available;
@@ -447,8 +449,13 @@ public class FantasyDraftService {
         // Prepare current team for validation
         List<DraftPick> userPicks = picks.stream().filter(p -> p.getPlayerId().equals(playerId)).collect(Collectors.toList());
         Set<Long> userPickedSeqs = userPicks.stream().map(DraftPick::getFantasyPlayerSeq).collect(Collectors.toSet());
-        // Optimize: we have allPlayers, can find from there
-        List<FantasyPlayer> currentTeam = allPlayers.stream().filter(p -> userPickedSeqs.contains(p.getSeq())).collect(Collectors.toList());
+
+        List<FantasyPlayer> currentTeam;
+        if (userPickedSeqs.isEmpty()) {
+            currentTeam = Collections.emptyList();
+        } else {
+            currentTeam = fantasyPlayerRepository.findAllById(userPickedSeqs);
+        }
 
         int currentCost = 0;
         if (game.getSalaryCap() != null && game.getSalaryCap() > 0) {

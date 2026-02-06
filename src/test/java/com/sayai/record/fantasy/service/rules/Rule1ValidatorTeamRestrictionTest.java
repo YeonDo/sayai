@@ -62,8 +62,8 @@ class Rule1ValidatorTeamRestrictionTest {
 
         assertThatThrownBy(() -> validator.validate(game, finalPlayer, currentTeam, participant))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("Must pick players from all 10 teams")
-                .hasMessageContaining("Missing: [")
+                .hasMessageContaining("10개 구단에서 각각 한명씩 뽑아야합니다")
+                .hasMessageContaining("빠진 팀 : [")
                 .hasMessageContaining("LG")
                 .hasMessageContaining("SSG");
     }
