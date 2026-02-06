@@ -39,7 +39,7 @@ class Rule1ValidatorFirstPickTest {
 
         assertThatThrownBy(() -> validator.validate(game, player, currentTeam, participant))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("First pick must be from preferred team");
+                .hasMessageContaining("1차 지명 룰 위반");
     }
 
     @Test

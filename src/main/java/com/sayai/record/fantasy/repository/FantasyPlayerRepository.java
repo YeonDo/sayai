@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface FantasyPlayerRepository extends JpaRepository<FantasyPlayer, Long> {
@@ -16,4 +17,6 @@ public interface FantasyPlayerRepository extends JpaRepository<FantasyPlayer, Lo
     List<FantasyPlayer> findPlayers(@Param("team") String team,
                                     @Param("position") String position,
                                     @Param("search") String search);
+
+    List<FantasyPlayer> findBySeqNotIn(Collection<Long> seqs);
 }
