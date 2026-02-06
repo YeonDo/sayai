@@ -182,8 +182,13 @@ public class FantasyScoringService {
             i = j;
         }
 
-        // Handle nulls (optional: set 0 points and last rank?)
-        // Currently they just stay null.
+        // Handle nulls
+        for (FantasyRotisserieScore s : scores) {
+            if (valueExtractor.apply(s) == null) {
+                rankSetter.accept(s, totalParticipants);
+                pointSetter.accept(s, 0.0);
+            }
+        }
     }
 
     private FantasyScoreDto convertToDto(FantasyRotisserieScore entity) {
