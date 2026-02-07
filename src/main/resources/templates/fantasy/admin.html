@@ -19,7 +19,10 @@
         <div class="admin-section" style="margin-bottom: 40px; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2>Manage Games</h2>
-                <button onclick="openCreateModal()" class="btn btn-primary">Create New Game</button>
+                <div>
+                    <button onclick="openCreatePostModal()" class="btn btn-primary" style="margin-right: 10px; background-color: #17a2b8;">Patch Note / Column</button>
+                    <button onclick="openCreateModal()" class="btn btn-primary">Create New Game</button>
+                </div>
             </div>
 
             <table class="fantasy-table">
@@ -251,8 +254,46 @@
         </div>
     </div>
 
+    <!-- Create Post Modal -->
+    <div id="createPostModal" class="modal-overlay" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div class="modal-container" style="background: white; padding: 20px; border-radius: 8px; width: 600px; max-width: 90%; max-height: 90vh; display: flex; flex-direction: column; position: relative;">
+            <div class="modal-header" style="border-bottom: 1px solid #eee; margin-bottom: 15px; display: flex; justify-content: space-between; flex-shrink: 0;">
+                <h3 style="margin: 0;">Create Post (Patch Note / Column)</h3>
+                <button onclick="closeCreatePostModal()" style="background:none; border:none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            </div>
+            <div class="modal-body" style="overflow-y: auto; flex-grow: 1;">
+                <form id="createPostForm">
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label style="font-weight: bold;">Type</label>
+                        <select name="type" class="form-control" style="width: 100%; padding: 8px;">
+                            <option value="PATCH_NOTE">Patch Note</option>
+                            <option value="COLUMN">Column (News)</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label style="font-weight: bold;">Title</label>
+                        <input type="text" name="title" class="form-control" required style="width: 100%; padding: 8px;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label style="font-weight: bold;">Content</label>
+                        <textarea name="content" class="form-control" rows="10" required style="width: 100%; padding: 8px; white-space: pre-wrap;"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Create Post</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script th:inline="javascript">
         /*<![CDATA[*/
+        function openCreatePostModal() {
+            $('#createPostModal').css('display', 'flex');
+        }
+
+        function closeCreatePostModal() {
+            $('#createPostModal').hide();
+        }
+
         function openCreateModal() {
             $('#createGameModal').css('display', 'flex');
         }
@@ -620,6 +661,30 @@
                         }
                     });
                 }
+            });
+
+            $('#createPostForm').submit(function(e) {
+                e.preventDefault();
+                const data = {
+                    type: $(this).find('select[name="type"]').val(),
+                    title: $(this).find('input[name="title"]').val(),
+                    content: $(this).find('textarea[name="content"]').val()
+                };
+
+                $.ajax({
+                    url: '/apis/v1/admin/posts',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(data),
+                    success: function() {
+                        alert('Post created!');
+                        closeCreatePostModal();
+                        $('#createPostForm')[0].reset();
+                    },
+                    error: function(xhr) {
+                        alert('Error: ' + (xhr.responseText || 'Failed'));
+                    }
+                });
             });
 
             $('#createGameForm').submit(function(e) {

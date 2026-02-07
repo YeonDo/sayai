@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS app_posts (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  type VARCHAR(50),
+  title VARCHAR(255),
+  content TEXT,
+  created_at DATETIME
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
