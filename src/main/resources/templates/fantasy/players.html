@@ -14,7 +14,10 @@
                 <h1>선수 공시</h1>
             </div>
             <div>
-                <button onclick="openNewsModal()" class="btn btn-primary" style="background-color: #17a2b8; margin-right: 10px;">News</button>
+                <button onclick="openNewsModal()" class="btn btn-primary" style="background-color: #17a2b8; margin-right: 10px; position: relative;">
+                    News
+                    <span id="newsBadge" style="display:none; position: absolute; top: -5px; right: -5px; width: 10px; height: 10px; background-color: #dc3545; border-radius: 50%; border: 2px solid #fff;"></span>
+                </button>
                 <button onclick="openPatchLog()" class="btn btn-primary" style="background-color: #6c757d;">Patch Log</button>
             </div>
         </header>
@@ -264,8 +267,25 @@
             });
         }
 
+        function checkNewsNotification() {
+             $.get('/apis/v1/fantasy/posts?type=COLUMN', function(posts) {
+                 if (posts && posts.length > 0) {
+                     const lastPost = posts[0];
+                     const created = new Date(lastPost.createdAt);
+                     const now = new Date();
+                     const diffMs = now - created;
+                     const diffHours = diffMs / (1000 * 60 * 60);
+
+                     if (diffHours <= 24) {
+                         $('#newsBadge').show();
+                     }
+                 }
+             });
+        }
+
         $(document).ready(function() {
             loadGames();
+            checkNewsNotification();
 
             // Trigger search on enter in search input
             $('#searchInput').keypress(function(e) {
