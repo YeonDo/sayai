@@ -13,10 +13,12 @@ public interface FantasyPlayerRepository extends JpaRepository<FantasyPlayer, Lo
     @Query("SELECT p FROM FantasyPlayer p WHERE " +
             "(:team IS NULL OR p.team = :team) AND " +
             "(:position IS NULL OR (:position = 'C' AND p.position = 'C') OR (:position <> 'C' AND p.position LIKE CONCAT('%', :position, '%'))) AND " +
-            "(:search IS NULL OR p.name LIKE CONCAT('%', :search, '%'))")
+            "(:search IS NULL OR p.name LIKE CONCAT('%', :search, '%')) AND " +
+            "(:foreignerType IS NULL OR p.foreignerType = :foreignerType)")
     List<FantasyPlayer> findPlayers(@Param("team") String team,
                                     @Param("position") String position,
-                                    @Param("search") String search);
+                                    @Param("search") String search,
+                                    @Param("foreignerType") FantasyPlayer.ForeignerType foreignerType);
 
     List<FantasyPlayer> findBySeqNotIn(Collection<Long> seqs);
 }

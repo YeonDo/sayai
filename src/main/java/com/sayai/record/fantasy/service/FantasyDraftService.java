@@ -70,10 +70,20 @@ public class FantasyDraftService {
     }
 
     @Transactional(readOnly = true)
-    public List<FantasyPlayerDto> getAvailablePlayers(Long gameSeq, String team, String position, String search, String sort) {
+    public List<FantasyPlayerDto> getAvailablePlayers(Long gameSeq, String team, String position, String search, String sort, String foreignerType) {
         if (team != null && team.isEmpty()) team = null;
         if (position != null && position.isEmpty()) position = null;
         if (search != null && search.isEmpty()) search = null;
+        if (foreignerType != null && foreignerType.isEmpty()) foreignerType = null;
+
+        FantasyPlayer.ForeignerType fType = null;
+        if (foreignerType != null) {
+            try {
+                fType = FantasyPlayer.ForeignerType.valueOf(foreignerType);
+            } catch (IllegalArgumentException e) {
+                // Invalid enum value, ignore or treat as null
+            }
+        }
 
         // 1. Get all picks for this game
         Set<Long> pickedPlayerSeqs;
@@ -87,7 +97,7 @@ public class FantasyDraftService {
         }
 
         // 2. Get filtered players from DB
-        List<FantasyPlayer> filteredPlayers = fantasyPlayerRepository.findPlayers(team, position, search);
+        List<FantasyPlayer> filteredPlayers = fantasyPlayerRepository.findPlayers(team, position, search, fType);
 
         // Sort
         if (sort != null) {
@@ -432,8 +442,8 @@ public class FantasyDraftService {
         FantasyParticipant participant = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(gameSeq, playerId).orElseThrow();
         List<FantasyPlayer> candidates = available;
 
-        // Rule 2 Logic for Auto Pick
-        if (game.getRuleType() == FantasyGame.RuleType.RULE_2 && nextPick.round == 1) {
+        // First Pick Rule for Auto Pick (applies to both Rule 1 and Rule 2 if enabled)
+        if (Boolean.TRUE.equals(game.getUseFirstPickRule()) && nextPick.round == 1) {
              String pref = participant.getPreferredTeam();
              if (pref != null) {
                  String prefLower = pref.trim().toLowerCase();

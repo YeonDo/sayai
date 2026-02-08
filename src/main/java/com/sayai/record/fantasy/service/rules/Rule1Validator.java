@@ -89,7 +89,7 @@ public class Rule1Validator implements DraftRuleValidator {
         }
     }
 
-    private void validateTeamRestriction(List<FantasyPlayer> team) {
+    protected void validateTeamRestriction(List<FantasyPlayer> team) {
         Set<String> distinctTeams = team.stream()
                 .map(FantasyPlayer::getTeam)
                 .filter(Objects::nonNull)
@@ -142,7 +142,7 @@ public class Rule1Validator implements DraftRuleValidator {
         }
     }
 
-    private void validateForeignerLimits(List<FantasyPlayer> team) {
+    protected void validateForeignerLimits(List<FantasyPlayer> team) {
         long type1Count = team.stream().filter(p -> {
             FantasyPlayer.ForeignerType type = Optional.ofNullable(p.getForeignerType()).orElse(FantasyPlayer.ForeignerType.NONE);
             return type == FantasyPlayer.ForeignerType.TYPE_1;
@@ -161,12 +161,12 @@ public class Rule1Validator implements DraftRuleValidator {
         }
     }
 
-    private boolean canFit(List<FantasyPlayer> team) {
+    protected boolean canFit(List<FantasyPlayer> team) {
         Map<String, Integer> slots = new HashMap<>(getRequiredSlots());
         return backtrack(team, 0, slots);
     }
 
-    private boolean backtrack(List<FantasyPlayer> team, int index, Map<String, Integer> slots) {
+    protected boolean backtrack(List<FantasyPlayer> team, int index, Map<String, Integer> slots) {
         if (index == team.size()) {
             return true;
         }
@@ -192,10 +192,10 @@ public class Rule1Validator implements DraftRuleValidator {
         return false;
     }
 
-    private List<String> parsePositions(String positionString) {
-        if (positionString == null || positionString.isEmpty()) return Collections.emptyList();
+    protected List<String> parsePositions(String positionString) {
+        if (positionString == null || positionString.isEmpty()) return new ArrayList<>();
         return Arrays.stream(positionString.split(","))
                 .map(String::trim)
-                .collect(Collectors.toList());
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 }

@@ -5,7 +5,10 @@ import com.sayai.record.fantasy.entity.FantasyParticipant;
 import com.sayai.record.fantasy.entity.FantasyPlayer;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class Rule2Validator extends Rule1Validator {
@@ -16,27 +19,50 @@ public class Rule2Validator extends Rule1Validator {
     }
 
     @Override
-    public void validate(FantasyGame game, FantasyPlayer newPlayer, List<FantasyPlayer> currentTeam, FantasyParticipant participant) {
-        // Rule 2 Specific Check
-        if (currentTeam.isEmpty()) {
-            if (participant == null || participant.getPreferredTeam() == null) {
-                throw new IllegalStateException("Preferred team not set for participant");
-            }
+    public int getTotalPlayerCount() {
+        return 20;
+    }
 
-            // Normalize team names for comparison if needed
-            // Use contains to support Short Name vs Full Name (e.g., KIA vs KIA Tigers)
-            String pref = participant.getPreferredTeam().trim();
-            String playerTeam = newPlayer.getTeam().trim();
+    // Reuse Rule1Validator.validate() which performs:
+    // 1. First Pick Rule Check (conditional)
+    // 2. Composition Check (calls this.canFit())
+    // 3. Foreigner Limit Check
+    // 4. Team Restriction Check (conditional)
 
-            boolean match = playerTeam.toLowerCase().contains(pref.toLowerCase()) ||
-                            pref.toLowerCase().contains(playerTeam.toLowerCase());
+    @Override
+    protected boolean canFit(List<FantasyPlayer> team) {
+        Map<String, Integer> slots = new HashMap<>(getRequiredSlots());
+        slots.put("BENCH", 2); // Add Bench Slots
+        return backtrack(team, 0, slots);
+    }
 
-            if (!match) {
-                throw new IllegalStateException("First pick must be from preferred team: " + participant.getPreferredTeam());
+    @Override
+    protected boolean backtrack(List<FantasyPlayer> team, int index, Map<String, Integer> slots) {
+        if (index == team.size()) {
+            return true;
+        }
+
+        FantasyPlayer p = team.get(index);
+        List<String> possiblePositions = parsePositions(p.getPosition());
+
+        boolean isPitcher = possiblePositions.stream().anyMatch(pos -> pos.equals("SP") || pos.equals("RP") || pos.equals("CL"));
+        if (!isPitcher) {
+            possiblePositions.add("DH");
+        }
+
+        // Allow any player to go to BENCH
+        possiblePositions.add("BENCH");
+
+        for (String pos : possiblePositions) {
+            if (slots.getOrDefault(pos, 0) > 0) {
+                slots.put(pos, slots.get(pos) - 1);
+                if (backtrack(team, index + 1, slots)) {
+                    return true;
+                }
+                slots.put(pos, slots.get(pos) + 1);
             }
         }
 
-        // Delegate to Rule 1 (Base Composition Check)
-        super.validate(game, newPlayer, currentTeam, participant);
+        return false;
     }
 }

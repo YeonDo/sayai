@@ -262,6 +262,7 @@ public class FantasyGameService {
 
             List<DraftPick> picks = picksByPart.getOrDefault(p.getPlayerId(), Collections.emptyList());
             List<FantasyPlayer> roster = picks.stream()
+                    .filter(pick -> pick.getAssignedPosition() != null && !"BENCH".equalsIgnoreCase(pick.getAssignedPosition()))
                     .map(pick -> players.get(pick.getFantasyPlayerSeq()))
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
