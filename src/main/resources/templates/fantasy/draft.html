@@ -104,6 +104,12 @@
                         <option value="RP">RP</option>
                         <option value="CL">CL</option>
                     </select>
+                    <select id="filter-foreigner" style="padding: 5px;">
+                        <option value="">전체</option>
+                        <option value="TYPE_1">외국인</option>
+                        <option value="TYPE_2">아시아쿼터</option>
+                        <option value="NONE">토종</option>
+                    </select>
                     <select id="sort-order" style="padding: 5px;">
                         <option value="">기본 정렬</option>
                         <option value="cost_desc">Cost (High-Low)</option>
@@ -182,8 +188,14 @@
                 }
             });
 
-            $('#filter-team, #filter-position, #sort-order').change(function() {
-                renderPlayers(); // Local filter
+            $('#filter-team, #filter-position, #filter-foreigner, #sort-order').change(function() {
+                // If foreigner filter changes, we might need to reload from server if we didn't fetch all
+                // But current implementation of loadAvailablePlayers fetches ALL.
+                // However, the prompt says "search condition is foreigner_type values".
+                // If the list is large, server side is better.
+                // Given the existing code fetches "allAvailablePlayers" (which implies ALL),
+                // we can filter locally. BUT if we want to use the server feature we just added:
+                loadAvailablePlayers(true); // Force reload with new filter
             });
             $('#search-player').on('keyup', function(e) {
                 renderPlayers(); // Local search
@@ -359,13 +371,16 @@
 
         // Fetch all players once (or force refresh)
         function loadAvailablePlayers(force = false) {
-            if (isPlayersLoaded && !force) {
-                renderPlayers();
-                return;
-            }
+            // Because we added server-side filtering for ForeignerType,
+            // we should include it in the request.
+            // If we filter by ForeignerType on server, 'allAvailablePlayers' will only contain that subset.
+            // This changes the semantics of 'allAvailablePlayers' to 'currentFetchedPlayers'.
 
-            // Fetch ALL players (no server-side filters)
-            $.get(`/apis/v1/fantasy/games/${gameSeq}/available-players`, function(data) {
+            const foreignerType = $('#filter-foreigner').val();
+
+            $.get(`/apis/v1/fantasy/games/${gameSeq}/available-players`, {
+                foreignerType: foreignerType
+            }, function(data) {
                 allAvailablePlayers = data;
                 isPlayersLoaded = true;
                 renderPlayers();

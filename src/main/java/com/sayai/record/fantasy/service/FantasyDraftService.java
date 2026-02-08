@@ -70,10 +70,20 @@ public class FantasyDraftService {
     }
 
     @Transactional(readOnly = true)
-    public List<FantasyPlayerDto> getAvailablePlayers(Long gameSeq, String team, String position, String search, String sort) {
+    public List<FantasyPlayerDto> getAvailablePlayers(Long gameSeq, String team, String position, String search, String sort, String foreignerType) {
         if (team != null && team.isEmpty()) team = null;
         if (position != null && position.isEmpty()) position = null;
         if (search != null && search.isEmpty()) search = null;
+        if (foreignerType != null && foreignerType.isEmpty()) foreignerType = null;
+
+        FantasyPlayer.ForeignerType fType = null;
+        if (foreignerType != null) {
+            try {
+                fType = FantasyPlayer.ForeignerType.valueOf(foreignerType);
+            } catch (IllegalArgumentException e) {
+                // Invalid enum value, ignore or treat as null
+            }
+        }
 
         // 1. Get all picks for this game
         Set<Long> pickedPlayerSeqs;
@@ -87,7 +97,7 @@ public class FantasyDraftService {
         }
 
         // 2. Get filtered players from DB
-        List<FantasyPlayer> filteredPlayers = fantasyPlayerRepository.findPlayers(team, position, search);
+        List<FantasyPlayer> filteredPlayers = fantasyPlayerRepository.findPlayers(team, position, search, fType);
 
         // Sort
         if (sort != null) {

@@ -38,9 +38,9 @@ class FantasyDraftServiceFilterTest {
         FantasyPlayer p1 = FantasyPlayer.builder().seq(1L).name("Kim").team("Doosan").position("P").cost(10).build();
 
         when(draftPickRepository.findByFantasyGameSeq(gameSeq)).thenReturn(Collections.emptyList());
-        when(fantasyPlayerRepository.findPlayers(team, pos, search)).thenReturn(Collections.singletonList(p1));
+        when(fantasyPlayerRepository.findPlayers(team, pos, search, null)).thenReturn(Collections.singletonList(p1));
 
-        List<FantasyPlayerDto> result = fantasyDraftService.getAvailablePlayers(gameSeq, team, pos, search, null);
+        List<FantasyPlayerDto> result = fantasyDraftService.getAvailablePlayers(gameSeq, team, pos, search, null, null);
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getName()).isEqualTo("Kim");
@@ -54,10 +54,10 @@ class FantasyDraftServiceFilterTest {
         String search = "";
 
         // Expect findPlayers to be called with nulls
-        when(fantasyPlayerRepository.findPlayers(null, null, null)).thenReturn(Collections.emptyList());
+        when(fantasyPlayerRepository.findPlayers(null, null, null, null)).thenReturn(Collections.emptyList());
 
-        fantasyDraftService.getAvailablePlayers(gameSeq, team, pos, search, null);
+        fantasyDraftService.getAvailablePlayers(gameSeq, team, pos, search, null, null);
 
-        verify(fantasyPlayerRepository).findPlayers(null, null, null);
+        verify(fantasyPlayerRepository).findPlayers(null, null, null, null);
     }
 }
