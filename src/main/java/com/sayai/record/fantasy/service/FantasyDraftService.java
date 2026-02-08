@@ -442,8 +442,8 @@ public class FantasyDraftService {
         FantasyParticipant participant = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(gameSeq, playerId).orElseThrow();
         List<FantasyPlayer> candidates = available;
 
-        // Rule 2 Logic for Auto Pick
-        if (game.getRuleType() == FantasyGame.RuleType.RULE_2 && nextPick.round == 1) {
+        // First Pick Rule for Auto Pick (applies to both Rule 1 and Rule 2 if enabled)
+        if (Boolean.TRUE.equals(game.getUseFirstPickRule()) && nextPick.round == 1) {
              String pref = participant.getPreferredTeam();
              if (pref != null) {
                  String prefLower = pref.trim().toLowerCase();

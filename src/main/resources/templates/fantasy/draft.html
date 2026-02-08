@@ -188,14 +188,11 @@
                 }
             });
 
-            $('#filter-team, #filter-position, #filter-foreigner, #sort-order').change(function() {
-                // If foreigner filter changes, we might need to reload from server if we didn't fetch all
-                // But current implementation of loadAvailablePlayers fetches ALL.
-                // However, the prompt says "search condition is foreigner_type values".
-                // If the list is large, server side is better.
-                // Given the existing code fetches "allAvailablePlayers" (which implies ALL),
-                // we can filter locally. BUT if we want to use the server feature we just added:
+            $('#filter-foreigner').change(function() {
                 loadAvailablePlayers(true); // Force reload with new filter
+            });
+            $('#filter-team, #filter-position, #sort-order').change(function() {
+                renderPlayers(); // Local filter
             });
             $('#search-player').on('keyup', function(e) {
                 renderPlayers(); // Local search
@@ -224,6 +221,7 @@
                 gameState.ruleType = data.ruleType; // RULE_1 or RULE_2
                 gameState.round = data.roundNum;
                 gameState.salaryCap = data.salaryCap;
+                gameState.useFirstPickRule = data.useFirstPickRule;
 
                 // Determine My Info
                 const myPart = gameState.participants.find(p => String(p.participantId) === String(userId));
@@ -439,8 +437,8 @@
                 let disabled = !isMyTurn;
                 let btnText = "Draft";
 
-                // Rule 2 Check
-                if (isMyTurn && gameState.ruleType === 'RULE_2' && isRound1) {
+                // First Pick Rule Check (applies to both Rule 1 and Rule 2)
+                if (isMyTurn && gameState.useFirstPickRule === true && isRound1) {
                      // Check team
                      const myTeam = (gameState.myPreferredTeam || "").toLowerCase().trim();
                      const pTeam = (player.team || "").toLowerCase().trim();
@@ -449,13 +447,6 @@
                          btnText = "Restricted"; // Or just keep disabled
                      }
                 }
-
-                // First Pick Rule (Rule 1 Option) Check
-                // We need to know if Rule 1 Option is enabled.
-                // Currently gameState doesn't explicitly store useFirstPickRule flag but backend sends RuleType.
-                // Assuming useFirstPickRule is property of game, we should fetch it in initGame.
-                // But for now, let's skip strict client-side check if we lack the flag, server will block.
-                // Or user can add the flag to initGame details.
 
                 // Salary Cap Check
                 if (isMyTurn && gameState.salaryCap && gameState.salaryCap > 0) {
