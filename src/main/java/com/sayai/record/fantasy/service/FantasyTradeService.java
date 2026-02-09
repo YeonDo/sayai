@@ -56,7 +56,7 @@ public class FantasyTradeService {
 
         // 4. Check Bench Status
         String pos = pick.getAssignedPosition();
-        if (pos != null && !pos.equalsIgnoreCase("BENCH")) {
+        if (pos != null && !pos.toUpperCase().contains("BENCH")) {
             throw new IllegalStateException("벤치 멤버만 방출할 수 있습니다.");
         }
 
@@ -269,7 +269,7 @@ public class FantasyTradeService {
             DraftPick pick = draftPickRepository.findByFantasyGameSeqAndPlayerIdAndFantasyPlayerSeq(dto.getGameSeq(), playerId, seq)
                     .orElseThrow(() -> new IllegalArgumentException("You do not own player " + seq));
 
-            if (!"BENCH".equalsIgnoreCase(pick.getAssignedPosition())) {
+            if (pick.getAssignedPosition() == null || !pick.getAssignedPosition().toUpperCase().contains("BENCH")) {
                 throw new IllegalStateException("Only BENCH players can be traded.");
             }
 
@@ -285,7 +285,7 @@ public class FantasyTradeService {
             DraftPick pick = draftPickRepository.findByFantasyGameSeqAndPlayerIdAndFantasyPlayerSeq(dto.getGameSeq(), dto.getTargetPlayerId(), seq)
                     .orElseThrow(() -> new IllegalArgumentException("Target does not own player " + seq));
 
-            if (!"BENCH".equalsIgnoreCase(pick.getAssignedPosition())) {
+            if (pick.getAssignedPosition() == null || !pick.getAssignedPosition().toUpperCase().contains("BENCH")) {
                 throw new IllegalStateException("Target player must be on BENCH.");
             }
 

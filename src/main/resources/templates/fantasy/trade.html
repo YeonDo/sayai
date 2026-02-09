@@ -229,7 +229,9 @@
             $.get(`/apis/v1/fantasy/games/${gameSeq}/my-picks`, function(players) {
                 const container = $('#my-bench-list');
                 container.empty();
-                const bench = players.filter(p => !p.assignedPosition || p.assignedPosition === 'BENCH');
+
+                const isBench = (pos) => !pos || pos.toUpperCase().includes('BENCH');
+                const bench = players.filter(p => isBench(p.assignedPosition));
 
                 if (bench.length === 0) {
                     container.text("No players on bench.");
@@ -273,7 +275,9 @@
             }
 
             $.get(`/apis/v1/fantasy/games/${gameSeq}/players/${targetId}/picks`, function(players) {
-                const bench = players.filter(p => !p.assignedPosition || p.assignedPosition === 'BENCH');
+                const isBench = (pos) => !pos || pos.toUpperCase().includes('BENCH');
+                const bench = players.filter(p => isBench(p.assignedPosition));
+
                 if (bench.length === 0) {
                     container.text("No bench players available.");
                 } else {
@@ -407,10 +411,11 @@
                 const tbody = $('#waiver-list-body');
                 tbody.empty();
 
-                // Sort players: Non-Bench first, then Bench
-                // "Roster (18) - Bench (2)"
-                const rosterPlayers = players.filter(p => p.assignedPosition && p.assignedPosition !== 'BENCH');
-                const benchPlayers = players.filter(p => !p.assignedPosition || p.assignedPosition === 'BENCH');
+                // Check Bench Logic: Contains "BENCH"
+                const isBench = (pos) => !pos || pos.toUpperCase().includes('BENCH');
+
+                const rosterPlayers = players.filter(p => p.assignedPosition && !isBench(p.assignedPosition));
+                const benchPlayers = players.filter(p => isBench(p.assignedPosition));
 
                 const sortedPlayers = [...rosterPlayers, ...benchPlayers];
                 const rosterSize = players.length;
@@ -421,11 +426,11 @@
                 }
 
                 sortedPlayers.forEach(p => {
-                    const isBench = (!p.assignedPosition || p.assignedPosition === 'BENCH');
-                    const posDisplay = isBench ? '<span style="color:#888;">(Bench)</span> ' + p.position : '<strong>' + p.assignedPosition + '</strong> (' + p.position + ')';
+                    const benchFlag = isBench(p.assignedPosition);
+                    const posDisplay = benchFlag ? '<span style="color:#888;">(Bench)</span> ' + p.position : '<strong>' + p.assignedPosition + '</strong> (' + p.position + ')';
 
                     const row = $('<tr>');
-                    if (isBench) row.css('background-color', '#f9f9f9');
+                    if (benchFlag) row.css('background-color', '#f9f9f9');
 
                     row.append(`<td>${p.name}</td>`);
                     row.append(`<td>${posDisplay}</td>`);
@@ -433,7 +438,7 @@
                     row.append(`<td>${p.cost || 0}</td>`);
 
                     const actionTd = $('<td>');
-                    if (isBench) {
+                    if (benchFlag) {
                         if (rosterSize >= 19) {
                             const btn = $('<button>').addClass('btn-danger').text('Drop').click(() => dropPlayer(p.seq));
                             actionTd.append(btn);
