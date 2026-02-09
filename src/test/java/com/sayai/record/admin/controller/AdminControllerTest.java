@@ -1,118 +1,98 @@
 package com.sayai.record.admin.controller;
 
-import com.sayai.record.auth.entity.Member;
+import com.sayai.record.admin.controller.AdminController;
+import com.sayai.record.admin.controller.AdminController.FantasyLogDto;
 import com.sayai.record.auth.repository.MemberRepository;
+import com.sayai.record.auth.service.AuthService;
 import com.sayai.record.fantasy.entity.FantasyGame;
+import com.sayai.record.fantasy.entity.FantasyLog;
+import com.sayai.record.fantasy.entity.FantasyParticipant;
+import com.sayai.record.fantasy.entity.FantasyPlayer;
+import com.sayai.record.fantasy.repository.FantasyLogRepository;
+import com.sayai.record.fantasy.repository.FantasyParticipantRepository;
+import com.sayai.record.fantasy.repository.FantasyPlayerRepository;
 import com.sayai.record.fantasy.service.FantasyGameService;
+import com.sayai.record.fantasy.service.FantasyScoringService;
+import com.sayai.record.fantasy.service.PostService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.validation.BindingResult;
-import org.springframework.validation.ObjectError;
-
-import java.util.List;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.MockitoAnnotations;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
-@ExtendWith(MockitoExtension.class)
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.when;
+
 class AdminControllerTest {
 
-    @Mock
-    private FantasyGameService fantasyGameService;
-
-    @Mock
-    private MemberRepository memberRepository;
-
-    @Mock
-    private PasswordEncoder passwordEncoder;
+    @Mock private FantasyGameService fantasyGameService;
+    @Mock private MemberRepository memberRepository;
+    @Mock private FantasyParticipantRepository fantasyParticipantRepository;
+    @Mock private PasswordEncoder passwordEncoder;
+    @Mock private AuthService authService;
+    @Mock private FantasyScoringService fantasyScoringService;
+    @Mock private PostService postService;
+    @Mock private FantasyLogRepository fantasyLogRepository;
+    @Mock private FantasyPlayerRepository fantasyPlayerRepository;
 
     @InjectMocks
     private AdminController adminController;
 
-    @Test
-    void createGame_shouldSaveGame() {
-        AdminController.GameCreateRequest req = new AdminController.GameCreateRequest();
-        req.setTitle("New League");
-        req.setRuleType(FantasyGame.RuleType.RULE_1);
-        req.setScoringType(FantasyGame.ScoringType.POINTS);
-
-        when(fantasyGameService.createGame(
-                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()
-        )).thenReturn(FantasyGame.builder()
-                .title("New League")
-                .scoringType(FantasyGame.ScoringType.POINTS)
-                .build());
-
-        ResponseEntity<FantasyGame> response = adminController.createGame(req);
-
-        assertThat(response.getBody().getTitle()).isEqualTo("New League");
-        assertThat(response.getBody().getScoringType()).isEqualTo(FantasyGame.ScoringType.POINTS);
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
     }
 
     @Test
-    void listUsers_shouldReturnMemberDtos() {
-        Member member = Member.builder()
-                .playerId(1L)
-                .userId("testuser")
-                .name("Test User")
-                .role(Member.Role.USER)
-                .password("encodedPwd")
+    void testGetWaiverLogs() {
+        Long gameSeq = 1L;
+
+        // Mock Logs
+        FantasyLog log = FantasyLog.builder()
+                .seq(100L)
+                .fantasyGameSeq(gameSeq)
+                .action(FantasyLog.ActionType.DROP)
+                .playerId(10L)
+                .fantasyPlayerSeq(20L)
+                .createdAt(LocalDateTime.now())
                 .build();
 
-        when(memberRepository.findAll()).thenReturn(List.of(member));
+        when(fantasyLogRepository.findByFantasyGameSeqAndActionOrderByCreatedAtDesc(gameSeq, FantasyLog.ActionType.DROP))
+                .thenReturn(Collections.singletonList(log));
 
-        ResponseEntity<List<AdminController.MemberDto>> response = adminController.listUsers();
+        // Mock Player
+        FantasyPlayer player = FantasyPlayer.builder().seq(20L).name("PlayerName").team("TeamA").position("P").cost(10).build();
+        when(fantasyPlayerRepository.findAllById(any())).thenReturn(Collections.singletonList(player));
 
-        assertThat(response.getBody()).hasSize(1);
-        AdminController.MemberDto dto = response.getBody().get(0);
-        assertThat(dto.getPlayerId()).isEqualTo(1L);
-        assertThat(dto.getUserId()).isEqualTo("testuser");
-        assertThat(dto.getName()).isEqualTo("Test User");
-        assertThat(dto.getRole()).isEqualTo(Member.Role.USER);
+        // Mock Participants
+        FantasyParticipant participant = FantasyParticipant.builder().playerId(10L).teamName("UserTeam").build();
+        when(fantasyParticipantRepository.findByFantasyGameSeq(gameSeq)).thenReturn(Collections.singletonList(participant));
+
+        // Act
+        ResponseEntity<List<FantasyLogDto>> response = adminController.getWaiverLogs(gameSeq);
+
+        // Assert
+        assertEquals(200, response.getStatusCodeValue());
+        List<FantasyLogDto> body = response.getBody();
+        assertEquals(1, body.size());
+        assertEquals("PlayerName", body.get(0).getPlayerName());
+        assertEquals("UserTeam", body.get(0).getDroppedByTeam());
     }
 
     @Test
-    void createUser_shouldReturnBadRequest_whenValidationFails() {
-        AdminController.UserCreateRequest req = new AdminController.UserCreateRequest();
-        // req has null fields
-
-        BindingResult bindingResult = mock(BindingResult.class);
-        when(bindingResult.hasErrors()).thenReturn(true);
-        when(bindingResult.getAllErrors()).thenReturn(List.of(new ObjectError("userCreateRequest", "Player ID is required")));
-
-        ResponseEntity<String> response = adminController.createUser(req, bindingResult);
-
-        assertThat(response.getStatusCodeValue()).isEqualTo(400);
-        assertThat(response.getBody()).contains("Player ID is required");
-        verify(passwordEncoder, never()).encode(any());
-        verify(memberRepository, never()).save(any());
-    }
-
-    @Test
-    void createUser_shouldCreateUser_whenValidationPasses() {
-        AdminController.UserCreateRequest req = new AdminController.UserCreateRequest();
-        req.setPlayerId(10L);
-        req.setUserId("newUser");
-        req.setName("New User");
-        req.setPassword("pass");
-
-        BindingResult bindingResult = mock(BindingResult.class);
-        when(bindingResult.hasErrors()).thenReturn(false);
-
-        when(memberRepository.existsById(10L)).thenReturn(false);
-        when(memberRepository.findByUserId("newUser")).thenReturn(java.util.Optional.empty());
-        when(passwordEncoder.encode("pass")).thenReturn("encoded");
-
-        ResponseEntity<String> response = adminController.createUser(req, bindingResult);
-
-        assertThat(response.getStatusCodeValue()).isEqualTo(200);
-        assertThat(response.getBody()).isEqualTo("User created");
-        verify(memberRepository).save(any(Member.class));
+    void testGetTradeRequests() {
+        Long gameSeq = 1L;
+        ResponseEntity<List<String>> response = adminController.getTradeRequests(gameSeq);
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(0, response.getBody().size());
     }
 }

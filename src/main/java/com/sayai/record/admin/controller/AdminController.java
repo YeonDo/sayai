@@ -39,6 +39,8 @@ public class AdminController {
     private final AuthService authService;
     private final FantasyScoringService fantasyScoringService;
     private final PostService postService;
+    private final com.sayai.record.fantasy.repository.FantasyLogRepository fantasyLogRepository;
+    private final com.sayai.record.fantasy.repository.FantasyPlayerRepository fantasyPlayerRepository;
 
     // --- Post Management ---
 
@@ -112,6 +114,41 @@ public class AdminController {
     public ResponseEntity<String> exportPlayers(@PathVariable(name = "gameSeq") Long gameSeq) {
         String data = fantasyGameService.exportRoster(gameSeq);
         return ResponseEntity.ok(data);
+    }
+
+    @GetMapping("/fantasy/games/{gameSeq}/waiver-logs")
+    public ResponseEntity<List<FantasyLogDto>> getWaiverLogs(@PathVariable(name = "gameSeq") Long gameSeq) {
+        List<com.sayai.record.fantasy.entity.FantasyLog> logs = fantasyLogRepository.findByFantasyGameSeqAndActionOrderByCreatedAtDesc(
+                gameSeq, com.sayai.record.fantasy.entity.FantasyLog.ActionType.DROP);
+
+        java.util.Set<Long> playerSeqs = logs.stream().map(com.sayai.record.fantasy.entity.FantasyLog::getFantasyPlayerSeq).collect(Collectors.toSet());
+        java.util.Map<Long, com.sayai.record.fantasy.entity.FantasyPlayer> players = fantasyPlayerRepository.findAllById(playerSeqs).stream()
+                .collect(Collectors.toMap(com.sayai.record.fantasy.entity.FantasyPlayer::getSeq, java.util.function.Function.identity()));
+
+        List<FantasyParticipant> participants = fantasyParticipantRepository.findByFantasyGameSeq(gameSeq);
+        java.util.Map<Long, String> teamNames = participants.stream()
+                .collect(Collectors.toMap(FantasyParticipant::getPlayerId, FantasyParticipant::getTeamName, (a, b) -> a));
+
+        List<FantasyLogDto> dtos = logs.stream().map(log -> {
+            com.sayai.record.fantasy.entity.FantasyPlayer p = players.get(log.getFantasyPlayerSeq());
+            String teamName = teamNames.getOrDefault(log.getPlayerId(), "Unknown");
+            return new FantasyLogDto(
+                    log.getSeq(),
+                    p != null ? p.getName() : "Unknown",
+                    p != null ? p.getTeam() : "-",
+                    p != null ? p.getPosition() : "-",
+                    teamName,
+                    log.getCreatedAt()
+            );
+        }).collect(Collectors.toList());
+
+        return ResponseEntity.ok(dtos);
+    }
+
+    @GetMapping("/fantasy/games/{gameSeq}/trade-requests")
+    public ResponseEntity<List<String>> getTradeRequests(@PathVariable(name = "gameSeq") Long gameSeq) {
+        // Placeholder for future trade request logic
+        return ResponseEntity.ok(java.util.Collections.emptyList());
     }
 
     // --- Scoring Endpoints ---
@@ -276,6 +313,25 @@ public class AdminController {
             this.userId = member.getUserId();
             this.name = member.getName();
             this.role = member.getRole();
+        }
+    }
+
+    @Data
+    public static class FantasyLogDto {
+        private Long seq;
+        private String playerName;
+        private String playerTeam;
+        private String playerPosition;
+        private String droppedByTeam;
+        private LocalDateTime timestamp;
+
+        public FantasyLogDto(Long seq, String playerName, String playerTeam, String playerPosition, String droppedByTeam, LocalDateTime timestamp) {
+            this.seq = seq;
+            this.playerName = playerName;
+            this.playerTeam = playerTeam;
+            this.playerPosition = playerPosition;
+            this.droppedByTeam = droppedByTeam;
+            this.timestamp = timestamp;
         }
     }
 }
