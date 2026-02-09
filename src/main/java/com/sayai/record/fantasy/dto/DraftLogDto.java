@@ -14,4 +14,5 @@ public class DraftLogDto {
     private String playerPosition;
     private String pickedByTeamName;
     private LocalDateTime pickedAt;
+    private String action; // DRAFT, DROP, CLAIM
 }

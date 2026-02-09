@@ -30,6 +30,8 @@ public class FantasyGameService {
     private final FantasyParticipantRepository fantasyParticipantRepository;
     private final DraftPickRepository draftPickRepository;
     private final FantasyPlayerRepository fantasyPlayerRepository;
+    private final com.sayai.record.fantasy.repository.FantasyLogRepository fantasyLogRepository;
+    private final com.sayai.record.auth.repository.MemberRepository memberRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final FantasyDraftService fantasyDraftService;
     private final DraftScheduler draftScheduler;
@@ -198,9 +200,13 @@ public class FantasyGameService {
 
     @Transactional(readOnly = true)
     public List<DraftLogDto> getDraftPicks(Long gameSeq) {
-        List<DraftPick> picks = draftPickRepository.findByFantasyGameSeq(gameSeq);
+        List<com.sayai.record.fantasy.entity.FantasyLog> logs = fantasyLogRepository.findByFantasyGameSeqOrderByCreatedAtAsc(gameSeq);
 
-        Set<Long> playerSeqs = picks.stream().map(DraftPick::getFantasyPlayerSeq).collect(Collectors.toSet());
+        // Collect all related IDs
+        Set<Long> playerSeqs = logs.stream().map(com.sayai.record.fantasy.entity.FantasyLog::getFantasyPlayerSeq).collect(Collectors.toSet());
+        Set<Long> userIds = logs.stream().map(com.sayai.record.fantasy.entity.FantasyLog::getPlayerId).collect(Collectors.toSet());
+
+        // Fetch Data
         Map<Long, FantasyPlayer> players = fantasyPlayerRepository.findAllById(playerSeqs).stream()
                 .collect(Collectors.toMap(FantasyPlayer::getSeq, Function.identity()));
 
@@ -208,18 +214,38 @@ public class FantasyGameService {
         Map<Long, String> teamNames = participants.stream()
                 .collect(Collectors.toMap(FantasyParticipant::getPlayerId, FantasyParticipant::getTeamName, (a, b) -> a));
 
-        return picks.stream().map(pick -> {
-            FantasyPlayer player = players.get(pick.getFantasyPlayerSeq());
-            String teamName = teamNames.getOrDefault(pick.getPlayerId(), "Unknown");
-            return DraftLogDto.builder()
-                    .pickNumber(pick.getPickNumber())
+        // Fallback for names if participant left or not found
+        Map<Long, String> memberNames = com.sayai.record.auth.entity.MemberHelper.getNames(memberRepository, userIds);
+
+        // Re-construct Pick Numbers counter for DRAFT events
+        // Assuming logs are sorted by time.
+        // Actually, DraftPick has the authoritative pickNumber. FantasyLog might not store it.
+        // For Draft Logs, we can infer pick number if we only count DRAFT actions?
+        // Let's just use a counter for display.
+
+        List<DraftLogDto> dtos = new ArrayList<>();
+        int draftCounter = 1;
+
+        for (com.sayai.record.fantasy.entity.FantasyLog log : logs) {
+            FantasyPlayer player = players.get(log.getFantasyPlayerSeq());
+            String teamName = teamNames.getOrDefault(log.getPlayerId(), memberNames.getOrDefault(log.getPlayerId(), "Unknown"));
+
+            Integer pickNum = null;
+            if (log.getAction() == com.sayai.record.fantasy.entity.FantasyLog.ActionType.DRAFT) {
+                pickNum = draftCounter++;
+            }
+
+            dtos.add(DraftLogDto.builder()
+                    .pickNumber(pickNum)
                     .playerName(player != null ? player.getName() : "Unknown")
                     .playerTeam(player != null ? player.getTeam() : "")
                     .playerPosition(player != null ? player.getPosition() : "")
                     .pickedByTeamName(teamName)
-                    .pickedAt(pick.getPickedAt())
-                    .build();
-        }).sorted(Comparator.comparing(DraftLogDto::getPickNumber)).collect(Collectors.toList());
+                    .pickedAt(log.getCreatedAt())
+                    .action(log.getAction().name())
+                    .build());
+        }
+        return dtos;
     }
 
     private void updateSchedulerSafely(Long gameSeq, boolean add) {

@@ -26,6 +26,7 @@ public class FantasyTradeService {
     private final FantasyGameRepository fantasyGameRepository;
     private final FantasyPlayerRepository fantasyPlayerRepository;
     private final FantasyParticipantRepository fantasyParticipantRepository;
+    private final com.sayai.record.fantasy.repository.FantasyLogRepository fantasyLogRepository;
 
     @Transactional
     public void dropPlayer(Long gameSeq, Long playerId, Long fantasyPlayerSeq) {
@@ -55,6 +56,14 @@ public class FantasyTradeService {
 
         // 5. Drop (Delete Pick)
         draftPickRepository.delete(pick);
+
+        // Log
+        fantasyLogRepository.save(com.sayai.record.fantasy.entity.FantasyLog.builder()
+                .fantasyGameSeq(gameSeq)
+                .playerId(playerId)
+                .fantasyPlayerSeq(fantasyPlayerSeq)
+                .action(com.sayai.record.fantasy.entity.FantasyLog.ActionType.DROP)
+                .build());
     }
 
     @Transactional
@@ -137,5 +146,13 @@ public class FantasyTradeService {
                 .build();
 
         draftPickRepository.save(newPick);
+
+        // Log
+        fantasyLogRepository.save(com.sayai.record.fantasy.entity.FantasyLog.builder()
+                .fantasyGameSeq(gameSeq)
+                .playerId(playerId)
+                .fantasyPlayerSeq(fantasyPlayerSeq)
+                .action(com.sayai.record.fantasy.entity.FantasyLog.ActionType.CLAIM)
+                .build());
     }
 }

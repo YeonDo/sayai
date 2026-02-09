@@ -24,11 +24,11 @@
                 <table class="fantasy-table">
                     <thead>
                         <tr>
-                            <th>#</th>
+                            <th># / Action</th>
                             <th>Player</th>
                             <th>Team</th>
                             <th>Position</th>
-                            <th>Picked By</th>
+                            <th>User/Team</th>
                             <th>Time</th>
                         </tr>
                     </thead>
@@ -86,14 +86,28 @@
                     const firstPos = p.playerPosition ? p.playerPosition.split(',')[0].trim().toLowerCase() : '';
                     const posClass = 'pos-' + firstPos;
 
+                    let actionDisplay = p.pickNumber;
+                    let rowStyle = "";
+
+                    if (p.action === 'DROP') {
+                        actionDisplay = '<span style="color:red; font-weight:bold;">DROP</span>';
+                        rowStyle = "background-color: #fff0f0;";
+                    } else if (p.action === 'CLAIM') {
+                        actionDisplay = '<span style="color:green; font-weight:bold;">CLAIM</span>';
+                        rowStyle = "background-color: #f0fff0;";
+                    } else if (p.action === 'DRAFT') {
+                        // Standard pick number
+                        if (!actionDisplay) actionDisplay = "PICK";
+                    }
+
                     const row = `
-                        <tr>
-                            <td>${p.pickNumber}</td>
+                        <tr style="${rowStyle}">
+                            <td>${actionDisplay}</td>
                             <td>${p.playerName}</td>
                             <td>${p.playerTeam}</td>
                             <td><span class="${posClass}" style="font-weight:bold;">${p.playerPosition}</span></td>
                             <td>${p.pickedByTeamName}</td>
-                            <td>${p.pickedAt ? new Date(p.pickedAt).toLocaleTimeString() : ''}</td>
+                            <td>${p.pickedAt ? new Date(p.pickedAt).toLocaleString() : ''}</td>
                         </tr>
                     `;
                     tbody.append(row);

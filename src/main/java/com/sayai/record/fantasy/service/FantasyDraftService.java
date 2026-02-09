@@ -41,6 +41,7 @@ public class FantasyDraftService {
     private final DraftPickRepository draftPickRepository;
     private final FantasyGameRepository fantasyGameRepository;
     private final FantasyParticipantRepository fantasyParticipantRepository;
+    private final com.sayai.record.fantasy.repository.FantasyLogRepository fantasyLogRepository;
     private final DraftValidator draftValidator;
     private final SimpMessagingTemplate messagingTemplate;
     private final ObjectProvider<DraftScheduler> draftSchedulerProvider;
@@ -194,6 +195,14 @@ public class FantasyDraftService {
                 .build();
 
         draftPickRepository.save(pick);
+
+        // Log
+        fantasyLogRepository.save(com.sayai.record.fantasy.entity.FantasyLog.builder()
+                .fantasyGameSeq(request.getFantasyGameSeq())
+                .playerId(request.getPlayerId())
+                .fantasyPlayerSeq(request.getFantasyPlayerSeq())
+                .action(com.sayai.record.fantasy.entity.FantasyLog.ActionType.DRAFT)
+                .build());
 
         // Update Deadline for NEXT pick
         if (game.getDraftTimeLimit() != null && game.getDraftTimeLimit() > 0) {
