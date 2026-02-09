@@ -41,7 +41,7 @@ public class AdminController {
     private final PostService postService;
     private final com.sayai.record.fantasy.repository.FantasyLogRepository fantasyLogRepository;
     private final com.sayai.record.fantasy.repository.FantasyPlayerRepository fantasyPlayerRepository;
-        private final com.sayai.record.fantasy.service.FantasyTradeService fantasyTradeService;
+    private final com.sayai.record.fantasy.service.FantasyTradeService fantasyTradeService;
 
     // --- Post Management ---
 
@@ -119,7 +119,8 @@ public class AdminController {
 
     @GetMapping("/fantasy/games/{gameSeq}/waiver-logs")
     public ResponseEntity<List<FantasyLogDto>> getWaiverLogs(@PathVariable(name = "gameSeq") Long gameSeq) {
-        List<com.sayai.record.fantasy.entity.FantasyLog> logs = fantasyLogRepository.findByFantasyGameSeqAndActionOrderByCreatedAtDesc(
+        // Return only unprocessed DROP logs
+        List<com.sayai.record.fantasy.entity.FantasyLog> logs = fantasyLogRepository.findByFantasyGameSeqAndActionAndIsProcessedFalseOrderByCreatedAtDesc(
                 gameSeq, com.sayai.record.fantasy.entity.FantasyLog.ActionType.DROP);
 
         java.util.Set<Long> playerSeqs = logs.stream().map(com.sayai.record.fantasy.entity.FantasyLog::getFantasyPlayerSeq).collect(Collectors.toSet());
@@ -175,12 +176,22 @@ public class AdminController {
     @PostMapping("/fantasy/trade/assign")
     public ResponseEntity<String> assignPlayerByAdmin(@RequestBody AssignRequest request) {
         try {
-            fantasyTradeService.assignPlayerByAdmin(request.getGameSeq(), request.getTargetPlayerId(), request.getFantasyPlayerSeq());
+            fantasyTradeService.assignPlayerByAdmin(request.getGameSeq(), request.getTargetPlayerId(), request.getFantasyPlayerSeq(), request.getLogSeq());
             return ResponseEntity.ok("Player assigned successfully");
         } catch (IllegalStateException | IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Error: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/fantasy/waiver/{logSeq}/release")
+    public ResponseEntity<String> releaseToFa(@PathVariable(name="logSeq") Long logSeq) {
+        try {
+            fantasyTradeService.releaseToFa(logSeq);
+            return ResponseEntity.ok("Released to FA");
+        } catch (Exception e) {
+             return ResponseEntity.badRequest().body("Error: " + e.getMessage());
         }
     }
 
@@ -375,5 +386,6 @@ public class AdminController {
         private Long gameSeq;
         private Long fantasyPlayerSeq;
         private Long targetPlayerId;
+        private Long logSeq;
     }
 }

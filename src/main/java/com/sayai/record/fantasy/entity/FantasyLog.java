@@ -27,6 +27,9 @@ public class FantasyLog {
     @Enumerated(EnumType.STRING)
     private ActionType action;
 
+    @Column(columnDefinition = "boolean default false")
+    private boolean isProcessed;
+
     private LocalDateTime createdAt;
 
     @PrePersist
@@ -39,6 +42,7 @@ public class FantasyLog {
         DROP,
         CLAIM,
         ADMIN_ASSIGN,
-        TRADE
+        TRADE,
+        WAIVER_CLEARED
     }
 }

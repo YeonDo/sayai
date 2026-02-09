@@ -51,7 +51,7 @@ class FantasyTradeServiceRule1Test {
         FantasyGame game = FantasyGame.builder().status(FantasyGame.GameStatus.ONGOING).ruleType(FantasyGame.RuleType.RULE_1).build();
         when(fantasyGameRepository.findById(gameSeq)).thenReturn(Optional.of(game));
 
-        assertThrows(IllegalStateException.class, () -> fantasyTradeService.assignPlayerByAdmin(gameSeq, 100L, 500L));
+        assertThrows(IllegalStateException.class, () -> fantasyTradeService.assignPlayerByAdmin(gameSeq, 100L, 500L, null));
     }
 
     @Test

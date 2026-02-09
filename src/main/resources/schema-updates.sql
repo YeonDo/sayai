@@ -5,3 +5,4 @@ CREATE TABLE IF NOT EXISTS app_posts (
   content TEXT,
   created_at DATETIME
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+ALTER TABLE ft_logs ADD COLUMN is_processed BOOLEAN DEFAULT FALSE;

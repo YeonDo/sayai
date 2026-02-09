@@ -52,7 +52,7 @@ class FantasyTradeServiceAssignTest {
         when(draftPickRepository.countByFantasyGameSeqAndPlayerId(gameSeq, targetPlayerId)).thenReturn(18L);
         when(draftPickRepository.findByFantasyGameSeqAndPlayerId(gameSeq, targetPlayerId)).thenReturn(Collections.emptyList());
 
-        assertDoesNotThrow(() -> fantasyTradeService.assignPlayerByAdmin(gameSeq, targetPlayerId, playerSeq));
+        assertDoesNotThrow(() -> fantasyTradeService.assignPlayerByAdmin(gameSeq, targetPlayerId, playerSeq, null));
         verify(draftPickRepository, times(1)).save(any(DraftPick.class));
         verify(fantasyLogRepository, times(1)).save(any(FantasyLog.class));
     }
@@ -71,7 +71,7 @@ class FantasyTradeServiceAssignTest {
         // Size 21 -> Full
         when(draftPickRepository.countByFantasyGameSeqAndPlayerId(gameSeq, targetPlayerId)).thenReturn(21L);
 
-        assertThrows(IllegalStateException.class, () -> fantasyTradeService.assignPlayerByAdmin(gameSeq, targetPlayerId, playerSeq));
+        assertThrows(IllegalStateException.class, () -> fantasyTradeService.assignPlayerByAdmin(gameSeq, targetPlayerId, playerSeq, null));
     }
 
     @Test
@@ -96,6 +96,6 @@ class FantasyTradeServiceAssignTest {
         when(fantasyPlayerRepository.findAllById(any())).thenReturn(Collections.singletonList(existingPlayer));
 
         // 90 + 20 = 110 > 100
-        assertThrows(IllegalStateException.class, () -> fantasyTradeService.assignPlayerByAdmin(gameSeq, targetPlayerId, playerSeq));
+        assertThrows(IllegalStateException.class, () -> fantasyTradeService.assignPlayerByAdmin(gameSeq, targetPlayerId, playerSeq, null));
     }
 }

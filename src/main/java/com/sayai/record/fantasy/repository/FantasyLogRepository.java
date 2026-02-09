@@ -8,4 +8,6 @@ import java.util.List;
 public interface FantasyLogRepository extends JpaRepository<FantasyLog, Long> {
     List<FantasyLog> findByFantasyGameSeqOrderByCreatedAtAsc(Long fantasyGameSeq);
     List<FantasyLog> findByFantasyGameSeqAndActionOrderByCreatedAtDesc(Long fantasyGameSeq, FantasyLog.ActionType action);
+    List<FantasyLog> findByFantasyGameSeqAndActionAndIsProcessedFalseOrderByCreatedAtDesc(Long fantasyGameSeq, FantasyLog.ActionType action);
+    List<FantasyLog> findByFantasyGameSeqAndFantasyPlayerSeqAndActionAndIsProcessedFalse(Long fantasyGameSeq, Long fantasyPlayerSeq, FantasyLog.ActionType action);
 }

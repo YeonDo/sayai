@@ -62,6 +62,9 @@ class FantasyTradeServiceProposalTest {
         when(draftPickRepository.findByFantasyGameSeqAndPlayerIdAndFantasyPlayerSeq(gameSeq, targetId, 20L))
                 .thenReturn(Optional.of(targetPick));
 
+        FantasyGame game = FantasyGame.builder().seq(gameSeq).status(FantasyGame.GameStatus.ONGOING).build();
+        when(fantasyGameRepository.findById(gameSeq)).thenReturn(Optional.of(game));
+
         assertDoesNotThrow(() -> fantasyTradeService.proposeTrade(proposerId, dto));
         verify(fantasyTradePlayerRepository, times(2)).save(any(FantasyTradePlayer.class));
     }

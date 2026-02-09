@@ -35,13 +35,16 @@ class DraftValidatorTest {
 
     @Test
     void validate_shouldDelegateToRule2() {
-        FantasyGame game = FantasyGame.builder().ruleType(FantasyGame.RuleType.RULE_2).build();
+        FantasyGame game = FantasyGame.builder()
+                .ruleType(FantasyGame.RuleType.RULE_2)
+                .useFirstPickRule(true) // Explicitly enable for test
+                .build();
         FantasyParticipant participant = FantasyParticipant.builder().preferredTeam("TeamA").build();
         FantasyPlayer p1 = FantasyPlayer.builder().team("TeamB").position("C").cost(10).build(); // Wrong Team
 
         assertThatThrownBy(() -> draftValidator.validate(game, p1, Collections.emptyList(), participant))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("First pick must be from preferred team");
+                .hasMessageContaining("1차 지명 룰 위반");
     }
 
     @Test

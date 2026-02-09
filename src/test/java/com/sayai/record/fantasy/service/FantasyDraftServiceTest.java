@@ -29,13 +29,24 @@ class FantasyDraftServiceTest {
     @Mock private FantasyParticipantRepository fantasyParticipantRepository;
     @Mock private DraftValidator draftValidator;
     @Mock private SimpMessagingTemplate messagingTemplate;
+    @Mock private com.sayai.record.fantasy.repository.FantasyLogRepository fantasyLogRepository;
+    @Mock private org.springframework.beans.factory.ObjectProvider<DraftScheduler> draftSchedulerProvider;
 
-    @InjectMocks
     private FantasyDraftService fantasyDraftService;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        fantasyDraftService = new FantasyDraftService(
+            fantasyPlayerRepository,
+            draftPickRepository,
+            fantasyGameRepository,
+            fantasyParticipantRepository,
+            fantasyLogRepository,
+            draftValidator,
+            messagingTemplate,
+            draftSchedulerProvider
+        );
     }
 
     @Test
@@ -54,14 +65,17 @@ class FantasyDraftServiceTest {
 
         // Mock DraftPicks (empty)
         when(draftPickRepository.findByFantasyGameSeq(anyLong())).thenReturn(Collections.emptyList());
+        when(fantasyLogRepository.findByFantasyGameSeqAndActionAndIsProcessedFalseOrderByCreatedAtDesc(anyLong(), any())).thenReturn(Collections.emptyList());
 
         // Act & Assert 1
         List<FantasyPlayerDto> result1 = fantasyDraftService.getAvailablePlayers(1L, null, null, null, null, "TYPE_1");
+        assertNotNull(result1);
         assertEquals(1, result1.size());
         assertEquals("P1", result1.get(0).getName());
 
         // Act & Assert 2
         List<FantasyPlayerDto> result2 = fantasyDraftService.getAvailablePlayers(1L, null, null, null, null, "NONE");
+        assertNotNull(result2);
         assertEquals(1, result2.size());
         assertEquals("P2", result2.get(0).getName());
     }

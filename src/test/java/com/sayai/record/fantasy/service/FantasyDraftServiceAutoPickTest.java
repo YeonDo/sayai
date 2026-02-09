@@ -5,6 +5,7 @@ import com.sayai.record.fantasy.repository.DraftPickRepository;
 import com.sayai.record.fantasy.repository.FantasyGameRepository;
 import com.sayai.record.fantasy.repository.FantasyParticipantRepository;
 import com.sayai.record.fantasy.repository.FantasyPlayerRepository;
+import com.sayai.record.fantasy.repository.FantasyLogRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -36,6 +37,8 @@ class FantasyDraftServiceAutoPickTest {
     private org.springframework.messaging.simp.SimpMessagingTemplate messagingTemplate;
     @Mock
     private org.springframework.beans.factory.ObjectProvider<DraftScheduler> draftSchedulerProvider;
+    @Mock
+    private FantasyLogRepository fantasyLogRepository;
 
     @InjectMocks
     private FantasyDraftService fantasyDraftService;

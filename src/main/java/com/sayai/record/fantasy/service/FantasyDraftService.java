@@ -100,27 +100,78 @@ public class FantasyDraftService {
         // 2. Get filtered players from DB
         List<FantasyPlayer> filteredPlayers = fantasyPlayerRepository.findPlayers(team, position, search, fType);
 
-        // Sort
-        if (sort != null) {
-            if ("cost_desc".equals(sort)) {
-                filteredPlayers.sort((p1, p2) -> {
-                    int c1 = p1.getCost() == null ? 0 : p1.getCost();
-                    int c2 = p2.getCost() == null ? 0 : p2.getCost();
-                    return Integer.compare(c2, c1);
-                });
-            } else if ("cost_asc".equals(sort)) {
-                filteredPlayers.sort((p1, p2) -> {
-                    int c1 = p1.getCost() == null ? 0 : p1.getCost();
-                    int c2 = p2.getCost() == null ? 0 : p2.getCost();
-                    return Integer.compare(c1, c2);
-                });
+        // --- NEW LOGIC: Exclude Waiver Players ---
+        // Players who are currently in waiver period (unprocessed DROP log) should not appear in FA search.
+        if (gameSeq != null && gameSeq != 0L) {
+            List<com.sayai.record.fantasy.entity.FantasyLog> waiverLogs = fantasyLogRepository.findByFantasyGameSeqAndActionAndIsProcessedFalseOrderByCreatedAtDesc(
+                    gameSeq, com.sayai.record.fantasy.entity.FantasyLog.ActionType.DROP);
+            Set<Long> waiverPlayerSeqs = waiverLogs.stream()
+                    .map(com.sayai.record.fantasy.entity.FantasyLog::getFantasyPlayerSeq)
+                    .collect(Collectors.toSet());
+
+            // Add waiver players to the exclusion set (pickedPlayerSeqs effectively acts as "unavailable")
+            // Since pickedPlayerSeqs is immutable if emptySet, we filter separately or combine.
+            // Let's filter stream.
+
+            List<FantasyPlayerDto> result = filteredPlayers.stream()
+                    .filter(p -> !pickedPlayerSeqs.contains(p.getSeq()))
+                    .filter(p -> !waiverPlayerSeqs.contains(p.getSeq())) // Exclude waiver players
+                    .map(FantasyPlayerDto::from)
+                    .collect(Collectors.toList());
+
+            Comparator<FantasyPlayerDto> dtoComparator = getDtoComparator(sort);
+            if (dtoComparator != null) {
+                result.sort(dtoComparator);
             }
+            return result;
+        }
+
+        // Sort (if gameSeq was 0 or no waiver logic needed)
+        // If sort logic was inline before, extract it.
+
+        Comparator<FantasyPlayer> comparator = getComparator(sort);
+        if (comparator != null) {
+            filteredPlayers.sort(comparator);
         }
 
         return filteredPlayers.stream()
                 .filter(p -> !pickedPlayerSeqs.contains(p.getSeq()))
                 .map(FantasyPlayerDto::from)
                 .collect(Collectors.toList());
+    }
+
+    private Comparator<FantasyPlayer> getComparator(String sort) {
+        if ("cost_desc".equals(sort)) {
+            return (p1, p2) -> {
+                int c1 = p1.getCost() == null ? 0 : p1.getCost();
+                int c2 = p2.getCost() == null ? 0 : p2.getCost();
+                return Integer.compare(c2, c1);
+            };
+        } else if ("cost_asc".equals(sort)) {
+            return (p1, p2) -> {
+                int c1 = p1.getCost() == null ? 0 : p1.getCost();
+                int c2 = p2.getCost() == null ? 0 : p2.getCost();
+                return Integer.compare(c1, c2);
+            };
+        }
+        return null;
+    }
+
+    private Comparator<FantasyPlayerDto> getDtoComparator(String sort) {
+        if ("cost_desc".equals(sort)) {
+            return (p1, p2) -> {
+                int c1 = p1.getCost() == null ? 0 : p1.getCost();
+                int c2 = p2.getCost() == null ? 0 : p2.getCost();
+                return Integer.compare(c2, c1);
+            };
+        } else if ("cost_asc".equals(sort)) {
+            return (p1, p2) -> {
+                int c1 = p1.getCost() == null ? 0 : p1.getCost();
+                int c2 = p2.getCost() == null ? 0 : p2.getCost();
+                return Integer.compare(c1, c2);
+            };
+        }
+        return null;
     }
 
     @Transactional
@@ -173,8 +224,7 @@ public class FantasyDraftService {
         // Get Participant Info (needed for Rule 2)
         FantasyParticipant participant = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(
                 request.getFantasyGameSeq(), request.getPlayerId())
-                .orElse(null); // Might be null if user didn't join explicitly (Rule 1 usually allows ad-hoc?)
-                                // Actually better to require join for consistent logic, but let's handle null gracefully for Rule 1.
+                .orElse(null);
 
         draftValidator.validate(game, targetPlayer, currentTeam, participant);
 
@@ -207,7 +257,6 @@ public class FantasyDraftService {
         // Update Deadline for NEXT pick
         if (game.getDraftTimeLimit() != null && game.getDraftTimeLimit() > 0) {
             game.setNextPickDeadline(LocalDateTime.now().plusMinutes(game.getDraftTimeLimit()));
-            // No need to save game explicitly if transaction handles dirty check, but safest to save or rely on transactional
         }
 
         // Get NEXT Pick Info
@@ -333,9 +382,6 @@ public class FantasyDraftService {
         String primaryPos = positions[0].trim();
 
         if (isPitcher(primaryPos)) {
-            // Pitcher logic: find first open slot (SP-1..SP-4, RP-1..RP-4, CL-1)
-            // Or simple logic: Just store "SP", "RP", "CL". Frontend handles slots.
-            // But if user has 4 SPs, 5th SP -> Bench.
             long spCount = occupied.stream().filter(p -> p.equals("SP")).count();
             long rpCount = occupied.stream().filter(p -> p.equals("RP")).count();
             long clCount = occupied.stream().filter(p -> p.equals("CL")).count();

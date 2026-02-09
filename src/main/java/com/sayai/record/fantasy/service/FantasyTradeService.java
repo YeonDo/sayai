@@ -69,6 +69,7 @@ public class FantasyTradeService {
                 .playerId(playerId)
                 .fantasyPlayerSeq(fantasyPlayerSeq)
                 .action(com.sayai.record.fantasy.entity.FantasyLog.ActionType.DROP)
+                .isProcessed(false) // Explicitly set to false (default)
                 .build());
     }
 
@@ -90,6 +91,17 @@ public class FantasyTradeService {
         if (draftPickRepository.existsByFantasyGameSeqAndFantasyPlayerSeq(gameSeq, fantasyPlayerSeq)) {
             throw new IllegalStateException("Player is already picked by another team.");
         }
+
+        // --- NEW LOGIC: Check if player is on WAIVER (unprocessed DROP log) ---
+        // FA Claim should fail if player is currently in Waiver period (i.e. has pending drop log)
+        // because Waiver players are claimed via Admin only (per request 2)
+        List<com.sayai.record.fantasy.entity.FantasyLog> pendingDrops = fantasyLogRepository.findByFantasyGameSeqAndFantasyPlayerSeqAndActionAndIsProcessedFalse(
+                gameSeq, fantasyPlayerSeq, com.sayai.record.fantasy.entity.FantasyLog.ActionType.DROP);
+
+        if (!pendingDrops.isEmpty()) {
+            throw new IllegalStateException("Player is currently on WAIVER status and cannot be claimed as FA directly.");
+        }
+        // ----------------------------------------------------------------------
 
         FantasyPlayer player = fantasyPlayerRepository.findById(fantasyPlayerSeq)
                 .orElseThrow(() -> new IllegalArgumentException("Player not found"));
@@ -124,9 +136,11 @@ public class FantasyTradeService {
             }
         }
 
-        // 4. Update Waiver Order
+        // --- NEW LOGIC: REMOVED WAIVER ORDER UPDATE ---
+        // Request: "웨이버 Claim 은 어드민화면에서만 ... FA 화면에서 선수 영입시에는 웨이버 순번이 밀릴 필요가 없어"
+        // So we skip the waiver order reordering here.
+        /*
         List<FantasyParticipant> participants = fantasyParticipantRepository.findByFantasyGameSeq(gameSeq);
-        // Sort by waiver order asc (1 is top priority)
         participants.sort(Comparator.comparingInt(p -> p.getWaiverOrder() == null ? 999 : p.getWaiverOrder()));
 
         FantasyParticipant me = participants.stream()
@@ -137,30 +151,31 @@ public class FantasyTradeService {
         int myOldOrder = me.getWaiverOrder();
         int maxOrder = participants.size();
 
-        // Shift others up: If their order > myOldOrder, decrement by 1
         for (FantasyParticipant p : participants) {
             if (p.getWaiverOrder() > myOldOrder) {
                 p.setWaiverOrder(p.getWaiverOrder() - 1);
             }
         }
-        // Move me to last
         me.setWaiverOrder(maxOrder);
-
         fantasyParticipantRepository.saveAll(participants);
+        */
+        // ----------------------------------------------
 
         // 5. Create Pick
-        // For claimed player, initial position is BENCH unless we want to auto-assign?
-        // Let's set to BENCH safely.
         DraftPick newPick = DraftPick.builder()
                 .fantasyGameSeq(gameSeq)
                 .playerId(playerId)
                 .fantasyPlayerSeq(fantasyPlayerSeq)
-                .pickNumber(0) // 0 or separate counter for FA? Using 0 to distinguish from draft picks might be okay or just irrelevant.
+                .pickNumber(0)
                 .assignedPosition("BENCH")
                 .pickedAt(LocalDateTime.now())
                 .build();
 
         draftPickRepository.save(newPick);
+
+        // (Pending drops check is done above, but just in case of race condition or cleanup)
+        // If we allowed claiming waiver via this method (which we blocked above), we would clear it.
+        // Since we block it, no need to clear logs here.
 
         // Log
         fantasyLogRepository.save(com.sayai.record.fantasy.entity.FantasyLog.builder()
@@ -172,12 +187,11 @@ public class FantasyTradeService {
     }
 
     @Transactional
-    public void assignPlayerByAdmin(Long gameSeq, Long targetPlayerId, Long fantasyPlayerSeq) {
+    public void assignPlayerByAdmin(Long gameSeq, Long targetPlayerId, Long fantasyPlayerSeq, Long logSeq) {
         // 1. Check Game Status
         FantasyGame game = fantasyGameRepository.findById(gameSeq)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid Game Seq"));
 
-        // Admin can technically assign anytime, but let's restrict to ONGOING for consistency with trade logic
         if (game.getStatus() != FantasyGame.GameStatus.ONGOING) {
             throw new IllegalStateException("Cannot assign player. Game is not ONGOING.");
         }
@@ -197,7 +211,6 @@ public class FantasyTradeService {
         // 3. Check Roster Size & Salary Cap
         long currentRosterSize = draftPickRepository.countByFantasyGameSeqAndPlayerId(gameSeq, targetPlayerId);
 
-        // Roster Limit Check (Max 21)
         if (currentRosterSize >= 21) {
             throw new IllegalStateException("Target roster is full (Max 21 players).");
         }
@@ -213,7 +226,6 @@ public class FantasyTradeService {
 
         int playerCost = player.getCost() == null ? 0 : player.getCost();
 
-        // Penalty Check (If size becomes 21)
         if (currentRosterSize == 20) {
             playerCost += 5;
         }
@@ -236,13 +248,78 @@ public class FantasyTradeService {
 
         draftPickRepository.save(newPick);
 
-        // 5. Log
+        // 5. Update Log if provided (Waiver assignment)
+        if (logSeq != null) {
+            fantasyLogRepository.findById(logSeq).ifPresent(log -> {
+                log.setProcessed(true);
+                fantasyLogRepository.save(log);
+            });
+
+            // --- UPDATE WAIVER ORDER HERE (Only for Admin Waiver Assign) ---
+            // If this was a waiver claim (implied by logSeq existing and being a DROP log),
+            // then we should update the waiver order of the target team.
+            // Requirement 2 implies: "웨이버 Claim 은 어드민화면에서만 ... FA 화면에서 ... 밀릴 필요가 없어"
+            // This suggests Waiver Claim (Admin Assign) SHOULD affect order?
+            // Usually Waiver Claims reset priority. Let's assume Yes.
+
+            List<FantasyParticipant> participants = fantasyParticipantRepository.findByFantasyGameSeq(gameSeq);
+            participants.sort(Comparator.comparingInt(p -> p.getWaiverOrder() == null ? 999 : p.getWaiverOrder()));
+
+            FantasyParticipant target = participants.stream()
+                    .filter(p -> p.getPlayerId().equals(targetPlayerId))
+                    .findFirst()
+                    .orElse(null);
+
+            if (target != null) {
+                int oldOrder = target.getWaiverOrder();
+                int maxOrder = participants.size();
+
+                // Shift others
+                for (FantasyParticipant p : participants) {
+                    if (p.getWaiverOrder() > oldOrder) {
+                        p.setWaiverOrder(p.getWaiverOrder() - 1);
+                    }
+                }
+                target.setWaiverOrder(maxOrder);
+                fantasyParticipantRepository.saveAll(participants);
+            }
+            // -------------------------------------------------------------
+        }
+
+        // Also ensure any other pending drops for this player are cleared
+        List<com.sayai.record.fantasy.entity.FantasyLog> pendingDrops = fantasyLogRepository.findByFantasyGameSeqAndFantasyPlayerSeqAndActionAndIsProcessedFalse(
+                gameSeq, fantasyPlayerSeq, com.sayai.record.fantasy.entity.FantasyLog.ActionType.DROP);
+        for (com.sayai.record.fantasy.entity.FantasyLog log : pendingDrops) {
+            if (!log.isProcessed()) {
+                log.setProcessed(true);
+                fantasyLogRepository.save(log);
+            }
+        }
+
+        // 6. Log Assignment
         fantasyLogRepository.save(com.sayai.record.fantasy.entity.FantasyLog.builder()
                 .fantasyGameSeq(gameSeq)
-                .playerId(targetPlayerId) // Assigned To
+                .playerId(targetPlayerId)
                 .fantasyPlayerSeq(fantasyPlayerSeq)
                 .action(com.sayai.record.fantasy.entity.FantasyLog.ActionType.ADMIN_ASSIGN)
                 .build());
+    }
+
+    @Transactional
+    public void releaseToFa(Long logSeq) {
+        if (logSeq == null) return;
+
+        com.sayai.record.fantasy.entity.FantasyLog log = fantasyLogRepository.findById(logSeq)
+                .orElseThrow(() -> new IllegalArgumentException("Log not found"));
+
+        if (log.getAction() != com.sayai.record.fantasy.entity.FantasyLog.ActionType.DROP) {
+            throw new IllegalArgumentException("Can only release DROP logs to FA.");
+        }
+
+        log.setProcessed(true);
+        fantasyLogRepository.save(log);
+
+        // Optionally log WAIVER_CLEARED, but updating isProcessed is sufficient for UI clearing.
     }
 
     @Transactional
@@ -264,7 +341,6 @@ public class FantasyTradeService {
         trade = fantasyTradeRepository.save(trade);
 
         // 2. Add Players
-        // Validate My Players
         for (Long seq : dto.getMyPlayers()) {
             DraftPick pick = draftPickRepository.findByFantasyGameSeqAndPlayerIdAndFantasyPlayerSeq(dto.getGameSeq(), playerId, seq)
                     .orElseThrow(() -> new IllegalArgumentException("You do not own player " + seq));
@@ -280,7 +356,6 @@ public class FantasyTradeService {
                     .build());
         }
 
-        // Validate Target Players
         for (Long seq : dto.getTargetPlayers()) {
             DraftPick pick = draftPickRepository.findByFantasyGameSeqAndPlayerIdAndFantasyPlayerSeq(dto.getGameSeq(), dto.getTargetPlayerId(), seq)
                     .orElseThrow(() -> new IllegalArgumentException("Target does not own player " + seq));
@@ -314,11 +389,9 @@ public class FantasyTradeService {
         List<Long> proposerOut = tradePlayers.stream().filter(p -> p.getPlayerId().equals(trade.getProposerId())).map(com.sayai.record.fantasy.entity.FantasyTradePlayer::getFantasyPlayerSeq).collect(Collectors.toList());
         List<Long> targetOut = tradePlayers.stream().filter(p -> p.getPlayerId().equals(trade.getTargetId())).map(com.sayai.record.fantasy.entity.FantasyTradePlayer::getFantasyPlayerSeq).collect(Collectors.toList());
 
-        // Validate Cost & Size
         validateTradeImpact(game, trade.getProposerId(), proposerOut, targetOut);
         validateTradeImpact(game, trade.getTargetId(), targetOut, proposerOut);
 
-        // Execute Swap
         for (com.sayai.record.fantasy.entity.FantasyTradePlayer tp : tradePlayers) {
             Long ownerId = tp.getPlayerId();
             Long newOwnerId = ownerId.equals(trade.getProposerId()) ? trade.getTargetId() : trade.getProposerId();
@@ -327,13 +400,12 @@ public class FantasyTradeService {
                     .orElseThrow(() -> new IllegalStateException("Player not found during execution"));
 
             pick.setPlayerId(newOwnerId);
-            pick.setAssignedPosition("BENCH"); // Reset to Bench
+            pick.setAssignedPosition("BENCH");
             draftPickRepository.save(pick);
 
-            // Log
             fantasyLogRepository.save(com.sayai.record.fantasy.entity.FantasyLog.builder()
                     .fantasyGameSeq(game.getSeq())
-                    .playerId(newOwnerId) // New Owner
+                    .playerId(newOwnerId)
                     .fantasyPlayerSeq(tp.getFantasyPlayerSeq())
                     .action(com.sayai.record.fantasy.entity.FantasyLog.ActionType.TRADE)
                     .build());
@@ -356,7 +428,6 @@ public class FantasyTradeService {
 
         long newSize = currentPicks.size() - losing.size() + gaining.size();
 
-        // Calculate new cost
         Set<Long> currentSeqs = currentPicks.stream().map(DraftPick::getFantasyPlayerSeq).collect(Collectors.toSet());
         currentSeqs.removeAll(losing);
         currentSeqs.addAll(gaining);
@@ -368,15 +439,6 @@ public class FantasyTradeService {
         }
 
         if (newSize == 21) {
-            // Find the added players, add +5 for one of them?
-            // "선수단이 20명을 넘으면 코스트 패널티 5를 추가"
-            // If size > 20, applies. (User said 21 penalty).
-            // Logic in Claim was: if size 20 -> 21, +5.
-            // If trade results in 21, add +5.
-            // What if already 21 (from waiver)?
-            // Let's apply: For every player above 20, add 5? Or just flat +5 if >= 21?
-            // "21인인 경우 해당 선수의 코스트 +5".
-            // Let's assume +5 penalty if size >= 21.
             cost += 5;
         }
 
@@ -394,9 +456,6 @@ public class FantasyTradeService {
         return trades.stream().map(t -> {
             List<com.sayai.record.fantasy.entity.FantasyTradePlayer> tps = fantasyTradePlayerRepository.findByFantasyTradeSeq(t.getSeq());
 
-            // Helper to format: "PlayerName(Team)"
-            // Need to fetch names. Doing it simply here (N+1 risk but low volume for admin)
-            // Or fetch all players in one go.
             Set<Long> pIds = tps.stream().map(com.sayai.record.fantasy.entity.FantasyTradePlayer::getFantasyPlayerSeq).collect(Collectors.toSet());
             java.util.Map<Long, FantasyPlayer> pMap = fantasyPlayerRepository.findAllById(pIds).stream().collect(Collectors.toMap(FantasyPlayer::getSeq, java.util.function.Function.identity()));
 

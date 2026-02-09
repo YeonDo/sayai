@@ -9,7 +9,11 @@ import com.sayai.record.fantasy.repository.DraftPickRepository;
 import com.sayai.record.fantasy.repository.FantasyGameRepository;
 import com.sayai.record.fantasy.repository.FantasyParticipantRepository;
 import com.sayai.record.fantasy.repository.FantasyPlayerRepository;
+import com.sayai.record.fantasy.repository.FantasyLogRepository;
+import com.sayai.record.auth.repository.MemberRepository;
+import com.sayai.record.auth.entity.MemberHelper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,20 +34,18 @@ public class FantasyGameService {
     private final FantasyParticipantRepository fantasyParticipantRepository;
     private final DraftPickRepository draftPickRepository;
     private final FantasyPlayerRepository fantasyPlayerRepository;
-    private final com.sayai.record.fantasy.repository.FantasyLogRepository fantasyLogRepository;
-    private final com.sayai.record.auth.repository.MemberRepository memberRepository;
+    private final FantasyLogRepository fantasyLogRepository;
+    private final MemberRepository memberRepository;
     private final SimpMessagingTemplate messagingTemplate;
-    private final FantasyDraftService fantasyDraftService;
+    @Lazy private final FantasyDraftService fantasyDraftService; // Corrected injection
     private final DraftScheduler draftScheduler;
 
     @Transactional(readOnly = true)
     public List<FantasyGameDto> getDashboardGames(Long userId) {
-        // 1. Get all active games (not FINISHED)
         List<FantasyGame> games = fantasyGameRepository.findAll().stream()
                 .filter(g -> g.getStatus() != FantasyGame.GameStatus.FINISHED)
                 .collect(Collectors.toList());
 
-        // 2. Get all participants for these games to calculate counts and check join status
         List<Long> gameSeqs = games.stream().map(FantasyGame::getSeq).collect(Collectors.toList());
         List<FantasyParticipant> participants = fantasyParticipantRepository.findAll().stream()
                 .filter(p -> gameSeqs.contains(p.getFantasyGameSeq()))
@@ -71,7 +73,6 @@ public class FantasyGameService {
 
     @Transactional(readOnly = true)
     public List<FantasyGameDto> getMyGames(Long userId) {
-        // Find games where user participated
         List<FantasyParticipant> myParticipations = fantasyParticipantRepository.findAll().stream()
                 .filter(p -> p.getPlayerId().equals(userId))
                 .collect(Collectors.toList());
@@ -151,29 +152,24 @@ public class FantasyGameService {
             throw new IllegalStateException("Cannot start game with no participants.");
         }
 
-        // Shuffle and assign order
         Collections.shuffle(participants);
 
         int order = 1;
         int participantCount = participants.size();
         for (FantasyParticipant p : participants) {
             p.setDraftOrder(order);
-            // Waiver Order is reverse of Draft Order
             p.setWaiverOrder(participantCount - order + 1);
             order++;
         }
         fantasyParticipantRepository.saveAll(participants);
 
-        // Update Game Status
         game.setStatus(FantasyGame.GameStatus.DRAFTING);
         updateSchedulerSafely(gameSeq, true);
 
-        // Set Initial Deadline
         if (game.getDraftTimeLimit() != null && game.getDraftTimeLimit() > 0) {
             game.setNextPickDeadline(LocalDateTime.now().plusMinutes(game.getDraftTimeLimit()));
         }
 
-        // Prepare Event Data
         List<ParticipantRosterDto> orderList = participants.stream()
             .sorted(Comparator.comparingInt(FantasyParticipant::getDraftOrder))
             .map(p -> ParticipantRosterDto.builder()
@@ -189,7 +185,7 @@ public class FantasyGameService {
                 .fantasyGameSeq(gameSeq)
                 .message("Draft Started")
                 .draftOrder(orderList)
-                .nextPickerId(orderList.get(0).getParticipantId()) // First picker
+                .nextPickerId(orderList.get(0).getParticipantId())
                 .nextPickDeadline(game.getNextPickDeadline() != null ? game.getNextPickDeadline().atZone(ZoneId.of("UTC")) : null)
                 .round(1)
                 .pickInRound(1)
@@ -202,11 +198,9 @@ public class FantasyGameService {
     public List<DraftLogDto> getDraftPicks(Long gameSeq) {
         List<com.sayai.record.fantasy.entity.FantasyLog> logs = fantasyLogRepository.findByFantasyGameSeqOrderByCreatedAtAsc(gameSeq);
 
-        // Collect all related IDs
         Set<Long> playerSeqs = logs.stream().map(com.sayai.record.fantasy.entity.FantasyLog::getFantasyPlayerSeq).collect(Collectors.toSet());
         Set<Long> userIds = logs.stream().map(com.sayai.record.fantasy.entity.FantasyLog::getPlayerId).collect(Collectors.toSet());
 
-        // Fetch Data
         Map<Long, FantasyPlayer> players = fantasyPlayerRepository.findAllById(playerSeqs).stream()
                 .collect(Collectors.toMap(FantasyPlayer::getSeq, Function.identity()));
 
@@ -214,14 +208,7 @@ public class FantasyGameService {
         Map<Long, String> teamNames = participants.stream()
                 .collect(Collectors.toMap(FantasyParticipant::getPlayerId, FantasyParticipant::getTeamName, (a, b) -> a));
 
-        // Fallback for names if participant left or not found
-        Map<Long, String> memberNames = com.sayai.record.auth.entity.MemberHelper.getNames(memberRepository, userIds);
-
-        // Re-construct Pick Numbers counter for DRAFT events
-        // Assuming logs are sorted by time.
-        // Actually, DraftPick has the authoritative pickNumber. FantasyLog might not store it.
-        // For Draft Logs, we can infer pick number if we only count DRAFT actions?
-        // Let's just use a counter for display.
+        Map<Long, String> memberNames = MemberHelper.getNames(memberRepository, userIds);
 
         List<DraftLogDto> dtos = new ArrayList<>();
         int draftCounter = 1;
@@ -267,13 +254,10 @@ public class FantasyGameService {
         FantasyGame game = fantasyGameRepository.findById(gameSeq)
                 .orElseThrow(() -> new IllegalArgumentException("Game not found"));
 
-        // Allow export for ONGOING and FINISHED
-        if (game.getStatus() != FantasyGame.GameStatus.ONGOING && game.getStatus() != FantasyGame.GameStatus.FINISHED) {
-            // throw new IllegalStateException("Game must be ONGOING or FINISHED to export.");
-            // Or just return empty or proceed. Requirement says "ONGOING".
-        }
-
         List<FantasyParticipant> participants = fantasyParticipantRepository.findByFantasyGameSeq(gameSeq);
+        // Sort participants by draft order for consistent export (optional but good)
+        participants.sort(Comparator.comparingInt(p -> p.getDraftOrder() != null ? p.getDraftOrder() : 0));
+
         List<DraftPick> allPicks = draftPickRepository.findByFantasyGameSeq(gameSeq);
 
         Set<Long> playerSeqs = allPicks.stream().map(DraftPick::getFantasyPlayerSeq).collect(Collectors.toSet());
@@ -282,15 +266,17 @@ public class FantasyGameService {
 
         Map<Long, List<DraftPick>> picksByPart = allPicks.stream().collect(Collectors.groupingBy(DraftPick::getPlayerId));
 
-        // Prepare data grid: Participant -> { Batters, Pitchers }
+        // Rows for display
+        List<String> teamNames = new ArrayList<>();
         List<List<String>> allBatters = new ArrayList<>();
         List<List<String>> allPitchers = new ArrayList<>();
-        List<String> teamNames = new ArrayList<>();
 
         for (FantasyParticipant p : participants) {
             teamNames.add(p.getTeamName());
 
             List<DraftPick> picks = picksByPart.getOrDefault(p.getPlayerId(), Collections.emptyList());
+
+            // Filter out Bench players
             List<FantasyPlayer> roster = picks.stream()
                     .filter(pick -> pick.getAssignedPosition() != null && !pick.getAssignedPosition().toUpperCase().contains("BENCH"))
                     .map(pick -> players.get(pick.getFantasyPlayerSeq()))
@@ -301,6 +287,8 @@ public class FantasyGameService {
             List<String> pitchers = new ArrayList<>();
 
             for (FantasyPlayer fp : roster) {
+                // Determine if Pitcher based on Position string or assigned position logic.
+                // Assuming standard KBO positions.
                 String pos = fp.getPosition();
                 boolean isPitcher = pos.contains("SP") || pos.contains("RP") || pos.contains("CL") || pos.equals("P");
                 if (isPitcher) {
@@ -315,14 +303,18 @@ public class FantasyGameService {
 
         StringBuilder sb = new StringBuilder();
 
-        // Header Row: Team Names
+        // 1. Team Names Header
         for (String name : teamNames) {
             sb.append(name).append("\t");
         }
         sb.append("\n");
 
-        // Batters (9 rows)
-        for (int i = 0; i < 9; i++) {
+        // 2. Batters (Max 9 rows usually, but handle dynamic)
+        int maxBatters = allBatters.stream().mapToInt(List::size).max().orElse(0);
+        // Ensure at least 9 rows for standard view
+        if (maxBatters < 9) maxBatters = 9;
+
+        for (int i = 0; i < maxBatters; i++) {
             for (List<String> teamBatters : allBatters) {
                 if (i < teamBatters.size()) {
                     sb.append(teamBatters.get(i));
@@ -332,8 +324,14 @@ public class FantasyGameService {
             sb.append("\n");
         }
 
-        // Pitchers (9 rows)
-        for (int i = 0; i < 9; i++) {
+        // Separator (optional)
+        // sb.append("\n");
+
+        // 3. Pitchers (Max 9 rows)
+        int maxPitchers = allPitchers.stream().mapToInt(List::size).max().orElse(0);
+        if (maxPitchers < 9) maxPitchers = 9;
+
+        for (int i = 0; i < maxPitchers; i++) {
             for (List<String> teamPitchers : allPitchers) {
                 if (i < teamPitchers.size()) {
                     sb.append(teamPitchers.get(i));
@@ -353,19 +351,16 @@ public class FantasyGameService {
 
         List<FantasyParticipant> participants = fantasyParticipantRepository.findByFantasyGameSeq(gameSeq);
 
-        // Fetch all picks
         List<DraftPick> allPicks = draftPickRepository.findByFantasyGameSeq(gameSeq);
         Map<Long, List<DraftPick>> picksByParticipant = allPicks.stream()
                 .collect(Collectors.groupingBy(DraftPick::getPlayerId));
 
-        // Fetch all relevant fantasy players
         Set<Long> fantasyPlayerSeqs = allPicks.stream()
                 .map(DraftPick::getFantasyPlayerSeq)
                 .collect(Collectors.toSet());
         Map<Long, FantasyPlayer> fantasyPlayers = fantasyPlayerRepository.findAllById(fantasyPlayerSeqs).stream()
                 .collect(Collectors.toMap(FantasyPlayer::getSeq, Function.identity()));
 
-        // Calculate Next Picker (if Drafting)
         Long nextPickerId = null;
         Integer round = null;
         Integer pickInRound = null;
@@ -376,7 +371,6 @@ public class FantasyGameService {
                  round = info.round;
                  pickInRound = info.pickInRound;
              } catch (Exception e) {
-                 // Ignore if calculation fails (e.g. no participants yet)
              }
         }
 

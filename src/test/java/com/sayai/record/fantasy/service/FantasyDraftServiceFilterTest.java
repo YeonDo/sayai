@@ -25,8 +25,30 @@ class FantasyDraftServiceFilterTest {
     @Mock
     private DraftPickRepository draftPickRepository;
 
-    @InjectMocks
+    @Mock
+    private com.sayai.record.fantasy.repository.FantasyLogRepository fantasyLogRepository;
+
+    @Mock private org.springframework.beans.factory.ObjectProvider<DraftScheduler> draftSchedulerProvider;
+    @Mock private org.springframework.messaging.simp.SimpMessagingTemplate messagingTemplate;
+    @Mock private com.sayai.record.fantasy.repository.FantasyGameRepository fantasyGameRepository;
+    @Mock private com.sayai.record.fantasy.repository.FantasyParticipantRepository fantasyParticipantRepository;
+    @Mock private DraftValidator draftValidator;
+
     private FantasyDraftService fantasyDraftService;
+
+    @org.junit.jupiter.api.BeforeEach
+    void setUp() {
+        fantasyDraftService = new FantasyDraftService(
+            fantasyPlayerRepository,
+            draftPickRepository,
+            fantasyGameRepository,
+            fantasyParticipantRepository,
+            fantasyLogRepository,
+            draftValidator,
+            messagingTemplate,
+            draftSchedulerProvider
+        );
+    }
 
     @Test
     void getAvailablePlayers_shouldCallRepositoryWithFilters() {
@@ -38,6 +60,11 @@ class FantasyDraftServiceFilterTest {
         FantasyPlayer p1 = FantasyPlayer.builder().seq(1L).name("Kim").team("Doosan").position("P").cost(10).build();
 
         when(draftPickRepository.findByFantasyGameSeq(gameSeq)).thenReturn(Collections.emptyList());
+        when(fantasyLogRepository.findByFantasyGameSeqAndActionAndIsProcessedFalseOrderByCreatedAtDesc(
+                org.mockito.ArgumentMatchers.eq(gameSeq),
+                org.mockito.ArgumentMatchers.any()
+        )).thenReturn(Collections.emptyList());
+
         when(fantasyPlayerRepository.findPlayers(team, pos, search, null)).thenReturn(Collections.singletonList(p1));
 
         List<FantasyPlayerDto> result = fantasyDraftService.getAvailablePlayers(gameSeq, team, pos, search, null, null);
