@@ -79,8 +79,26 @@
 
             <!-- Trade Tab -->
             <div id="tab-trade" class="trade-content">
-                <h3>Trade</h3>
-                <p>Player-to-Player trades coming soon.</p>
+                <h3>Trade Proposal</h3>
+                <div style="display: flex; gap: 20px;">
+                    <!-- Left: My Bench -->
+                    <div style="flex: 1; border: 1px solid #ddd; padding: 10px; border-radius: 5px;">
+                        <h4>My Bench</h4>
+                        <div id="my-bench-list">Loading...</div>
+                    </div>
+
+                    <!-- Right: Target Bench -->
+                    <div style="flex: 1; border: 1px solid #ddd; padding: 10px; border-radius: 5px;">
+                        <h4>Target Team</h4>
+                        <select id="target-participant" style="width: 100%; margin-bottom: 10px; padding: 5px;" onchange="loadTargetBench()">
+                            <option value="">Select Team...</option>
+                        </select>
+                        <div id="target-bench-list">Select a team to view bench.</div>
+                    </div>
+                </div>
+                <div style="margin-top: 20px; text-align: center;">
+                    <button class="btn-primary" onclick="proposeTrade()">Propose Trade</button>
+                </div>
             </div>
 
             <!-- FA Tab -->
@@ -165,7 +183,126 @@
 
             if (tabName === 'waiver') {
                 loadWaiverList();
+            } else if (tabName === 'trade') {
+                loadTradeUI();
             }
+        }
+
+        function loadTradeUI() {
+            // Load My Bench
+            $.get(`/apis/v1/fantasy/games/${gameSeq}/my-picks`, function(players) {
+                const container = $('#my-bench-list');
+                container.empty();
+                const bench = players.filter(p => !p.assignedPosition || p.assignedPosition === 'BENCH');
+
+                if (bench.length === 0) {
+                    container.text("No players on bench.");
+                } else {
+                    bench.forEach(p => {
+                        container.append(`
+                            <div style="margin-bottom:5px;">
+                                <input type="checkbox" name="my-trade-player" value="${p.seq}" id="my-p-${p.seq}">
+                                <label for="my-p-${p.seq}">${p.name} (${p.position}, ${p.cost || 0})</label>
+                            </div>
+                        `);
+                    });
+                }
+            });
+
+            // Load Participants
+            $.get(`/apis/v1/fantasy/games/${gameSeq}/details`, function(data) {
+                const select = $('#target-participant');
+                select.empty();
+                select.append('<option value="">Select Team...</option>');
+
+                if (data.participants) {
+                    data.participants.forEach(p => {
+                        // Exclude myself
+                        if (String(p.participantId) !== String(userId)) {
+                            select.append(`<option value="${p.participantId}">${p.teamName}</option>`);
+                        }
+                    });
+                }
+            });
+        }
+
+        function loadTargetBench() {
+            const targetId = $('#target-participant').val();
+            const container = $('#target-bench-list');
+            container.empty();
+
+            if (!targetId) {
+                container.text("Select a team.");
+                return;
+            }
+
+            $.get(`/apis/v1/fantasy/games/${gameSeq}/players/${targetId}/picks`, function(players) {
+                const bench = players.filter(p => !p.assignedPosition || p.assignedPosition === 'BENCH');
+                if (bench.length === 0) {
+                    container.text("No bench players available.");
+                } else {
+                    bench.forEach(p => {
+                        container.append(`
+                            <div style="margin-bottom:5px;">
+                                <input type="checkbox" name="target-trade-player" value="${p.seq}" id="target-p-${p.seq}">
+                                <label for="target-p-${p.seq}">${p.name} (${p.position}, ${p.cost || 0})</label>
+                            </div>
+                        `);
+                    });
+                }
+            });
+        }
+
+        function proposeTrade() {
+            const targetId = $('#target-participant').val();
+            if (!targetId) {
+                alert("Please select a target team.");
+                return;
+            }
+
+            const myPlayers = [];
+            $('input[name="my-trade-player"]:checked').each(function() {
+                myPlayers.push(parseInt($(this).val()));
+            });
+
+            const targetPlayers = [];
+            $('input[name="target-trade-player"]:checked').each(function() {
+                targetPlayers.push(parseInt($(this).val()));
+            });
+
+            if (myPlayers.length === 0 && targetPlayers.length === 0) {
+                alert("Select at least one player to trade.");
+                return;
+            }
+
+            // Validate counts (1:1, 2:2, 1:2, 2:1)
+            // Actually prompt didn't strictly restrict, just said "1:1, 2:2, 1:2, 2:1 possible".
+            // Backend will validate generic logic or if needed.
+            // Let's allow generic proposal.
+
+            const data = {
+                gameSeq: parseInt(gameSeq),
+                targetPlayerId: parseInt(targetId),
+                myPlayers: myPlayers,
+                targetPlayers: targetPlayers
+            };
+
+            $.ajax({
+                url: '/apis/v1/fantasy/trade/propose',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function() {
+                    alert("Trade proposed successfully.");
+                    // Reset UI
+                    loadTradeUI();
+                    $('#target-participant').val('');
+                    $('#target-bench-list').empty();
+                },
+                error: function(xhr) {
+                    alert("Proposal failed: " + xhr.responseText);
+                }
+            });
         }
 
         function loadFAPlayers() {

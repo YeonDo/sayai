@@ -30,6 +30,8 @@ class FantasyTradeServiceTest {
     @Mock private FantasyPlayerRepository fantasyPlayerRepository;
     @Mock private FantasyParticipantRepository fantasyParticipantRepository;
 
+    @Mock private com.sayai.record.fantasy.repository.FantasyLogRepository fantasyLogRepository;
+
     @InjectMocks
     private FantasyTradeService fantasyTradeService;
 
@@ -133,6 +135,24 @@ class FantasyTradeServiceTest {
     }
 
     @Test
+    void testClaimPlayer_Fail_RosterFull() {
+        Long gameSeq = 1L;
+        Long playerId = 100L;
+        Long playerSeq = 600L;
+
+        FantasyGame game = FantasyGame.builder().status(FantasyGame.GameStatus.ONGOING).build();
+        when(fantasyGameRepository.findById(gameSeq)).thenReturn(Optional.of(game));
+        when(draftPickRepository.existsByFantasyGameSeqAndFantasyPlayerSeq(gameSeq, playerSeq)).thenReturn(false);
+        // Add cost to builder to avoid NPE in service logic if checked earlier or later
+        when(fantasyPlayerRepository.findById(playerSeq)).thenReturn(Optional.of(FantasyPlayer.builder().cost(10).build()));
+
+        // Size 21
+        when(draftPickRepository.countByFantasyGameSeqAndPlayerId(gameSeq, playerId)).thenReturn(21L);
+
+        assertThrows(IllegalStateException.class, () -> fantasyTradeService.claimPlayer(gameSeq, playerId, playerSeq));
+    }
+
+    @Test
     void testClaimPlayer_Fail_OverCap() {
         Long gameSeq = 1L;
         Long playerId = 100L;
@@ -149,6 +169,10 @@ class FantasyTradeServiceTest {
         when(draftPickRepository.findByFantasyGameSeqAndPlayerId(gameSeq, playerId)).thenReturn(Collections.singletonList(existingPick));
         FantasyPlayer existingPlayer = FantasyPlayer.builder().seq(900L).cost(90).build();
         when(fantasyPlayerRepository.findAllById(any())).thenReturn(Collections.singletonList(existingPlayer));
+
+        // Mock participants for order logic which runs before saving, just in case
+        FantasyParticipant me = FantasyParticipant.builder().playerId(playerId).waiverOrder(1).build();
+        when(fantasyParticipantRepository.findByFantasyGameSeq(gameSeq)).thenReturn(new ArrayList<>(List.of(me)));
 
         assertThrows(IllegalStateException.class, () -> fantasyTradeService.claimPlayer(gameSeq, playerId, playerSeq));
     }

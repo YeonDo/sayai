@@ -501,9 +501,61 @@
         }
 
         function loadTradeRequests(gameSeq) {
-            // Placeholder logic
             $.get(`/apis/v1/admin/fantasy/games/${gameSeq}/trade-requests`, function(reqs) {
-                // Currently empty
+                const tbody = $('#tradeListBody');
+                tbody.empty();
+                if(reqs.length === 0) {
+                     // tbody.append('<tr><td colspan="4" style="text-align:center;">No trade requests.</td></tr>');
+                     // The parent container has a <p> "No active trade requests" which is visible by default?
+                     // Let's just use table.
+                     $('#tab-trade p').text("No active trade requests.");
+                     $('#tab-trade table').hide();
+                     return;
+                }
+
+                $('#tab-trade p').hide();
+                $('#tab-trade table').show();
+
+                reqs.forEach(t => {
+                    const row = `
+                        <tr>
+                            <td>${t.proposerTeam}</td>
+                            <td>${t.targetTeam}</td>
+                            <td>
+                                <div><strong>${t.proposerTeam} gives:</strong> ${t.proposerPlayers}</div>
+                                <div><strong>${t.targetTeam} gives:</strong> ${t.targetPlayers}</div>
+                            </td>
+                            <td>
+                                ${t.status}
+                                <div style="margin-top:5px;">
+                                    <button class="btn btn-primary" style="font-size:0.8rem; padding:2px 5px;" onclick="approveTrade(${t.tradeSeq})">Approve</button>
+                                    <button class="btn btn-danger" style="font-size:0.8rem; padding:2px 5px; background-color:#dc3545;" onclick="rejectTrade(${t.tradeSeq})">Reject</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.append(row);
+                });
+            });
+        }
+
+        function approveTrade(tradeSeq) {
+            if(!confirm("Approve this trade?")) return;
+            $.post(`/apis/v1/admin/fantasy/trade/${tradeSeq}/approve`, function() {
+                alert("Approved");
+                loadTradeRequests(currentManageGameSeq);
+            }).fail(function(xhr) {
+                alert("Error: " + xhr.responseText);
+            });
+        }
+
+        function rejectTrade(tradeSeq) {
+            if(!confirm("Reject this trade?")) return;
+            $.post(`/apis/v1/admin/fantasy/trade/${tradeSeq}/reject`, function() {
+                alert("Rejected");
+                loadTradeRequests(currentManageGameSeq);
+            }).fail(function(xhr) {
+                alert("Error: " + xhr.responseText);
             });
         }
 

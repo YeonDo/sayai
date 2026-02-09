@@ -27,6 +27,8 @@ public class FantasyTradeService {
     private final FantasyPlayerRepository fantasyPlayerRepository;
     private final FantasyParticipantRepository fantasyParticipantRepository;
     private final com.sayai.record.fantasy.repository.FantasyLogRepository fantasyLogRepository;
+    private final com.sayai.record.fantasy.repository.FantasyTradeRepository fantasyTradeRepository;
+    private final com.sayai.record.fantasy.repository.FantasyTradePlayerRepository fantasyTradePlayerRepository;
 
     @Transactional
     public void dropPlayer(Long gameSeq, Long playerId, Long fantasyPlayerSeq) {
@@ -86,6 +88,11 @@ public class FantasyTradeService {
 
         // 3. Check Salary Cap & Roster Size
         long currentRosterSize = draftPickRepository.countByFantasyGameSeqAndPlayerId(gameSeq, playerId);
+
+        if (currentRosterSize >= 21) {
+            throw new IllegalStateException("Your roster is full (Max 21 players). Drop a player first.");
+        }
+
         List<DraftPick> myPicks = draftPickRepository.findByFantasyGameSeqAndPlayerId(gameSeq, playerId);
 
         // Calculate Current Cost
@@ -99,7 +106,7 @@ public class FantasyTradeService {
         int playerCost = player.getCost() == null ? 0 : player.getCost();
 
         // Penalty Check (If size becomes 21)
-        if (currentRosterSize == 20) {
+        if (currentRosterSize >= 20) {
             playerCost += 5;
         }
 
@@ -224,5 +231,174 @@ public class FantasyTradeService {
                 .fantasyPlayerSeq(fantasyPlayerSeq)
                 .action(com.sayai.record.fantasy.entity.FantasyLog.ActionType.ADMIN_ASSIGN)
                 .build());
+    }
+
+    @Transactional
+    public void proposeTrade(Long playerId, com.sayai.record.fantasy.dto.TradeProposalDto dto) {
+        // 1. Create Trade
+        com.sayai.record.fantasy.entity.FantasyTrade trade = com.sayai.record.fantasy.entity.FantasyTrade.builder()
+                .fantasyGameSeq(dto.getGameSeq())
+                .proposerId(playerId)
+                .targetId(dto.getTargetPlayerId())
+                .build();
+
+        trade = fantasyTradeRepository.save(trade);
+
+        // 2. Add Players
+        // Validate My Players
+        for (Long seq : dto.getMyPlayers()) {
+            DraftPick pick = draftPickRepository.findByFantasyGameSeqAndPlayerIdAndFantasyPlayerSeq(dto.getGameSeq(), playerId, seq)
+                    .orElseThrow(() -> new IllegalArgumentException("You do not own player " + seq));
+
+            if (!"BENCH".equalsIgnoreCase(pick.getAssignedPosition())) {
+                throw new IllegalStateException("Only BENCH players can be traded.");
+            }
+
+            fantasyTradePlayerRepository.save(com.sayai.record.fantasy.entity.FantasyTradePlayer.builder()
+                    .fantasyTradeSeq(trade.getSeq())
+                    .playerId(playerId)
+                    .fantasyPlayerSeq(seq)
+                    .build());
+        }
+
+        // Validate Target Players
+        for (Long seq : dto.getTargetPlayers()) {
+            DraftPick pick = draftPickRepository.findByFantasyGameSeqAndPlayerIdAndFantasyPlayerSeq(dto.getGameSeq(), dto.getTargetPlayerId(), seq)
+                    .orElseThrow(() -> new IllegalArgumentException("Target does not own player " + seq));
+
+            if (!"BENCH".equalsIgnoreCase(pick.getAssignedPosition())) {
+                throw new IllegalStateException("Target player must be on BENCH.");
+            }
+
+            fantasyTradePlayerRepository.save(com.sayai.record.fantasy.entity.FantasyTradePlayer.builder()
+                    .fantasyTradeSeq(trade.getSeq())
+                    .playerId(dto.getTargetPlayerId())
+                    .fantasyPlayerSeq(seq)
+                    .build());
+        }
+    }
+
+    @Transactional
+    public void approveTrade(Long tradeSeq) {
+        com.sayai.record.fantasy.entity.FantasyTrade trade = fantasyTradeRepository.findById(tradeSeq)
+                .orElseThrow(() -> new IllegalArgumentException("Trade not found"));
+
+        if (trade.getStatus() != com.sayai.record.fantasy.entity.FantasyTrade.TradeStatus.PROPOSED) {
+            throw new IllegalStateException("Trade is not in PROPOSED status.");
+        }
+
+        FantasyGame game = fantasyGameRepository.findById(trade.getFantasyGameSeq())
+                .orElseThrow(() -> new IllegalArgumentException("Game not found"));
+
+        List<com.sayai.record.fantasy.entity.FantasyTradePlayer> tradePlayers = fantasyTradePlayerRepository.findByFantasyTradeSeq(tradeSeq);
+
+        List<Long> proposerOut = tradePlayers.stream().filter(p -> p.getPlayerId().equals(trade.getProposerId())).map(com.sayai.record.fantasy.entity.FantasyTradePlayer::getFantasyPlayerSeq).collect(Collectors.toList());
+        List<Long> targetOut = tradePlayers.stream().filter(p -> p.getPlayerId().equals(trade.getTargetId())).map(com.sayai.record.fantasy.entity.FantasyTradePlayer::getFantasyPlayerSeq).collect(Collectors.toList());
+
+        // Validate Cost & Size
+        validateTradeImpact(game, trade.getProposerId(), proposerOut, targetOut);
+        validateTradeImpact(game, trade.getTargetId(), targetOut, proposerOut);
+
+        // Execute Swap
+        for (com.sayai.record.fantasy.entity.FantasyTradePlayer tp : tradePlayers) {
+            Long ownerId = tp.getPlayerId();
+            Long newOwnerId = ownerId.equals(trade.getProposerId()) ? trade.getTargetId() : trade.getProposerId();
+
+            DraftPick pick = draftPickRepository.findByFantasyGameSeqAndPlayerIdAndFantasyPlayerSeq(game.getSeq(), ownerId, tp.getFantasyPlayerSeq())
+                    .orElseThrow(() -> new IllegalStateException("Player not found during execution"));
+
+            pick.setPlayerId(newOwnerId);
+            pick.setAssignedPosition("BENCH"); // Reset to Bench
+            draftPickRepository.save(pick);
+
+            // Log
+            fantasyLogRepository.save(com.sayai.record.fantasy.entity.FantasyLog.builder()
+                    .fantasyGameSeq(game.getSeq())
+                    .playerId(newOwnerId) // New Owner
+                    .fantasyPlayerSeq(tp.getFantasyPlayerSeq())
+                    .action(com.sayai.record.fantasy.entity.FantasyLog.ActionType.TRADE)
+                    .build());
+        }
+
+        trade.setStatus(com.sayai.record.fantasy.entity.FantasyTrade.TradeStatus.COMPLETED);
+        fantasyTradeRepository.save(trade);
+    }
+
+    @Transactional
+    public void rejectTrade(Long tradeSeq) {
+        com.sayai.record.fantasy.entity.FantasyTrade trade = fantasyTradeRepository.findById(tradeSeq)
+                .orElseThrow(() -> new IllegalArgumentException("Trade not found"));
+        trade.setStatus(com.sayai.record.fantasy.entity.FantasyTrade.TradeStatus.REJECTED);
+        fantasyTradeRepository.save(trade);
+    }
+
+    private void validateTradeImpact(FantasyGame game, Long playerId, List<Long> losing, List<Long> gaining) {
+        List<DraftPick> currentPicks = draftPickRepository.findByFantasyGameSeqAndPlayerId(game.getSeq(), playerId);
+
+        long newSize = currentPicks.size() - losing.size() + gaining.size();
+
+        // Calculate new cost
+        Set<Long> currentSeqs = currentPicks.stream().map(DraftPick::getFantasyPlayerSeq).collect(Collectors.toSet());
+        currentSeqs.removeAll(losing);
+        currentSeqs.addAll(gaining);
+
+        int cost = 0;
+        if (!currentSeqs.isEmpty()) {
+            List<FantasyPlayer> players = fantasyPlayerRepository.findAllById(currentSeqs);
+            cost = players.stream().mapToInt(p -> p.getCost() == null ? 0 : p.getCost()).sum();
+        }
+
+        if (newSize == 21) {
+            // Find the added players, add +5 for one of them?
+            // "선수단이 20명을 넘으면 코스트 패널티 5를 추가"
+            // If size > 20, applies. (User said 21 penalty).
+            // Logic in Claim was: if size 20 -> 21, +5.
+            // If trade results in 21, add +5.
+            // What if already 21 (from waiver)?
+            // Let's apply: For every player above 20, add 5? Or just flat +5 if >= 21?
+            // "21인인 경우 해당 선수의 코스트 +5".
+            // Let's assume +5 penalty if size >= 21.
+            cost += 5;
+        }
+
+        if (game.getSalaryCap() != null && game.getSalaryCap() > 0) {
+            if (cost > game.getSalaryCap()) {
+                throw new IllegalStateException("Trade would exceed salary cap for player " + playerId + ". New Cost: " + cost);
+            }
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public List<com.sayai.record.fantasy.dto.TradeLogDto> getTradeRequests(Long gameSeq) {
+        List<com.sayai.record.fantasy.entity.FantasyTrade> trades = fantasyTradeRepository.findByFantasyGameSeqAndStatus(gameSeq, com.sayai.record.fantasy.entity.FantasyTrade.TradeStatus.PROPOSED);
+
+        return trades.stream().map(t -> {
+            List<com.sayai.record.fantasy.entity.FantasyTradePlayer> tps = fantasyTradePlayerRepository.findByFantasyTradeSeq(t.getSeq());
+
+            // Helper to format: "PlayerName(Team)"
+            // Need to fetch names. Doing it simply here (N+1 risk but low volume for admin)
+            // Or fetch all players in one go.
+            Set<Long> pIds = tps.stream().map(com.sayai.record.fantasy.entity.FantasyTradePlayer::getFantasyPlayerSeq).collect(Collectors.toSet());
+            java.util.Map<Long, FantasyPlayer> pMap = fantasyPlayerRepository.findAllById(pIds).stream().collect(Collectors.toMap(FantasyPlayer::getSeq, java.util.function.Function.identity()));
+
+            String proposerName = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(gameSeq, t.getProposerId()).map(FantasyParticipant::getTeamName).orElse("Unknown");
+            String targetName = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(gameSeq, t.getTargetId()).map(FantasyParticipant::getTeamName).orElse("Unknown");
+
+            String fromPlayers = tps.stream().filter(x -> x.getPlayerId().equals(t.getProposerId()))
+                    .map(x -> pMap.get(x.getFantasyPlayerSeq()).getName()).collect(Collectors.joining(", "));
+
+            String toPlayers = tps.stream().filter(x -> x.getPlayerId().equals(t.getTargetId()))
+                    .map(x -> pMap.get(x.getFantasyPlayerSeq()).getName()).collect(Collectors.joining(", "));
+
+            return com.sayai.record.fantasy.dto.TradeLogDto.builder()
+                    .tradeSeq(t.getSeq())
+                    .proposerTeam(proposerName)
+                    .targetTeam(targetName)
+                    .proposerPlayers(fromPlayers)
+                    .targetPlayers(toPlayers)
+                    .status(t.getStatus().name())
+                    .createdAt(t.getCreatedAt())
+                    .build();
+        }).collect(Collectors.toList());
     }
 }

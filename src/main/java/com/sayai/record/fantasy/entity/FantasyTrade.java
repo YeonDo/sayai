@@ -10,9 +10,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-@Table(name = "ft_logs")
+@Table(name = "ft_trades")
 @Entity
-public class FantasyLog {
+public class FantasyTrade {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,25 +20,27 @@ public class FantasyLog {
 
     private Long fantasyGameSeq;
 
-    private Long playerId;
+    private Long proposerId;
 
-    private Long fantasyPlayerSeq;
+    private Long targetId;
 
     @Enumerated(EnumType.STRING)
-    private ActionType action;
+    private TradeStatus status;
 
     private LocalDateTime createdAt;
 
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
+        if (this.status == null) {
+            this.status = TradeStatus.PROPOSED;
+        }
     }
 
-    public enum ActionType {
-        DRAFT,
-        DROP,
-        CLAIM,
-        ADMIN_ASSIGN,
-        TRADE
+    public enum TradeStatus {
+        PROPOSED,
+        COMPLETED,
+        REJECTED,
+        CANCELED
     }
 }

@@ -91,7 +91,7 @@ class AdminControllerTest {
     @Test
     void testGetTradeRequests() {
         Long gameSeq = 1L;
-        ResponseEntity<List<String>> response = adminController.getTradeRequests(gameSeq);
+        ResponseEntity<List<com.sayai.record.fantasy.dto.TradeLogDto>> response = adminController.getTradeRequests(gameSeq);
         assertEquals(200, response.getStatusCodeValue());
         assertEquals(0, response.getBody().size());
     }

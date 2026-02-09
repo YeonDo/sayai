@@ -148,9 +148,28 @@ public class AdminController {
     }
 
     @GetMapping("/fantasy/games/{gameSeq}/trade-requests")
-    public ResponseEntity<List<String>> getTradeRequests(@PathVariable(name = "gameSeq") Long gameSeq) {
-        // Placeholder for future trade request logic
-        return ResponseEntity.ok(java.util.Collections.emptyList());
+    public ResponseEntity<List<com.sayai.record.fantasy.dto.TradeLogDto>> getTradeRequests(@PathVariable(name = "gameSeq") Long gameSeq) {
+        return ResponseEntity.ok(fantasyTradeService.getTradeRequests(gameSeq));
+    }
+
+    @PostMapping("/fantasy/trade/{tradeSeq}/approve")
+    public ResponseEntity<String> approveTrade(@PathVariable(name = "tradeSeq") Long tradeSeq) {
+        try {
+            fantasyTradeService.approveTrade(tradeSeq);
+            return ResponseEntity.ok("Trade approved");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Failed: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/fantasy/trade/{tradeSeq}/reject")
+    public ResponseEntity<String> rejectTrade(@PathVariable(name = "tradeSeq") Long tradeSeq) {
+        try {
+            fantasyTradeService.rejectTrade(tradeSeq);
+            return ResponseEntity.ok("Trade rejected");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Failed: " + e.getMessage());
+        }
     }
 
     @PostMapping("/fantasy/trade/assign")
