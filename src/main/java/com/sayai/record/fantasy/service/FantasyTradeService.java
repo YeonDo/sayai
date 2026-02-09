@@ -40,6 +40,10 @@ public class FantasyTradeService {
             throw new IllegalStateException("선수를 방출할 수 없습니다. 게임이 진행중이 아닙니다.");
         }
 
+        if (game.getRuleType() == FantasyGame.RuleType.RULE_1) {
+            throw new IllegalStateException("Rule 1 게임에서는 방출 기능을 사용할 수 없습니다.");
+        }
+
         // 2. Check Roster Size
         long rosterSize = draftPickRepository.countByFantasyGameSeqAndPlayerId(gameSeq, playerId);
         if (rosterSize < 19) {
@@ -76,6 +80,10 @@ public class FantasyTradeService {
 
         if (game.getStatus() != FantasyGame.GameStatus.ONGOING) {
             throw new IllegalStateException("Cannot claim player. Game is not ONGOING.");
+        }
+
+        if (game.getRuleType() == FantasyGame.RuleType.RULE_1) {
+            throw new IllegalStateException("Rule 1 게임에서는 FA/웨이버 영입 기능을 사용할 수 없습니다.");
         }
 
         // 2. Check Availability
@@ -174,6 +182,10 @@ public class FantasyTradeService {
             throw new IllegalStateException("Cannot assign player. Game is not ONGOING.");
         }
 
+        if (game.getRuleType() == FantasyGame.RuleType.RULE_1) {
+            throw new IllegalStateException("Rule 1 게임에서는 강제 이적 기능을 사용할 수 없습니다.");
+        }
+
         // 2. Check Availability
         if (draftPickRepository.existsByFantasyGameSeqAndFantasyPlayerSeq(gameSeq, fantasyPlayerSeq)) {
             throw new IllegalStateException("Player is already picked by another team.");
@@ -235,6 +247,13 @@ public class FantasyTradeService {
 
     @Transactional
     public void proposeTrade(Long playerId, com.sayai.record.fantasy.dto.TradeProposalDto dto) {
+        FantasyGame game = fantasyGameRepository.findById(dto.getGameSeq())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid Game Seq"));
+
+        if (game.getRuleType() == FantasyGame.RuleType.RULE_1) {
+            throw new IllegalStateException("Rule 1 게임에서는 트레이드 기능을 사용할 수 없습니다.");
+        }
+
         // 1. Create Trade
         com.sayai.record.fantasy.entity.FantasyTrade trade = com.sayai.record.fantasy.entity.FantasyTrade.builder()
                 .fantasyGameSeq(dto.getGameSeq())

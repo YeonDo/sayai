@@ -438,9 +438,21 @@
         }
 
         $(document).ready(function() {
-            // Load initial tab
             if (gameSeq) {
-                loadWaiverList();
+                // Check Rule Type
+                $.get(`/apis/v1/fantasy/games/${gameSeq}/details`, function(data) {
+                    if (data.ruleType === 'RULE_1') {
+                        $('.fantasy-card').html(`
+                            <div style="text-align: center; padding: 50px;">
+                                <h2>Feature Not Available</h2>
+                                <p>Trade, Waiver, and FA features are not available in Rule 1 (Snake Draft) games.</p>
+                                <a href="/fantasy" class="btn btn-primary">Go to Dashboard</a>
+                            </div>
+                        `);
+                    } else {
+                        loadWaiverList();
+                    }
+                });
             }
         });
         /*]]>*/
