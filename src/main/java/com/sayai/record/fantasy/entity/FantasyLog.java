@@ -37,6 +37,7 @@ public class FantasyLog {
     public enum ActionType {
         DRAFT,
         DROP,
-        CLAIM
+        CLAIM,
+        ADMIN_ASSIGN
     }
 }

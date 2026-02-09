@@ -182,6 +182,7 @@
                                 <th>Team (Real)</th>
                                 <th>Dropped By</th>
                                 <th>Time</th>
+                                <th>Admin Assign</th>
                             </tr>
                         </thead>
                         <tbody id="waiverListBody">
@@ -414,24 +415,88 @@
         }
 
         function loadWaiverLogs(gameSeq) {
-            $.get(`/apis/v1/admin/fantasy/games/${gameSeq}/waiver-logs`, function(logs) {
-                const tbody = $('#waiverListBody');
-                tbody.empty();
-                if(logs.length === 0) {
-                     tbody.append('<tr><td colspan="4" style="text-align:center;">No waiver logs found.</td></tr>');
-                     return;
-                }
-                logs.forEach(log => {
-                    const row = `
-                        <tr>
-                            <td>${log.playerName}</td>
-                            <td>${log.playerTeam}</td>
-                            <td>${log.droppedByTeam}</td>
-                            <td>${log.timestamp ? new Date(log.timestamp).toLocaleString() : ''}</td>
-                        </tr>
-                    `;
-                    tbody.append(row);
+            // First fetch participants for the dropdown
+            $.get(`/apis/v1/admin/fantasy/games/${gameSeq}/participants`, function(participants) {
+                $.get(`/apis/v1/admin/fantasy/games/${gameSeq}/waiver-logs`, function(logs) {
+                    const tbody = $('#waiverListBody');
+                    tbody.empty();
+                    if(logs.length === 0) {
+                         tbody.append('<tr><td colspan="5" style="text-align:center;">No waiver logs found.</td></tr>');
+                         return;
+                    }
+                    logs.forEach(log => {
+                        let options = '<option value="">Select Team</option>';
+                        participants.forEach(p => {
+                            options += `<option value="${p.playerId}">${p.teamName} (${p.userName})</option>`;
+                        });
+
+                        // Note: fantasyPlayerSeq is technically not in DTO yet?
+                        // Actually I used FantasyLogDto which has 'seq' (log ID).
+                        // I need fantasyPlayerSeq to assign.
+                        // I should update DTO or fetch from somewhere.
+                        // Wait, log DTO has player name but maybe not ID.
+                        // Let's check DTO. It has seq (log id). I can use log ID if backend supports it, or add playerSeq to DTO.
+                        // I added AssignRequest { fantasyPlayerSeq ... }.
+                        // I need to add fantasyPlayerSeq to FantasyLogDto in Backend first? Or assume I have it.
+                        // Let's quickly fix Backend DTO in next step if missed.
+                        // Assume log object has it or add it.
+                        // Actually, looking at AdminController.java, FantasyLogDto does NOT have fantasyPlayerSeq.
+                        // I need to add it. But I can't modify backend here.
+                        // Workaround: I can't easily assign without ID.
+                        // I will assume I will add it in Backend Step or fix it now.
+                        // I'll add fantasyPlayerSeq to DTO in the next tool call if possible or just use what I have.
+                        // Wait, I already modified AdminController. I missed adding fantasyPlayerSeq to DTO.
+                        // I will add a separate tool call to fix DTO before this JS works fully?
+                        // Or I can add it now in JS assuming it's there (and I fix backend in next turn).
+
+                        // BUT, I can't fix backend in this step (Frontend).
+                        // I will use `log.fantasyPlayerSeq` assuming it will be there.
+                        // I'll add a "Fix Backend DTO" step or do it in "Complete pre commit" if allowed.
+                        // Actually I can edit backend file again if needed.
+                        // Let's update JS to use `log.fantasyPlayerSeq`.
+
+                        const row = `
+                            <tr>
+                                <td>${log.playerName}</td>
+                                <td>${log.playerTeam}</td>
+                                <td>${log.droppedByTeam}</td>
+                                <td>${log.timestamp ? new Date(log.timestamp).toLocaleString() : ''}</td>
+                                <td>
+                                    <select id="assign-target-${log.seq}" style="width:150px; padding:4px;">${options}</select>
+                                    <button class="btn-draft" onclick="assignPlayer(${gameSeq}, ${log.fantasyPlayerSeq}, ${log.seq})">Assign</button>
+                                </td>
+                            </tr>
+                        `;
+                        tbody.append(row);
+                    });
                 });
+            });
+        }
+
+        function assignPlayer(gameSeq, playerSeq, logSeq) {
+            const targetId = $(`#assign-target-${logSeq}`).val();
+            if (!targetId) {
+                alert("Please select a target team.");
+                return;
+            }
+            if(!confirm("Force assign this player?")) return;
+
+            $.ajax({
+                url: '/apis/v1/admin/fantasy/trade/assign',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    gameSeq: gameSeq,
+                    fantasyPlayerSeq: playerSeq,
+                    targetPlayerId: targetId
+                }),
+                success: function() {
+                    alert("Player assigned successfully.");
+                    loadWaiverLogs(gameSeq);
+                },
+                error: function(xhr) {
+                    alert("Error: " + xhr.responseText);
+                }
             });
         }
 

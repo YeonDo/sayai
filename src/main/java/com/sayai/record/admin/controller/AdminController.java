@@ -41,6 +41,7 @@ public class AdminController {
     private final PostService postService;
     private final com.sayai.record.fantasy.repository.FantasyLogRepository fantasyLogRepository;
     private final com.sayai.record.fantasy.repository.FantasyPlayerRepository fantasyPlayerRepository;
+        private final com.sayai.record.fantasy.service.FantasyTradeService fantasyTradeService;
 
     // --- Post Management ---
 
@@ -134,6 +135,7 @@ public class AdminController {
             String teamName = teamNames.getOrDefault(log.getPlayerId(), "Unknown");
             return new FantasyLogDto(
                     log.getSeq(),
+                    log.getFantasyPlayerSeq(),
                     p != null ? p.getName() : "Unknown",
                     p != null ? p.getTeam() : "-",
                     p != null ? p.getPosition() : "-",
@@ -149,6 +151,18 @@ public class AdminController {
     public ResponseEntity<List<String>> getTradeRequests(@PathVariable(name = "gameSeq") Long gameSeq) {
         // Placeholder for future trade request logic
         return ResponseEntity.ok(java.util.Collections.emptyList());
+    }
+
+    @PostMapping("/fantasy/trade/assign")
+    public ResponseEntity<String> assignPlayerByAdmin(@RequestBody AssignRequest request) {
+        try {
+            fantasyTradeService.assignPlayerByAdmin(request.getGameSeq(), request.getTargetPlayerId(), request.getFantasyPlayerSeq());
+            return ResponseEntity.ok("Player assigned successfully");
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error: " + e.getMessage());
+        }
     }
 
     // --- Scoring Endpoints ---
@@ -319,19 +333,28 @@ public class AdminController {
     @Data
     public static class FantasyLogDto {
         private Long seq;
+        private Long fantasyPlayerSeq;
         private String playerName;
         private String playerTeam;
         private String playerPosition;
         private String droppedByTeam;
         private LocalDateTime timestamp;
 
-        public FantasyLogDto(Long seq, String playerName, String playerTeam, String playerPosition, String droppedByTeam, LocalDateTime timestamp) {
+        public FantasyLogDto(Long seq, Long fantasyPlayerSeq, String playerName, String playerTeam, String playerPosition, String droppedByTeam, LocalDateTime timestamp) {
             this.seq = seq;
+            this.fantasyPlayerSeq = fantasyPlayerSeq;
             this.playerName = playerName;
             this.playerTeam = playerTeam;
             this.playerPosition = playerPosition;
             this.droppedByTeam = droppedByTeam;
             this.timestamp = timestamp;
         }
+    }
+
+    @Data
+    public static class AssignRequest {
+        private Long gameSeq;
+        private Long fantasyPlayerSeq;
+        private Long targetPlayerId;
     }
 }

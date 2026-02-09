@@ -155,4 +155,74 @@ public class FantasyTradeService {
                 .action(com.sayai.record.fantasy.entity.FantasyLog.ActionType.CLAIM)
                 .build());
     }
+
+    @Transactional
+    public void assignPlayerByAdmin(Long gameSeq, Long targetPlayerId, Long fantasyPlayerSeq) {
+        // 1. Check Game Status
+        FantasyGame game = fantasyGameRepository.findById(gameSeq)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid Game Seq"));
+
+        // Admin can technically assign anytime, but let's restrict to ONGOING for consistency with trade logic
+        if (game.getStatus() != FantasyGame.GameStatus.ONGOING) {
+            throw new IllegalStateException("Cannot assign player. Game is not ONGOING.");
+        }
+
+        // 2. Check Availability
+        if (draftPickRepository.existsByFantasyGameSeqAndFantasyPlayerSeq(gameSeq, fantasyPlayerSeq)) {
+            throw new IllegalStateException("Player is already picked by another team.");
+        }
+
+        FantasyPlayer player = fantasyPlayerRepository.findById(fantasyPlayerSeq)
+                .orElseThrow(() -> new IllegalArgumentException("Player not found"));
+
+        // 3. Check Roster Size & Salary Cap
+        long currentRosterSize = draftPickRepository.countByFantasyGameSeqAndPlayerId(gameSeq, targetPlayerId);
+
+        // Roster Limit Check (Max 21)
+        if (currentRosterSize >= 21) {
+            throw new IllegalStateException("Target roster is full (Max 21 players).");
+        }
+
+        List<DraftPick> targetPicks = draftPickRepository.findByFantasyGameSeqAndPlayerId(gameSeq, targetPlayerId);
+        Set<Long> targetPickSeqs = targetPicks.stream().map(DraftPick::getFantasyPlayerSeq).collect(Collectors.toSet());
+
+        int currentCost = 0;
+        if (!targetPickSeqs.isEmpty()) {
+            List<FantasyPlayer> targetPlayers = fantasyPlayerRepository.findAllById(targetPickSeqs);
+            currentCost = targetPlayers.stream().mapToInt(p -> p.getCost() == null ? 0 : p.getCost()).sum();
+        }
+
+        int playerCost = player.getCost() == null ? 0 : player.getCost();
+
+        // Penalty Check (If size becomes 21)
+        if (currentRosterSize == 20) {
+            playerCost += 5;
+        }
+
+        if (game.getSalaryCap() != null && game.getSalaryCap() > 0) {
+            if (currentCost + playerCost > game.getSalaryCap()) {
+                throw new IllegalStateException("Salary Cap Exceeded for target team. Cost: " + (currentCost + playerCost) + " / " + game.getSalaryCap());
+            }
+        }
+
+        // 4. Create Pick
+        DraftPick newPick = DraftPick.builder()
+                .fantasyGameSeq(gameSeq)
+                .playerId(targetPlayerId)
+                .fantasyPlayerSeq(fantasyPlayerSeq)
+                .pickNumber(0)
+                .assignedPosition("BENCH")
+                .pickedAt(LocalDateTime.now())
+                .build();
+
+        draftPickRepository.save(newPick);
+
+        // 5. Log
+        fantasyLogRepository.save(com.sayai.record.fantasy.entity.FantasyLog.builder()
+                .fantasyGameSeq(gameSeq)
+                .playerId(targetPlayerId) // Assigned To
+                .fantasyPlayerSeq(fantasyPlayerSeq)
+                .action(com.sayai.record.fantasy.entity.FantasyLog.ActionType.ADMIN_ASSIGN)
+                .build());
+    }
 }
