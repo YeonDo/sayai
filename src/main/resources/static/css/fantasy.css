@@ -476,3 +476,18 @@
 .tab-content {
     /* reuse my-team-container styles if possible, or flex */
 }
+
+/* Manage Tab Buttons (Admin) */
+.manage-tab-btn {
+    padding: 10px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    font-weight: bold;
+    color: #333; /* Default */
+}
+.manage-tab-btn.active {
+    color: black !important;
+    border-bottom-color: #007bff;
+}

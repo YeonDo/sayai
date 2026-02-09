@@ -150,9 +150,9 @@
             </div>
 
             <div class="tabs" style="display:flex; gap:10px; margin-bottom:15px; border-bottom:1px solid #ddd;">
-                <button class="manage-tab-btn active" onclick="switchManageTab('participants')" style="padding:10px; background:none; border:none; border-bottom:2px solid transparent; cursor:pointer; font-weight:bold; color: #333;">Participants</button>
-                <button class="manage-tab-btn" onclick="switchManageTab('waiver')" style="padding:10px; background:none; border:none; border-bottom:2px solid transparent; cursor:pointer; font-weight:bold; color: #333;">Waiver Logs</button>
-                <button class="manage-tab-btn" onclick="switchManageTab('trade')" style="padding:10px; background:none; border:none; border-bottom:2px solid transparent; cursor:pointer; font-weight:bold; color: #333;">Trade Requests</button>
+                <button class="manage-tab-btn active" onclick="switchManageTab('participants')">Participants</button>
+                <button class="manage-tab-btn" onclick="switchManageTab('waiver')">Waiver Logs</button>
+                <button class="manage-tab-btn" onclick="switchManageTab('trade')">Trade Requests</button>
             </div>
 
             <div class="modal-body" style="overflow-y: auto; flex-grow: 1;">
@@ -425,7 +425,7 @@
                          return;
                     }
                     logs.forEach(log => {
-                        let options = '<option value="">Select Team</option>';
+                        let options = '<option value="">Select Team</option><option value="FA">FA (Release)</option>';
                         participants.forEach(p => {
                             options += `<option value="${p.playerId}">${p.teamName} (${p.userName})</option>`;
                         });
@@ -439,7 +439,6 @@
                                 <td>
                                     <select id="assign-target-${log.seq}" style="width:150px; padding:4px;">${options}</select>
                                     <button class="btn-draft" onclick="assignPlayer(${gameSeq}, ${log.fantasyPlayerSeq}, ${log.seq})">Assign</button>
-                                    <button class="btn-draft" style="background-color: #6c757d; margin-left:5px;" onclick="releasePlayer(${log.seq})">Release (FA)</button>
                                 </td>
                             </tr>
                         `;
@@ -452,9 +451,21 @@
         function assignPlayer(gameSeq, playerSeq, logSeq) {
             const targetId = $(`#assign-target-${logSeq}`).val();
             if (!targetId) {
-                alert("Please select a target team.");
+                alert("Please select a target team or FA.");
                 return;
             }
+
+            if (targetId === 'FA') {
+                if(!confirm("Release this player to FA (clear waiver)?")) return;
+                $.post(`/apis/v1/admin/fantasy/waiver/${logSeq}/release`, function() {
+                    alert("Released to FA.");
+                    loadWaiverLogs(gameSeq);
+                }).fail(function(xhr) {
+                    alert("Error: " + xhr.responseText);
+                });
+                return;
+            }
+
             if(!confirm("Force assign this player?")) return;
 
             $.ajax({
@@ -474,16 +485,6 @@
                 error: function(xhr) {
                     alert("Error: " + xhr.responseText);
                 }
-            });
-        }
-
-        function releasePlayer(logSeq) {
-            if(!confirm("Release this player to FA (clear waiver)?")) return;
-            $.post(`/apis/v1/admin/fantasy/waiver/${logSeq}/release`, function() {
-                alert("Released to FA.");
-                loadWaiverLogs(currentManageGameSeq);
-            }).fail(function(xhr) {
-                alert("Error: " + xhr.responseText);
             });
         }
 
