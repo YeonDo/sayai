@@ -31,6 +31,20 @@ public class FantasyTradeController {
         }
     }
 
+    @PostMapping("/waiver/claim")
+    public ResponseEntity<String> claimPlayer(@RequestBody DropRequest request,
+                                              @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            Long playerId = getPlayerIdFromUserDetails(userDetails);
+            fantasyTradeService.claimPlayer(request.getGameSeq(), playerId, request.getFantasyPlayerSeq());
+            return ResponseEntity.ok("Player claimed successfully");
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error: " + e.getMessage());
+        }
+    }
+
     private Long getPlayerIdFromUserDetails(UserDetails userDetails) {
         if (userDetails == null) {
             throw new IllegalArgumentException("Authentication required");

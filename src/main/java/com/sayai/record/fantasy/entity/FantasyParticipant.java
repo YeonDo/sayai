@@ -27,4 +27,6 @@ public class FantasyParticipant {
     private String preferredTeam;
 
     private Integer draftOrder;
+
+    private Integer waiverOrder;
 }

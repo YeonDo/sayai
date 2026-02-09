@@ -153,8 +153,12 @@ public class FantasyGameService {
         Collections.shuffle(participants);
 
         int order = 1;
+        int participantCount = participants.size();
         for (FantasyParticipant p : participants) {
-            p.setDraftOrder(order++);
+            p.setDraftOrder(order);
+            // Waiver Order is reverse of Draft Order
+            p.setWaiverOrder(participantCount - order + 1);
+            order++;
         }
         fantasyParticipantRepository.saveAll(participants);
 

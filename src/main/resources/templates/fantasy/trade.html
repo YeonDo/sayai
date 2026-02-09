@@ -85,8 +85,27 @@
 
             <!-- FA Tab -->
             <div id="tab-fa" class="trade-content">
-                <h3>Free Agents</h3>
-                <p>Free Agent pool coming soon.</p>
+                <h3>Free Agents / Waiver Claim</h3>
+                <div style="margin-bottom: 10px;">
+                    <input type="text" id="fa-search" placeholder="Search Player Name..." style="padding:5px;">
+                    <button class="btn-primary" onclick="loadFAPlayers()">Search</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="fantasy-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Position</th>
+                                <th>Team</th>
+                                <th>Cost</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fa-list-body">
+                            <tr><td colspan="5">Search to find available players.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -110,6 +129,57 @@
             }
         }
 
+        function loadFAPlayers() {
+            const search = $('#fa-search').val();
+            // Use available-players API which lists unpicked players (FA)
+            // No team/pos filters implemented in trade UI yet, just search
+            $.get(`/apis/v1/fantasy/games/${gameSeq}/available-players`, {
+                search: search
+            }, function(players) {
+                const tbody = $('#fa-list-body');
+                tbody.empty();
+
+                if (!players || players.length === 0) {
+                    tbody.append('<tr><td colspan="5">No players found.</td></tr>');
+                    return;
+                }
+
+                players.slice(0, 50).forEach(p => {
+                    const row = $('<tr>');
+                    row.append(`<td>${p.name}</td>`);
+                    row.append(`<td>${p.position}</td>`);
+                    row.append(`<td>${p.team}</td>`);
+                    row.append(`<td>${p.cost || 0}</td>`);
+                    const btn = $('<button>').addClass('btn-primary').text('Claim').click(() => claimPlayer(p.seq));
+                    row.append($('<td>').append(btn));
+                    tbody.append(row);
+                });
+            });
+        }
+
+        function claimPlayer(playerSeq) {
+            if(!confirm("Claim this player?")) return;
+
+            const data = {
+                gameSeq: gameSeq,
+                fantasyPlayerSeq: playerSeq
+            };
+
+            $.ajax({
+                url: '/apis/v1/fantasy/trade/waiver/claim',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function(response) {
+                    alert("Player claimed successfully.");
+                    loadFAPlayers(); // Refresh list
+                },
+                error: function(xhr) {
+                    alert('Claim failed: ' + (xhr.responseText || 'Error'));
+                }
+            });
+        }
+
         function loadWaiverList() {
             if (!gameSeq) return;
 
@@ -118,32 +188,41 @@
                 const tbody = $('#waiver-list-body');
                 tbody.empty();
 
-                // Filter Bench Players (assignedPosition is 'BENCH' or null)
-                // Note: API returns FantasyPlayerDto which includes assignedPosition
-                const benchPlayers = players.filter(p =>
-                    !p.assignedPosition || p.assignedPosition === 'BENCH'
-                );
+                // Sort players: Non-Bench first, then Bench
+                // "Roster (18) - Bench (2)"
+                const rosterPlayers = players.filter(p => p.assignedPosition && p.assignedPosition !== 'BENCH');
+                const benchPlayers = players.filter(p => !p.assignedPosition || p.assignedPosition === 'BENCH');
 
+                const sortedPlayers = [...rosterPlayers, ...benchPlayers];
                 const rosterSize = players.length;
 
-                if (benchPlayers.length === 0) {
-                    tbody.append('<tr><td colspan="5">No players on bench.</td></tr>');
+                if (sortedPlayers.length === 0) {
+                    tbody.append('<tr><td colspan="5">No players found.</td></tr>');
                     return;
                 }
 
-                benchPlayers.forEach(p => {
+                sortedPlayers.forEach(p => {
+                    const isBench = (!p.assignedPosition || p.assignedPosition === 'BENCH');
+                    const posDisplay = isBench ? '<span style="color:#888;">(Bench)</span> ' + p.position : '<strong>' + p.assignedPosition + '</strong> (' + p.position + ')';
+
                     const row = $('<tr>');
+                    if (isBench) row.css('background-color', '#f9f9f9');
+
                     row.append(`<td>${p.name}</td>`);
-                    row.append(`<td>${p.position}</td>`); // Original position
+                    row.append(`<td>${posDisplay}</td>`);
                     row.append(`<td>${p.team}</td>`);
                     row.append(`<td>${p.cost || 0}</td>`);
 
                     const actionTd = $('<td>');
-                    if (rosterSize >= 19) {
-                        const btn = $('<button>').addClass('btn-danger').text('Drop').click(() => dropPlayer(p.seq));
-                        actionTd.append(btn);
+                    if (isBench) {
+                        if (rosterSize >= 19) {
+                            const btn = $('<button>').addClass('btn-danger').text('Drop').click(() => dropPlayer(p.seq));
+                            actionTd.append(btn);
+                        } else {
+                            actionTd.append('<span class="text-muted">Cannot Drop (Size < 19)</span>');
+                        }
                     } else {
-                        actionTd.append('<span class="text-muted">Cannot Drop (Roster < 19)</span>');
+                        actionTd.append('<span class="text-muted">-</span>');
                     }
                     row.append(actionTd);
 

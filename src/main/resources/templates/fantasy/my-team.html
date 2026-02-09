@@ -11,9 +11,14 @@
     <div class="container">
         <header class="fantasy-header">
             <h1>My Team Roster</h1>
-            <select id="gameSelector" class="form-control" style="width: 250px; padding: 5px;">
-                <option value="">Loading Games...</option>
-            </select>
+            <div style="display:flex; flex-direction:column; align-items:flex-end;">
+                <select id="gameSelector" class="form-control" style="width: 250px; padding: 5px;">
+                    <option value="">Loading Games...</option>
+                </select>
+                <div id="salary-info" style="font-size:0.9rem; margin-top:5px; display:none;">
+                    Salary: <span id="current-cost" style="font-weight:bold;">0</span> / <span id="max-cap"></span>
+                </div>
+            </div>
         </header>
 
         <div th:replace="fragments/fantasy-nav :: nav(active='my-team')"></div>
@@ -285,6 +290,7 @@
                 // Select first and load
                 select.val(games[0].seq);
                 loadRoster(games[0].seq);
+                loadGameDetails(games[0].seq); // Load details for cap
                 $('#roster-view').show();
             }).fail(function() {
                 // If API fails or no games
@@ -292,7 +298,19 @@
             });
         }
 
+        function loadGameDetails(gameSeq) {
+            $.get(`/apis/v1/fantasy/games/${gameSeq}/details`, function(data) {
+                if (data.salaryCap && data.salaryCap > 0) {
+                    $('#max-cap').text(data.salaryCap);
+                    $('#salary-info').show();
+                } else {
+                    $('#salary-info').hide();
+                }
+            });
+        }
+
         function loadRoster(gameSeq) {
+            loadGameDetails(gameSeq); // Refresh cap on change
             // Reset slots
             $('.player-name').text('-');
             $('.player-team').remove();
@@ -305,8 +323,10 @@
                 const spCount = { count: 1 };
                 const rpCount = { count: 1 };
                 let benchCount = 1;
+                let totalCost = 0;
 
                 players.forEach(p => {
+                    totalCost += (p.cost || 0);
                     let placed = false;
 
                     // Try to use assignedPosition first
@@ -345,6 +365,7 @@
                          }
                     }
                 });
+                $('#current-cost').text(totalCost);
             });
         }
 
