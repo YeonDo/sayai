@@ -5,21 +5,184 @@
 <head>
     <title>Fantasy League - Trade Room</title>
     <link rel="stylesheet" th:href="@{/css/fantasy.css}">
+    <style>
+        .trade-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ddd;
+        }
+        .trade-tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #666;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+        }
+        .trade-tab.active {
+            color: #007bff;
+            border-bottom-color: #007bff;
+        }
+        .trade-content {
+            display: none;
+        }
+        .trade-content.active {
+            display: block;
+        }
+        .waiver-table th, .waiver-table td {
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
 <div layout:fragment="content">
     <div class="container">
-        <div class="fantasy-header">
+        <header class="fantasy-header">
             <h1>Trade Room</h1>
-        </div>
+            <div class="game-selector">
+                <!-- Assuming user has selected a game context or we pick first active game -->
+                <span th:text="${gameTitle}">Game Title</span>
+            </div>
+        </header>
 
         <div th:replace="fragments/fantasy-nav :: nav(active='trade')"></div>
 
-        <div class="fantasy-card" style="text-align: center; padding: 50px;">
-            <h2>Coming Soon</h2>
-            <p>Trading functionality is currently under development.</p>
+        <div class="fantasy-card">
+            <div class="trade-tabs">
+                <div class="trade-tab active" onclick="showTab('waiver')">Waiver</div>
+                <div class="trade-tab" onclick="showTab('trade')">Trade</div>
+                <div class="trade-tab" onclick="showTab('fa')">FA</div>
+            </div>
+
+            <!-- Waiver Tab -->
+            <div id="tab-waiver" class="trade-content active">
+                <h3>My Bench (Waiver Wire)</h3>
+                <p class="text-muted">You can drop players from your bench if your roster size is greater than 19.</p>
+
+                <div class="table-responsive">
+                    <table class="fantasy-table waiver-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Position</th>
+                                <th>Team</th>
+                                <th>Cost</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="waiver-list-body">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Trade Tab -->
+            <div id="tab-trade" class="trade-content">
+                <h3>Trade</h3>
+                <p>Player-to-Player trades coming soon.</p>
+            </div>
+
+            <!-- FA Tab -->
+            <div id="tab-fa" class="trade-content">
+                <h3>Free Agents</h3>
+                <p>Free Agent pool coming soon.</p>
+            </div>
         </div>
     </div>
+
+    <input type="hidden" id="gameSeq" th:value="${gameSeq}" />
+    <input type="hidden" id="currentUserId" th:value="${currentUserId}" />
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const gameSeq = $('#gameSeq').val();
+        const userId = $('#currentUserId').val();
+
+        function showTab(tabName) {
+            $('.trade-tab').removeClass('active');
+            $(`.trade-tab[onclick="showTab('${tabName}')"]`).addClass('active');
+            $('.trade-content').removeClass('active');
+            $(`#tab-${tabName}`).addClass('active');
+
+            if (tabName === 'waiver') {
+                loadWaiverList();
+            }
+        }
+
+        function loadWaiverList() {
+            if (!gameSeq) return;
+
+            // Fetch My Picks
+            $.get(`/apis/v1/fantasy/games/${gameSeq}/my-picks`, function(players) {
+                const tbody = $('#waiver-list-body');
+                tbody.empty();
+
+                // Filter Bench Players (assignedPosition is 'BENCH' or null)
+                // Note: API returns FantasyPlayerDto which includes assignedPosition
+                const benchPlayers = players.filter(p =>
+                    !p.assignedPosition || p.assignedPosition === 'BENCH'
+                );
+
+                const rosterSize = players.length;
+
+                if (benchPlayers.length === 0) {
+                    tbody.append('<tr><td colspan="5">No players on bench.</td></tr>');
+                    return;
+                }
+
+                benchPlayers.forEach(p => {
+                    const row = $('<tr>');
+                    row.append(`<td>${p.name}</td>`);
+                    row.append(`<td>${p.position}</td>`); // Original position
+                    row.append(`<td>${p.team}</td>`);
+                    row.append(`<td>${p.cost || 0}</td>`);
+
+                    const actionTd = $('<td>');
+                    if (rosterSize >= 19) {
+                        const btn = $('<button>').addClass('btn-danger').text('Drop').click(() => dropPlayer(p.seq));
+                        actionTd.append(btn);
+                    } else {
+                        actionTd.append('<span class="text-muted">Cannot Drop (Roster < 19)</span>');
+                    }
+                    row.append(actionTd);
+
+                    tbody.append(row);
+                });
+            });
+        }
+
+        function dropPlayer(playerSeq) {
+            if (!confirm("Are you sure you want to drop this player?")) return;
+
+            const data = {
+                gameSeq: gameSeq,
+                fantasyPlayerSeq: playerSeq
+            };
+
+            $.ajax({
+                url: '/apis/v1/fantasy/trade/waiver/drop',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function(response) {
+                    alert("Player dropped successfully.");
+                    loadWaiverList(); // Refresh
+                },
+                error: function(xhr) {
+                    alert('Drop failed: ' + (xhr.responseText || 'Error'));
+                }
+            });
+        }
+
+        $(document).ready(function() {
+            // Load initial tab
+            if (gameSeq) {
+                loadWaiverList();
+            }
+        });
+        /*]]>*/
+    </script>
 </div>
 </body>
 </html>

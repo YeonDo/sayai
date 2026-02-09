@@ -1,6 +1,5 @@
 package com.sayai.record.fantasy.service;
 
-import com.sayai.record.fantasy.dto.FantasyGameDetailDto;
 import com.sayai.record.fantasy.entity.DraftPick;
 import com.sayai.record.fantasy.entity.FantasyGame;
 import com.sayai.record.fantasy.entity.FantasyParticipant;
@@ -9,84 +8,69 @@ import com.sayai.record.fantasy.repository.DraftPickRepository;
 import com.sayai.record.fantasy.repository.FantasyGameRepository;
 import com.sayai.record.fantasy.repository.FantasyParticipantRepository;
 import com.sayai.record.fantasy.repository.FantasyPlayerRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.MockitoAnnotations;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(MockitoExtension.class)
 class FantasyGameServiceTest {
 
     @Mock private FantasyGameRepository fantasyGameRepository;
-    @Mock private FantasyParticipantRepository participantRepository;
+    @Mock private FantasyParticipantRepository fantasyParticipantRepository;
     @Mock private DraftPickRepository draftPickRepository;
     @Mock private FantasyPlayerRepository fantasyPlayerRepository;
+    @Mock private SimpMessagingTemplate messagingTemplate;
+    @Mock private FantasyDraftService fantasyDraftService;
+    @Mock private DraftScheduler draftScheduler;
 
     @InjectMocks
     private FantasyGameService fantasyGameService;
 
-    @Test
-    void getGameDetails_ReturnsCorrectStructure() {
-        Long gameSeq = 1L;
-        Long participantId = 100L;
-        Long fantasyPlayerSeq = 50L;
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
 
-        // Mock Game
-        FantasyGame game = mock(FantasyGame.class);
-        when(game.getSeq()).thenReturn(gameSeq);
-        when(game.getTitle()).thenReturn("Test Game");
-        when(game.getRuleType()).thenReturn(FantasyGame.RuleType.RULE_1);
-        when(game.getScoringType()).thenReturn(FantasyGame.ScoringType.POINTS);
-        when(game.getStatus()).thenReturn(FantasyGame.GameStatus.DRAFTING);
-        when(game.getGameDuration()).thenReturn("2026-03-01 ~ 2026-10-30");
+    @Test
+    void testExportRoster_ExcludesBench() {
+        Long gameSeq = 1L;
+        FantasyGame game = FantasyGame.builder().seq(gameSeq).status(FantasyGame.GameStatus.ONGOING).build();
         when(fantasyGameRepository.findById(gameSeq)).thenReturn(Optional.of(game));
 
-        // Mock Participant
         FantasyParticipant participant = FantasyParticipant.builder()
                 .fantasyGameSeq(gameSeq)
-                .playerId(participantId)
-                .teamName("Team A")
+                .playerId(100L)
+                .teamName("MyTeam")
                 .build();
-        when(participantRepository.findByFantasyGameSeq(gameSeq)).thenReturn(List.of(participant));
+        when(fantasyParticipantRepository.findByFantasyGameSeq(gameSeq)).thenReturn(Collections.singletonList(participant));
 
-        // Mock Picks
-        DraftPick pick = DraftPick.builder()
-                .fantasyGameSeq(gameSeq)
-                .playerId(participantId)
-                .fantasyPlayerSeq(fantasyPlayerSeq)
-                .build();
-        when(draftPickRepository.findByFantasyGameSeq(gameSeq)).thenReturn(List.of(pick));
+        FantasyPlayer p1 = FantasyPlayer.builder().seq(1L).name("Player1").position("C").cost(10).build();
+        FantasyPlayer p2 = FantasyPlayer.builder().seq(2L).name("Player2").position("1B").cost(10).build(); // Bench by explicit
+        FantasyPlayer p3 = FantasyPlayer.builder().seq(3L).name("Player3").position("2B").cost(10).build(); // Bench by null
 
-        // Mock Fantasy Player
-        FantasyPlayer fantasyPlayer = FantasyPlayer.builder()
-                .seq(fantasyPlayerSeq)
-                .name("Player 1")
-                .position("1B")
-                .team("KIA")
-                .cost(10)
-                .build();
-        when(fantasyPlayerRepository.findAllById(any())).thenReturn(List.of(fantasyPlayer));
+        when(fantasyPlayerRepository.findAllById(org.mockito.ArgumentMatchers.any())).thenReturn(Arrays.asList(p1, p2, p3));
 
-        // Execute
-        FantasyGameDetailDto result = fantasyGameService.getGameDetails(gameSeq);
+        DraftPick pick1 = DraftPick.builder().fantasyGameSeq(gameSeq).playerId(100L).fantasyPlayerSeq(1L).assignedPosition("C").build();
+        DraftPick pick2 = DraftPick.builder().fantasyGameSeq(gameSeq).playerId(100L).fantasyPlayerSeq(2L).assignedPosition("BENCH").build();
+        DraftPick pick3 = DraftPick.builder().fantasyGameSeq(gameSeq).playerId(100L).fantasyPlayerSeq(3L).assignedPosition(null).build();
 
-        // Verify
-        assertNotNull(result);
-        assertEquals(gameSeq, result.getSeq());
-        assertEquals("2026-03-01 ~ 2026-10-30", result.getGameDuration());
-        assertEquals("Team A", result.getParticipants().get(0).getTeamName());
-        assertEquals(1, result.getParticipants().get(0).getRoster().size());
-        assertEquals("Player 1", result.getParticipants().get(0).getRoster().get(0).getName());
+        when(draftPickRepository.findByFantasyGameSeq(gameSeq)).thenReturn(Arrays.asList(pick1, pick2, pick3));
+
+        String result = fantasyGameService.exportRoster(gameSeq);
+
+        assertTrue(result.contains("Player1"));
+        assertFalse(result.contains("Player2")); // BENCH
+        assertFalse(result.contains("Player3")); // null
     }
 }

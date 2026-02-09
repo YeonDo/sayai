@@ -55,6 +55,12 @@
                     <option value="RF">RF</option>
                     <option value="DH">DH</option>
                 </select>
+                <select id="foreignerFilter" class="form-control" style="padding: 8px; width: 120px;">
+                    <option value="">전체</option>
+                    <option value="TYPE_1">외국인</option>
+                    <option value="TYPE_2">아시아쿼터</option>
+                    <option value="NONE">토종</option>
+                </select>
                 <input type="text" id="searchInput" placeholder="Search Player" class="form-control" style="padding: 8px; width: 150px;">
                 <select id="sortOrder" class="form-control" style="padding: 8px; width: 150px;">
                     <option value="cost_desc">Cost High-Low</option>
@@ -218,12 +224,14 @@
             const pos = $('#posFilter').val();
             const search = $('#searchInput').val();
             const sort = $('#sortOrder').val();
+            const foreignerType = $('#foreignerFilter').val();
 
             $.get(`/apis/v1/fantasy/games/0/available-players`, {
                 team: team,
                 position: pos,
                 search: search,
-                sort: sort
+                sort: sort,
+                foreignerType: foreignerType
             }, function(players) {
                 const tbody = $('#playerListBody');
                 tbody.empty();

@@ -11,4 +11,6 @@ public interface DraftPickRepository extends JpaRepository<DraftPick, Long> {
     List<DraftPick> findByFantasyGameSeqAndPlayerId(Long fantasyGameSeq, Long playerId);
     boolean existsByFantasyGameSeqAndFantasyPlayerSeq(Long fantasyGameSeq, Long fantasyPlayerSeq);
     long countByFantasyGameSeq(Long fantasyGameSeq);
+    java.util.Optional<DraftPick> findByFantasyGameSeqAndPlayerIdAndFantasyPlayerSeq(Long gameSeq, Long playerId, Long fantasyPlayerSeq);
+    long countByFantasyGameSeqAndPlayerId(Long gameSeq, Long playerId);
 }

@@ -104,6 +104,12 @@
                         <option value="RP">RP</option>
                         <option value="CL">CL</option>
                     </select>
+                    <select id="filter-foreigner" style="padding: 5px;">
+                        <option value="">전체</option>
+                        <option value="TYPE_1">외국인</option>
+                        <option value="TYPE_2">아시아쿼터</option>
+                        <option value="NONE">토종</option>
+                    </select>
                     <select id="sort-order" style="padding: 5px;">
                         <option value="">기본 정렬</option>
                         <option value="cost_desc">Cost (High-Low)</option>
@@ -182,6 +188,9 @@
                 }
             });
 
+            $('#filter-foreigner').change(function() {
+                loadAvailablePlayers(true); // Force reload with new filter
+            });
             $('#filter-team, #filter-position, #sort-order').change(function() {
                 renderPlayers(); // Local filter
             });
@@ -212,6 +221,7 @@
                 gameState.ruleType = data.ruleType; // RULE_1 or RULE_2
                 gameState.round = data.roundNum;
                 gameState.salaryCap = data.salaryCap;
+                gameState.useFirstPickRule = data.useFirstPickRule;
 
                 // Determine My Info
                 const myPart = gameState.participants.find(p => String(p.participantId) === String(userId));
@@ -359,13 +369,16 @@
 
         // Fetch all players once (or force refresh)
         function loadAvailablePlayers(force = false) {
-            if (isPlayersLoaded && !force) {
-                renderPlayers();
-                return;
-            }
+            // Because we added server-side filtering for ForeignerType,
+            // we should include it in the request.
+            // If we filter by ForeignerType on server, 'allAvailablePlayers' will only contain that subset.
+            // This changes the semantics of 'allAvailablePlayers' to 'currentFetchedPlayers'.
 
-            // Fetch ALL players (no server-side filters)
-            $.get(`/apis/v1/fantasy/games/${gameSeq}/available-players`, function(data) {
+            const foreignerType = $('#filter-foreigner').val();
+
+            $.get(`/apis/v1/fantasy/games/${gameSeq}/available-players`, {
+                foreignerType: foreignerType
+            }, function(data) {
                 allAvailablePlayers = data;
                 isPlayersLoaded = true;
                 renderPlayers();
@@ -424,8 +437,8 @@
                 let disabled = !isMyTurn;
                 let btnText = "Draft";
 
-                // Rule 2 Check
-                if (isMyTurn && gameState.ruleType === 'RULE_2' && isRound1) {
+                // First Pick Rule Check (applies to both Rule 1 and Rule 2)
+                if (isMyTurn && gameState.useFirstPickRule === true && isRound1) {
                      // Check team
                      const myTeam = (gameState.myPreferredTeam || "").toLowerCase().trim();
                      const pTeam = (player.team || "").toLowerCase().trim();
@@ -434,13 +447,6 @@
                          btnText = "Restricted"; // Or just keep disabled
                      }
                 }
-
-                // First Pick Rule (Rule 1 Option) Check
-                // We need to know if Rule 1 Option is enabled.
-                // Currently gameState doesn't explicitly store useFirstPickRule flag but backend sends RuleType.
-                // Assuming useFirstPickRule is property of game, we should fetch it in initGame.
-                // But for now, let's skip strict client-side check if we lack the flag, server will block.
-                // Or user can add the flag to initGame details.
 
                 // Salary Cap Check
                 if (isMyTurn && gameState.salaryCap && gameState.salaryCap > 0) {
