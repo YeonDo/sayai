@@ -86,8 +86,47 @@
             <!-- FA Tab -->
             <div id="tab-fa" class="trade-content">
                 <h3>Free Agents / Waiver Claim</h3>
-                <div style="margin-bottom: 10px;">
-                    <input type="text" id="fa-search" placeholder="Search Player Name..." style="padding:5px;">
+                <div style="margin-bottom: 10px; display: flex; gap: 5px; flex-wrap: wrap;">
+                    <select id="fa-team" style="padding: 5px;">
+                        <option value="">All Teams</option>
+                        <option value="KIA">KIA</option>
+                        <option value="LG">LG</option>
+                        <option value="KT">KT</option>
+                        <option value="SSG">SSG</option>
+                        <option value="NC">NC</option>
+                        <option value="두산">두산</option>
+                        <option value="롯데">롯데</option>
+                        <option value="삼성">삼성</option>
+                        <option value="한화">한화</option>
+                        <option value="키움">키움</option>
+                    </select>
+                    <select id="fa-position" style="padding: 5px;">
+                        <option value="">All Pos</option>
+                        <option value="SP">SP</option>
+                        <option value="RP">RP</option>
+                        <option value="CL">CL</option>
+                        <option value="C">C</option>
+                        <option value="1B">1B</option>
+                        <option value="2B">2B</option>
+                        <option value="3B">3B</option>
+                        <option value="SS">SS</option>
+                        <option value="LF">LF</option>
+                        <option value="CF">CF</option>
+                        <option value="RF">RF</option>
+                        <option value="DH">DH</option>
+                    </select>
+                    <select id="fa-foreigner" style="padding: 5px;">
+                        <option value="">All Types</option>
+                        <option value="TYPE_1">Foreigner</option>
+                        <option value="TYPE_2">Asian Quarter</option>
+                        <option value="NONE">Domestic</option>
+                    </select>
+                    <select id="fa-sort" style="padding: 5px;">
+                        <option value="">Sort</option>
+                        <option value="cost_desc">Cost High-Low</option>
+                        <option value="cost_asc">Cost Low-High</option>
+                    </select>
+                    <input type="text" id="fa-search" placeholder="Search Name..." style="padding:5px;">
                     <button class="btn-primary" onclick="loadFAPlayers()">Search</button>
                 </div>
                 <div class="table-responsive">
@@ -131,10 +170,17 @@
 
         function loadFAPlayers() {
             const search = $('#fa-search').val();
-            // Use available-players API which lists unpicked players (FA)
-            // No team/pos filters implemented in trade UI yet, just search
+            const team = $('#fa-team').val();
+            const pos = $('#fa-position').val();
+            const foreigner = $('#fa-foreigner').val();
+            const sort = $('#fa-sort').val();
+
             $.get(`/apis/v1/fantasy/games/${gameSeq}/available-players`, {
-                search: search
+                search: search,
+                team: team,
+                position: pos,
+                foreignerType: foreigner,
+                sort: sort
             }, function(players) {
                 const tbody = $('#fa-list-body');
                 tbody.empty();
