@@ -40,8 +40,9 @@
         <header class="fantasy-header">
             <h1>Trade Room</h1>
             <div class="game-selector">
-                <!-- Assuming user has selected a game context or we pick first active game -->
-                <span th:text="${gameTitle}">Game Title</span>
+                <select id="gameSelector" class="form-control" style="width: 250px; padding: 5px;">
+                    <option value="">Loading Games...</option>
+                </select>
             </div>
         </header>
 
@@ -167,25 +168,60 @@
         </div>
     </div>
 
-    <input type="hidden" id="gameSeq" th:value="${gameSeq}" />
+    <input type="hidden" id="initialGameSeq" th:value="${gameSeq}" />
     <input type="hidden" id="currentUserId" th:value="${currentUserId}" />
 
     <script th:inline="javascript">
         /*<![CDATA[*/
-        const gameSeq = $('#gameSeq').val();
+        let gameSeq = $('#initialGameSeq').val();
         const userId = $('#currentUserId').val();
+        let currentTab = 'waiver';
 
         function showTab(tabName) {
+            currentTab = tabName;
             $('.trade-tab').removeClass('active');
             $(`.trade-tab[onclick="showTab('${tabName}')"]`).addClass('active');
             $('.trade-content').removeClass('active');
             $(`#tab-${tabName}`).addClass('active');
 
-            if (tabName === 'waiver') {
-                loadWaiverList();
-            } else if (tabName === 'trade') {
-                loadTradeUI();
-            }
+            loadCurrentTab();
+        }
+
+        function loadCurrentTab() {
+            if (!gameSeq) return;
+
+            // Check Rule Type First
+            $.get(`/apis/v1/fantasy/games/${gameSeq}/details`, function(data) {
+                if (data.ruleType === 'RULE_1') {
+                    // Disable features for Rule 1
+                    $('.fantasy-card .trade-tabs').hide();
+                    $('.fantasy-card .trade-content').hide();
+                    if ($('#rule1-msg').length === 0) {
+                        $('.fantasy-card').append(`
+                            <div id="rule1-msg" style="text-align: center; padding: 50px;">
+                                <h2>Feature Not Available</h2>
+                                <p>Trade, Waiver, and FA features are not available in Rule 1 (Snake Draft) games.</p>
+                            </div>
+                        `);
+                    } else {
+                        $('#rule1-msg').show();
+                    }
+                } else {
+                    // Enable features
+                    $('.fantasy-card .trade-tabs').show();
+                    $('#rule1-msg').hide();
+                    $(`#tab-${currentTab}`).show();
+
+                    if (currentTab === 'waiver') {
+                        loadWaiverList();
+                    } else if (currentTab === 'trade') {
+                        loadTradeUI();
+                    } else if (currentTab === 'fa') {
+                        // FA doesn't autoload list to avoid spam, or reload last search?
+                        // Let's keep manual search for now or clear.
+                    }
+                }
+            });
         }
 
         function loadTradeUI() {
@@ -437,23 +473,37 @@
             });
         }
 
-        $(document).ready(function() {
-            if (gameSeq) {
-                // Check Rule Type
-                $.get(`/apis/v1/fantasy/games/${gameSeq}/details`, function(data) {
-                    if (data.ruleType === 'RULE_1') {
-                        $('.fantasy-card').html(`
-                            <div style="text-align: center; padding: 50px;">
-                                <h2>Feature Not Available</h2>
-                                <p>Trade, Waiver, and FA features are not available in Rule 1 (Snake Draft) games.</p>
-                                <a href="/fantasy" class="btn btn-primary">Go to Dashboard</a>
-                            </div>
-                        `);
-                    } else {
-                        loadWaiverList();
-                    }
+        function loadMyGames() {
+            const select = $('#gameSelector');
+            $.get('/apis/v1/fantasy/my-games', function(games) {
+                select.empty();
+                if (games.length === 0) {
+                    select.append('<option value="">No Games</option>');
+                    return;
+                }
+                games.sort((a, b) => b.seq - a.seq);
+                games.forEach(g => {
+                    select.append(`<option value="${g.seq}">${g.title} (${g.status})</option>`);
                 });
-            }
+
+                // If we have an initial gameSeq (from controller), set it
+                if (gameSeq) {
+                    select.val(gameSeq);
+                } else {
+                    gameSeq = games[0].seq;
+                    select.val(gameSeq);
+                }
+                loadCurrentTab();
+            });
+        }
+
+        $(document).ready(function() {
+            loadMyGames();
+
+            $('#gameSelector').change(function() {
+                gameSeq = $(this).val();
+                loadCurrentTab();
+            });
         });
         /*]]>*/
     </script>
