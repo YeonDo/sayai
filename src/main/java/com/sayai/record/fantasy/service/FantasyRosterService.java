@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -227,6 +228,9 @@ public class FantasyRosterService {
                 }
             }
 
+            // Check Salary Cap
+            validateTradeSalaryCap(tx.getFantasyGameSeq(), tx.getRequesterId(), tx.getTargetId(), givingSeqs, receivingSeqs);
+
             // Swap
             for (DraftPick p : givingPicks) {
                 p.setPlayerId(tx.getTargetId());
@@ -260,6 +264,38 @@ public class FantasyRosterService {
         }
 
         roasterTransactionRepository.save(tx);
+    }
+
+    private void validateTradeSalaryCap(Long gameSeq, Long requesterId, Long targetId, List<Long> givingSeqs, List<Long> receivingSeqs) {
+        FantasyGame game = fantasyGameRepository.findById(gameSeq).orElseThrow();
+        if (game.getSalaryCap() == null || game.getSalaryCap() <= 0) return;
+
+        List<DraftPick> requesterPicks = draftPickRepository.findByFantasyGameSeqAndPlayerId(gameSeq, requesterId);
+        List<DraftPick> targetPicks = draftPickRepository.findByFantasyGameSeqAndPlayerId(gameSeq, targetId);
+
+        // Calculate Requester New Cost
+        int requesterCost = calculateTeamCostAfterTrade(requesterPicks, givingSeqs, receivingSeqs);
+        if (requesterCost > game.getSalaryCap()) {
+            throw new IllegalStateException("Trade failed: Requester Salary Cap Exceeded (" + requesterCost + " > " + game.getSalaryCap() + ")");
+        }
+
+        // Calculate Target New Cost
+        // For target: Giving = receivingSeqs, Receiving = givingSeqs
+        int targetCost = calculateTeamCostAfterTrade(targetPicks, receivingSeqs, givingSeqs);
+        if (targetCost > game.getSalaryCap()) {
+            throw new IllegalStateException("Trade failed: Target Salary Cap Exceeded (" + targetCost + " > " + game.getSalaryCap() + ")");
+        }
+    }
+
+    private int calculateTeamCostAfterTrade(List<DraftPick> currentPicks, List<Long> removingSeqs, List<Long> addingSeqs) {
+        Set<Long> teamSeqs = currentPicks.stream().map(DraftPick::getFantasyPlayerSeq).collect(Collectors.toSet());
+        teamSeqs.removeAll(removingSeqs);
+        teamSeqs.addAll(addingSeqs);
+
+        if (teamSeqs.isEmpty()) return 0;
+        return fantasyPlayerRepository.findAllById(teamSeqs).stream()
+                .mapToInt(p -> p.getCost() == null ? 0 : p.getCost())
+                .sum();
     }
 
     private void logAction(Long gameSeq, Long participantId, Long playerSeq, RoasterLog.LogActionType type, String details) {

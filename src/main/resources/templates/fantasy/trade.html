@@ -57,7 +57,6 @@
         .btn-trade { background-color: #007bff; }
         .btn-disabled { background-color: #ccc; cursor: not-allowed; }
 
-        /* FA Table Styles similar to draft.html/players.html */
         .fa-table {
             width: 100%;
             border-collapse: collapse;
@@ -106,11 +105,24 @@
         <div id="fa" class="tab-content">
             <div class="fantasy-card">
                 <h3>Available Free Agents</h3>
-                <!-- Search Filter similar to draft -->
-                <div style="margin-bottom: 15px; display:flex; gap:10px;">
-                    <input type="text" id="faSearch" placeholder="Search Player..." class="form-control" style="flex:1;">
-                    <select id="faPos" class="form-control" style="width:150px;">
-                        <option value="">All Positions</option>
+                <!-- FA Search Filter -->
+                <div style="margin-bottom: 15px; display:flex; gap:10px; flex-wrap: wrap;">
+                    <input type="text" id="faSearch" placeholder="Search Player..." class="form-control" style="flex:1; min-width: 150px;">
+                    <select id="faTeam" class="form-control" style="width:120px;">
+                        <option value="">All Teams</option>
+                        <option value="LG">LG</option>
+                        <option value="KT">KT</option>
+                        <option value="SSG">SSG</option>
+                        <option value="NC">NC</option>
+                        <option value="DOOSAN">DOOSAN</option>
+                        <option value="KIA">KIA</option>
+                        <option value="LOTTE">LOTTE</option>
+                        <option value="SAMSUNG">SAMSUNG</option>
+                        <option value="HANWHA">HANWHA</option>
+                        <option value="KIWOOM">KIWOOM</option>
+                    </select>
+                    <select id="faPos" class="form-control" style="width:120px;">
+                        <option value="">All Pos</option>
                         <option value="P">Pitcher</option>
                         <option value="C">Catcher</option>
                         <option value="1B">1B</option>
@@ -118,6 +130,15 @@
                         <option value="3B">3B</option>
                         <option value="SS">SS</option>
                         <option value="OF">Outfielder</option>
+                    </select>
+                    <select id="faForeigner" class="form-control" style="width:120px;">
+                        <option value="">All Types</option>
+                        <option value="TYPE_1">Foreigner</option>
+                        <option value="NONE">Domestic</option>
+                    </select>
+                    <select id="faSort" class="form-control" style="width:120px;">
+                        <option value="cost_desc">Cost High</option>
+                        <option value="cost_asc">Cost Low</option>
                     </select>
                     <button class="btn-action btn-fa" onclick="loadFAList()">Filter</button>
                 </div>
@@ -166,17 +187,24 @@
 
     <script th:inline="javascript">
         /*<![CDATA[*/
-        const currentUserId = 1;
+        let currentUserId = null;
         let currentGameSeq = null;
-        let gameSalaryCap = null; // Store max cap
+        let gameSalaryCap = null;
 
         $(document).ready(function() {
-            loadMyGames();
+            // Fetch Current User Info first
+            $.get('/apis/v1/auth/me', function(user) {
+                currentUserId = user.playerId;
+                loadMyGames();
+            }).fail(function() {
+                // If failed (not logged in?), redirect or show error.
+                // Assuming session valid for now.
+                console.error("Failed to load user info");
+            });
 
             $('#gameSelector').change(function() {
                 currentGameSeq = $(this).val();
                 if(currentGameSeq) {
-                    // Fetch details for cap
                     $.get(`/apis/v1/fantasy/games/${currentGameSeq}/details`, function(d) {
                         gameSalaryCap = d.salaryCap;
                         loadTabContent();
@@ -199,7 +227,8 @@
         }
 
         function loadMyGames() {
-            $.get('/apis/v1/fantasy/my-games?userId=' + currentUserId, function(games) {
+            // Passing userId just in case backend requires it, but AuthPrincipal usually handles it
+            $.get('/apis/v1/fantasy/my-games', function(games) {
                 const select = $('#gameSelector');
                 select.empty();
                 if (games.length === 0) {
@@ -213,7 +242,6 @@
                 select.val(games[0].seq);
                 currentGameSeq = games[0].seq;
 
-                // Load details for first game
                 $.get(`/apis/v1/fantasy/games/${currentGameSeq}/details`, function(d) {
                     gameSalaryCap = d.salaryCap;
                     loadTabContent();
@@ -299,10 +327,16 @@
 
             const search = $('#faSearch').val();
             const pos = $('#faPos').val();
+            const team = $('#faTeam').val();
+            const foreigner = $('#faForeigner').val();
+            const sort = $('#faSort').val();
 
-            let url = `/apis/v1/fantasy/games/${currentGameSeq}/available-players?sort=cost_desc`;
-            if(search) url += `&search=${search}`;
-            if(pos) url += `&position=${pos}`;
+            let url = `/apis/v1/fantasy/games/${currentGameSeq}/available-players?`;
+            if(sort) url += `sort=${sort}&`;
+            if(search) url += `search=${search}&`;
+            if(pos) url += `position=${pos}&`;
+            if(team) url += `team=${team}&`;
+            if(foreigner) url += `foreignerType=${foreigner}&`;
 
             $.get(url, function(players) {
                 tbody.empty();
@@ -336,11 +370,10 @@
                 url: '/apis/v1/fantasy/draft',
                 type: 'POST',
                 contentType: 'application/json',
-                data: JSON.stringify({ fantasyGameSeq: currentGameSeq, fantasyPlayerSeq: playerSeq, playerId: currentUserId }),
+                data: JSON.stringify({ fantasyGameSeq: currentGameSeq, fantasyPlayerSeq: playerSeq }),
                 success: function() {
                     alert('Signed Successfully!');
                     loadFAList();
-                    // Maybe refresh cap info if switch tab
                 },
                 error: function(xhr) {
                     alert('Error: ' + xhr.responseText);
@@ -356,9 +389,8 @@
                 select.empty();
                 select.append('<option value="">Select Target...</option>');
                 parts.forEach(p => {
-                    // Check logic: p.playerId != currentUserId.
-                    // Need to ensure types match (String vs Number).
-                    if (String(p.playerId) !== String(currentUserId)) {
+                    // Check logic using fetched currentUserId
+                    if (currentUserId && String(p.playerId) !== String(currentUserId)) {
                         select.append(`<option value="${p.playerId}">${p.teamName} (${p.userName})</option>`);
                     }
                 });

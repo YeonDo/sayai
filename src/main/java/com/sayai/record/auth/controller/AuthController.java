@@ -2,11 +2,13 @@ package com.sayai.record.auth.controller;
 
 import com.sayai.record.auth.jwt.CustomUserDetails;
 import com.sayai.record.auth.service.AuthService;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -76,6 +78,15 @@ public class AuthController {
         }
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<UserInfo> getMe(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
+        String name = authService.getUserName(userDetails.getUsername());
+        return ResponseEntity.ok(new UserInfo(userDetails.getPlayerId(), userDetails.getUsername(), name));
+    }
+
     @Data
     public static class ChangePasswordRequest {
         private String currentPassword;
@@ -100,5 +111,13 @@ public class AuthController {
     @RequiredArgsConstructor
     public static class LoginResponse {
         private final String name;
+    }
+
+    @Data
+    @AllArgsConstructor
+    public static class UserInfo {
+        private Long playerId;
+        private String userId;
+        private String name;
     }
 }

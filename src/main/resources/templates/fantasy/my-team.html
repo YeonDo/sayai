@@ -19,6 +19,11 @@
         <div th:replace="fragments/fantasy-nav :: nav(active='my-team')"></div>
 
         <div id="roster-view" class="my-team-container" style="display:none;">
+            <!-- Salary Cap Status -->
+            <div class="fantasy-card" style="margin-bottom: 20px; padding: 10px; text-align: right;">
+                <span id="salaryCapInfo" style="font-weight:bold; font-size: 1.1rem; color: #666;">Salary Cap: Loading...</span>
+            </div>
+
             <!-- Field View -->
             <div class="fantasy-card">
                 <h2 class="card-title">Fielding & Batting</h2>
@@ -112,6 +117,7 @@
     <script th:inline="javascript">
         /*<![CDATA[*/
         let selectedSlotId = null;
+        let gameSalaryCap = null;
 
         $(document).ready(function() {
             loadMyGames();
@@ -119,7 +125,10 @@
             $('#gameSelector').change(function() {
                 const seq = $(this).val();
                 if (seq) {
-                    loadRoster(seq);
+                    $.get(`/apis/v1/fantasy/games/${seq}/details`, function(d) {
+                        gameSalaryCap = d.salaryCap;
+                        loadRoster(seq);
+                    });
                 }
             });
 
@@ -162,8 +171,7 @@
             const pA = slotA.data('player');
             const pB = slotB.data('player');
 
-            // If both are empty, nothing to do, but technically valid? Or invalid?
-            // Let's say valid, nothing changes.
+            // If both are empty, nothing to do
             if (!pA && !pB) return true;
 
             // Check if pA fits in slotB
@@ -284,8 +292,12 @@
 
                 // Select first and load
                 select.val(games[0].seq);
-                loadRoster(games[0].seq);
-                $('#roster-view').show();
+
+                $.get(`/apis/v1/fantasy/games/${games[0].seq}/details`, function(d) {
+                    gameSalaryCap = d.salaryCap;
+                    loadRoster(games[0].seq);
+                    $('#roster-view').show();
+                });
             }).fail(function() {
                 // If API fails or no games
                 select.append('<option value="">Error Loading</option>');
@@ -305,8 +317,10 @@
                 const spCount = { count: 1 };
                 const rpCount = { count: 1 };
                 let benchCount = 1;
+                let totalCost = 0;
 
                 players.forEach(p => {
+                    totalCost += (p.cost || 0);
                     let placed = false;
 
                     // Try to use assignedPosition first
@@ -314,14 +328,11 @@
                         const ap = p.assignedPosition;
                         // Handle Specific Bench
                         if (ap.startsWith('BENCH')) {
-                            // ap might be BENCH-1, BENCH-2 or just BENCH
-                            // If BENCH-X, try exact match
                             if (ap.includes('-')) {
                                 if (fillSlotById('slot-' + ap, p)) {
                                     placed = true;
                                 }
                             }
-                            // If exact match failed or was generic 'BENCH', fall through to heuristic below
                         } else if (ap === 'SP') {
                             if (assignPitcher('SP', spCount, p)) placed = true;
                         } else if (ap === 'RP') {
@@ -329,15 +340,13 @@
                         } else if (ap === 'CL') {
                             if (fillSlotById('slot-CL-1', p)) placed = true;
                         } else {
-                            // Handle Specific Field (1B, C, etc)
-                            // Only if slot is free
                             if (fillSlotById('slot-' + ap, p)) {
                                 placed = true;
                             }
                         }
                     }
 
-                    // Fallback: If not placed yet (null assignedPosition, full slots, or collision)
+                    // Fallback
                     if (!placed) {
                          if (benchCount <= 3) {
                              fillSlotById('slot-BENCH-' + benchCount, p);
@@ -345,6 +354,15 @@
                          }
                     }
                 });
+
+                // Update Salary Cap
+                if (gameSalaryCap) {
+                    $('#salaryCapInfo').text(`Salary Cap: ${totalCost} / ${gameSalaryCap}`);
+                    if(totalCost > gameSalaryCap) $('#salaryCapInfo').css('color', 'red');
+                    else $('#salaryCapInfo').css('color', '#28a745');
+                } else {
+                    $('#salaryCapInfo').text('Salary Cap: No Limit');
+                }
             });
         }
 
@@ -362,21 +380,15 @@
         function saveRoster(gameSeq) {
              const updates = [];
 
-             // Iterate all slots
              $('.field-position, .pitcher-slot').each(function() {
                  const player = $(this).data('player');
                  if (player) {
                      const slotId = $(this).attr('id'); // e.g. slot-1B, slot-SP-1, slot-BENCH-1
                      let assignedPos = slotId.replace('slot-', '');
 
-                     // Normalize Pitchers
                      if (assignedPos.startsWith('SP-')) assignedPos = 'SP';
                      if (assignedPos.startsWith('RP-')) assignedPos = 'RP';
                      if (assignedPos.startsWith('CL-')) assignedPos = 'CL';
-
-                     // Bench kept as BENCH-1, BENCH-2 etc to preserve order if possible
-                     // Or normalize to BENCH?
-                     // Let's keep specific to allow persistence of bench order
 
                      updates.push({
                          fantasyPlayerSeq: player.seq,
@@ -399,22 +411,8 @@
              });
         }
 
-        function isPitcher(pos) {
-            return ['SP', 'RP', 'CL'].includes(pos);
-        }
-
-        function fillSlot(pos, player) {
-            const slot = $(`#slot-${pos}`);
-            if (slot.length) {
-                // Attach Data
-                slot.data('player', player);
-                renderSlot(slot, player);
-            }
-        }
-
         function assignPitcher(type, counterObj, player) {
             if (counterObj.count <= 4) {
-                // Try to fill next slot
                 if (fillPitcherSlot(`${type}-${counterObj.count}`, player)) {
                     counterObj.count++;
                     return true;
