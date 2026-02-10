@@ -33,8 +33,24 @@ public class DraftPick {
 
     private LocalDateTime pickedAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(columnDefinition = "VARCHAR(20) DEFAULT 'NORMAL'")
+    @Builder.Default
+    private PickStatus pickStatus = PickStatus.NORMAL;
+
     @PrePersist
     public void prePersist() {
-        this.pickedAt = LocalDateTime.now();
+        if (this.pickedAt == null) {
+            this.pickedAt = LocalDateTime.now();
+        }
+        if (this.pickStatus == null) {
+            this.pickStatus = PickStatus.NORMAL;
+        }
+    }
+
+    public enum PickStatus {
+        NORMAL,
+        WAIVER_REQ,
+        TRADE_PENDING
     }
 }
