@@ -56,6 +56,21 @@
         .btn-fa { background-color: #28a745; }
         .btn-trade { background-color: #007bff; }
         .btn-disabled { background-color: #ccc; cursor: not-allowed; }
+
+        /* FA Table Styles similar to draft.html/players.html */
+        .fa-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .fa-table th, .fa-table td {
+            padding: 10px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+        .fa-table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -79,7 +94,10 @@
         <!-- WAIVER TAB -->
         <div id="waiver" class="tab-content active">
             <div class="fantasy-card">
-                <h3>My Team (Release Player)</h3>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <h3>My Team (Release Player)</h3>
+                    <div id="salaryCapInfo" style="font-weight:bold; color:#666;">Salary Cap: Loading...</div>
+                </div>
                 <div id="waiverList">Loading...</div>
             </div>
         </div>
@@ -88,7 +106,38 @@
         <div id="fa" class="tab-content">
             <div class="fantasy-card">
                 <h3>Available Free Agents</h3>
-                <div id="faList">Loading...</div>
+                <!-- Search Filter similar to draft -->
+                <div style="margin-bottom: 15px; display:flex; gap:10px;">
+                    <input type="text" id="faSearch" placeholder="Search Player..." class="form-control" style="flex:1;">
+                    <select id="faPos" class="form-control" style="width:150px;">
+                        <option value="">All Positions</option>
+                        <option value="P">Pitcher</option>
+                        <option value="C">Catcher</option>
+                        <option value="1B">1B</option>
+                        <option value="2B">2B</option>
+                        <option value="3B">3B</option>
+                        <option value="SS">SS</option>
+                        <option value="OF">Outfielder</option>
+                    </select>
+                    <button class="btn-action btn-fa" onclick="loadFAList()">Filter</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="fa-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Team</th>
+                                <th>Position</th>
+                                <th>Stats</th>
+                                <th>Cost</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="faListBody">
+                            <tr><td colspan="6">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -117,21 +166,22 @@
 
     <script th:inline="javascript">
         /*<![CDATA[*/
-        const currentUserId = 1; // Need logic to get current User ID or Player ID properly
-        // In Admin html we fetch user list. Here we assume we can get it or rely on backend session logic mostly.
-        // But for UI, we need to know "My" ID.
-        // Assuming there's a global variable or endpoint.
-        // For now hardcoded 1 or fetch from session endpoint if available.
-        // Let's assume hardcoded 1 for demo purposes as per previous context.
-
+        const currentUserId = 1;
         let currentGameSeq = null;
+        let gameSalaryCap = null; // Store max cap
 
         $(document).ready(function() {
             loadMyGames();
 
             $('#gameSelector').change(function() {
                 currentGameSeq = $(this).val();
-                if(currentGameSeq) loadTabContent();
+                if(currentGameSeq) {
+                    // Fetch details for cap
+                    $.get(`/apis/v1/fantasy/games/${currentGameSeq}/details`, function(d) {
+                        gameSalaryCap = d.salaryCap;
+                        loadTabContent();
+                    });
+                }
             });
 
             $('#targetParticipantSelector').change(function() {
@@ -162,8 +212,13 @@
                 });
                 select.val(games[0].seq);
                 currentGameSeq = games[0].seq;
-                loadTabContent();
-                loadParticipants(); // For trade target selector
+
+                // Load details for first game
+                $.get(`/apis/v1/fantasy/games/${currentGameSeq}/details`, function(d) {
+                    gameSalaryCap = d.salaryCap;
+                    loadTabContent();
+                    loadParticipants();
+                });
             });
         }
 
@@ -182,10 +237,24 @@
             $.get(`/apis/v1/fantasy/games/${currentGameSeq}/my-picks`, function(picks) {
                 const container = $('#waiverList');
                 container.empty();
+
+                // Calculate Salary Cap Status
+                let totalCost = 0;
+                picks.forEach(p => totalCost += (p.cost || 0));
+
+                if (gameSalaryCap) {
+                    $('#salaryCapInfo').text(`Salary Cap: ${totalCost} / ${gameSalaryCap}`);
+                    if(totalCost > gameSalaryCap) $('#salaryCapInfo').css('color', 'red');
+                    else $('#salaryCapInfo').css('color', '#28a745');
+                } else {
+                    $('#salaryCapInfo').text('Salary Cap: No Limit');
+                }
+
                 if(picks.length === 0) {
                     container.text('No players.');
                     return;
                 }
+
                 picks.forEach(p => {
                     const isNormal = (!p.pickStatus || p.pickStatus === 'NORMAL');
                     const btnHtml = isNormal
@@ -225,34 +294,44 @@
 
         // --- FA ---
         function loadFAList() {
-            $('#faList').text('Loading...');
-            // Reuse available players API
-            $.get(`/apis/v1/fantasy/games/${currentGameSeq}/available-players?sort=cost_desc`, function(players) {
-                const container = $('#faList');
-                container.empty();
-                // Limit display to top 50 for performance
+            const tbody = $('#faListBody');
+            tbody.empty().append('<tr><td colspan="6">Loading...</td></tr>');
+
+            const search = $('#faSearch').val();
+            const pos = $('#faPos').val();
+
+            let url = `/apis/v1/fantasy/games/${currentGameSeq}/available-players?sort=cost_desc`;
+            if(search) url += `&search=${search}`;
+            if(pos) url += `&position=${pos}`;
+
+            $.get(url, function(players) {
+                tbody.empty();
+                // Limit 50
                 const displayPlayers = players.slice(0, 50);
+
+                if(displayPlayers.length === 0) {
+                    tbody.append('<tr><td colspan="6">No players found.</td></tr>');
+                    return;
+                }
 
                 displayPlayers.forEach(p => {
                     const row = `
-                        <div class="player-card-row">
-                            <div>
-                                <strong>${p.name}</strong> (${p.team}, ${p.position}) <br>
-                                <small>Cost: ${p.cost}</small>
-                            </div>
-                            <div>
-                                <button class="btn-action btn-fa" onclick="signFA(${p.seq}, ${p.cost})">Sign</button>
-                            </div>
-                        </div>
+                        <tr>
+                            <td>${p.name}</td>
+                            <td>${p.team}</td>
+                            <td>${p.position}</td>
+                            <td>${p.stats || '-'}</td>
+                            <td>${p.cost}</td>
+                            <td><button class="btn-action btn-fa" onclick="signFA(${p.seq}, ${p.cost})">Sign</button></td>
+                        </tr>
                     `;
-                    container.append(row);
+                    tbody.append(row);
                 });
             });
         }
 
         function signFA(playerSeq, cost) {
             if(!confirm(`Sign this player for cost ${cost}? (+5 penalty if roster full)`)) return;
-            // Uses Draft API
             $.ajax({
                 url: '/apis/v1/fantasy/draft',
                 type: 'POST',
@@ -261,6 +340,7 @@
                 success: function() {
                     alert('Signed Successfully!');
                     loadFAList();
+                    // Maybe refresh cap info if switch tab
                 },
                 error: function(xhr) {
                     alert('Error: ' + xhr.responseText);
@@ -276,7 +356,9 @@
                 select.empty();
                 select.append('<option value="">Select Target...</option>');
                 parts.forEach(p => {
-                    if (p.playerId != currentUserId) { // Don't trade with self
+                    // Check logic: p.playerId != currentUserId.
+                    // Need to ensure types match (String vs Number).
+                    if (String(p.playerId) !== String(currentUserId)) {
                         select.append(`<option value="${p.playerId}">${p.teamName} (${p.userName})</option>`);
                     }
                 });

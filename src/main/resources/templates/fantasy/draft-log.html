@@ -24,10 +24,14 @@
                 <table class="fantasy-table">
                     <thead>
                         <tr>
-                            <th>Time</th>
+                            <th>#</th>
+                            <th>Player</th>
+                            <th>Team</th>
+                            <th>Position</th>
+                            <th>Participant</th>
                             <th>Action Type</th>
-                            <th>Participant ID</th>
                             <th>Details</th>
+                            <th>Time</th>
                         </tr>
                     </thead>
                     <tbody id="logBody">
@@ -40,9 +44,7 @@
 
     <script th:inline="javascript">
         /*<![CDATA[*/
-        const currentUserId = 1; // Should be injected or fetched
-        // In real app, we fetch current user info. Here hardcoded or relying on session if backend rendered.
-        // Assuming we rely on JS to load.
+        const currentUserId = 1;
 
         $(document).ready(function() {
             loadMyGames();
@@ -54,8 +56,6 @@
         });
 
         function loadMyGames() {
-            // Fetch my games to populate selector
-            // Assuming endpoint exists or reusing what was there
             $.get('/apis/v1/fantasy/my-games?userId=' + currentUserId, function(games) {
                 const select = $('#gameSelector');
                 select.empty();
@@ -70,7 +70,6 @@
                 select.val(games[0].seq);
                 loadLogs(games[0].seq);
             }).fail(function() {
-                 // Fallback if endpoint fails or different
                  $('#gameSelector').html('<option value="">Error loading games</option>');
             });
         }
@@ -78,31 +77,39 @@
         function loadLogs(seq) {
             const tbody = $('#logBody');
             tbody.empty();
-            tbody.append('<tr><td colspan="4">Loading...</td></tr>');
+            tbody.append('<tr><td colspan="8">Loading...</td></tr>');
 
             $.get(`/apis/v1/fantasy/games/${seq}/logs`, function(logs) {
                 tbody.empty();
                 if (logs.length === 0) {
-                    tbody.append('<tr><td colspan="4">No history yet.</td></tr>');
+                    tbody.append('<tr><td colspan="8">No history yet.</td></tr>');
                     return;
                 }
 
+                let index = 1;
                 logs.forEach(log => {
                     let typeClass = '';
                     switch(log.actionType) {
                         case 'DRAFT_PICK': typeClass = 'status-badge status-DRAFTING'; break;
                         case 'TRADE_SUCCESS': typeClass = 'status-badge status-ONGOING'; break;
-                        case 'FA_ADD': typeClass = 'status-badge status-FINISHED'; break; // Just reuse green
+                        case 'FA_ADD': typeClass = 'status-badge status-FINISHED'; break;
                         case 'WAIVER_RELEASE': typeClass = 'status-badge status-WAITING'; break;
                         default: typeClass = 'status-badge';
                     }
 
+                    // Format Time
+                    const timeStr = new Date(log.timestamp).toLocaleString();
+
                     const row = `
                         <tr>
-                            <td>${new Date(log.timestamp).toLocaleString()}</td>
+                            <td>${index++}</td>
+                            <td>${log.playerName || ''}</td>
+                            <td>${log.playerTeam || ''}</td>
+                            <td>${log.playerPosition || ''}</td>
+                            <td>${log.participantName || ''}</td>
                             <td><span class="${typeClass}">${log.actionType}</span></td>
-                            <td>${log.participantId}</td>
-                            <td>${log.details}</td>
+                            <td>${log.details || ''}</td>
+                            <td>${timeStr}</td>
                         </tr>
                     `;
                     tbody.append(row);
