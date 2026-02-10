@@ -68,25 +68,22 @@ public class FantasyLogController {
             FantasyPlayer p = playerMap.get(log.getFantasyPlayerSeq());
             String pName = "", pTeam = "", pPos = "";
 
-            boolean isDraftOrFA = log.getActionType() == RoasterLog.LogActionType.DRAFT_PICK
-                               || log.getActionType() == RoasterLog.LogActionType.FA_ADD;
+            boolean showDetails = log.getActionType() == RoasterLog.LogActionType.DRAFT_PICK
+                               || log.getActionType() == RoasterLog.LogActionType.FA_ADD
+                               || log.getActionType().name().startsWith("WAIVER_");
 
             if (p != null) {
-                pName = p.getName();
-                // Show Team/Pos only for Draft/FA as requested
-                if (isDraftOrFA) {
+                // For Waiver/Trade/Draft/FA, show name
+                // Actually previous request said: "Player (드래프트, FA인 경우 ft_players 의 name, 웨이버, 트레이드인 경우 빈칸)"
+                // NEW Request: "draft-log 에서 WAVIER_RELEASE, WAIVER_FA, WAIVER_CLAIM 인 경우에도 해당 선수의 player, team, position 항목이 표시되게 해줘"
+                // Trade still empty? "트레이드" is not mentioned in new request, so keep empty for Trade.
+                if (showDetails) {
+                    pName = p.getName();
                     pTeam = p.getTeam();
                     pPos = p.getPosition();
                 }
-            } else if (isDraftOrFA) {
-                // If player deleted but was draft/fa log? Unlikely but handle grace
+            } else if (showDetails) {
                 pName = "Unknown Player";
-            }
-
-            // For Waiver/Trade, Player Name column should be empty?
-            // Request: "Player (드래프트, FA인 경우 ft_players 의 name, 웨이버, 트레이드인 경우 빈칸)"
-            if (!isDraftOrFA) {
-                pName = "";
             }
 
             // Participant Name

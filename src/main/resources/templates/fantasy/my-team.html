@@ -5,6 +5,22 @@
 <head>
     <title>Fantasy League - My Team</title>
     <link rel="stylesheet" th:href="@{/css/fantasy.css}">
+    <style>
+        .roster-flex-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .roster-card {
+            flex: 1;
+            min-width: 300px;
+        }
+        @media (max-width: 768px) {
+            .roster-flex-container {
+                flex-direction: column;
+            }
+        }
+    </style>
 </head>
 <body>
 <div layout:fragment="content">
@@ -19,91 +35,56 @@
         <div th:replace="fragments/fantasy-nav :: nav(active='my-team')"></div>
 
         <div id="roster-view" class="my-team-container" style="display:none;">
-            <!-- Salary Cap Status -->
-            <div class="fantasy-card" style="margin-bottom: 20px; padding: 10px; text-align: right;">
-                <span id="salaryCapInfo" style="font-weight:bold; font-size: 1.1rem; color: #666;">Salary Cap: Loading...</span>
+            <!-- Salary Cap Status (Top Right) -->
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 15px;">
+                <div class="fantasy-card" style="padding: 10px 20px; display: inline-block; margin:0;">
+                    <span id="salaryCapInfo" style="font-weight:bold; font-size: 1.1rem; color: #666;">Salary Cap: Loading...</span>
+                </div>
             </div>
 
-            <!-- Field View -->
-            <div class="fantasy-card">
-                <h2 class="card-title">Fielding & Batting</h2>
-                <div class="baseball-field">
-                    <!-- Positions -->
-                    <div class="field-position pos-c" id="slot-C">
-                        <span class="pos-label">C</span>
-                        <span class="player-name">-</span>
-                    </div>
-                    <div class="field-position pos-1b" id="slot-1B">
-                        <span class="pos-label">1B</span>
-                        <span class="player-name">-</span>
-                    </div>
-                    <div class="field-position pos-2b" id="slot-2B">
-                        <span class="pos-label">2B</span>
-                        <span class="player-name">-</span>
-                    </div>
-                    <div class="field-position pos-3b" id="slot-3B">
-                        <span class="pos-label">3B</span>
-                        <span class="player-name">-</span>
-                    </div>
-                    <div class="field-position pos-ss" id="slot-SS">
-                        <span class="pos-label">SS</span>
-                        <span class="player-name">-</span>
-                    </div>
-                    <div class="field-position pos-lf" id="slot-LF">
-                        <span class="pos-label">LF</span>
-                        <span class="player-name">-</span>
-                    </div>
-                    <div class="field-position pos-cf" id="slot-CF">
-                        <span class="pos-label">CF</span>
-                        <span class="player-name">-</span>
-                    </div>
-                    <div class="field-position pos-rf" id="slot-RF">
-                        <span class="pos-label">RF</span>
-                        <span class="player-name">-</span>
-                    </div>
-                    <!-- DH at Bottom Right -->
-                    <div class="field-position pos-dh" id="slot-DH">
-                        <span class="pos-label">DH</span>
-                        <span class="player-name">-</span>
-                    </div>
+            <div class="roster-flex-container">
+                <!-- Field View -->
+                <div class="fantasy-card roster-card">
+                    <h2 class="card-title">Fielding & Batting</h2>
+                    <div class="baseball-field">
+                        <!-- Positions -->
+                        <div class="field-position pos-c" id="slot-C"><span class="pos-label">C</span><span class="player-name">-</span></div>
+                        <div class="field-position pos-1b" id="slot-1B"><span class="pos-label">1B</span><span class="player-name">-</span></div>
+                        <div class="field-position pos-2b" id="slot-2B"><span class="pos-label">2B</span><span class="player-name">-</span></div>
+                        <div class="field-position pos-3b" id="slot-3B"><span class="pos-label">3B</span><span class="player-name">-</span></div>
+                        <div class="field-position pos-ss" id="slot-SS"><span class="pos-label">SS</span><span class="player-name">-</span></div>
+                        <div class="field-position pos-lf" id="slot-LF"><span class="pos-label">LF</span><span class="player-name">-</span></div>
+                        <div class="field-position pos-cf" id="slot-CF"><span class="pos-label">CF</span><span class="player-name">-</span></div>
+                        <div class="field-position pos-rf" id="slot-RF"><span class="pos-label">RF</span><span class="player-name">-</span></div>
+                        <div class="field-position pos-dh" id="slot-DH"><span class="pos-label">DH</span><span class="player-name">-</span></div>
 
-                    <!-- Bench Slots -->
-                    <div class="field-position pos-bench-1" id="slot-BENCH-1">
-                        <span class="pos-label">BN</span>
-                        <span class="player-name">-</span>
+                        <!-- Bench Slots -->
+                        <div class="field-position pos-bench-1" id="slot-BENCH-1"><span class="pos-label">BN</span><span class="player-name">-</span></div>
+                        <div class="field-position pos-bench-2" id="slot-BENCH-2"><span class="pos-label">BN</span><span class="player-name">-</span></div>
+                        <div class="field-position pos-bench-3" id="slot-BENCH-3"><span class="pos-label">BN</span><span class="player-name">-</span></div>
                     </div>
-                    <div class="field-position pos-bench-2" id="slot-BENCH-2">
-                        <span class="pos-label">BN</span>
-                        <span class="player-name">-</span>
-                    </div>
-                    <div class="field-position pos-bench-3" id="slot-BENCH-3">
-                        <span class="pos-label">BN</span>
-                        <span class="player-name">-</span>
+                </div>
+
+                <!-- Pitching View -->
+                <div class="fantasy-card roster-card">
+                    <h2 class="card-title">Pitching Staff</h2>
+                    <div class="pitcher-list" id="pitcher-list-container">
+                        <div class="pitcher-slot" id="slot-SP-1"><span class="pitcher-role">SP</span><span class="player-name">-</span></div>
+                        <div class="pitcher-slot" id="slot-SP-2"><span class="pitcher-role">SP</span><span class="player-name">-</span></div>
+                        <div class="pitcher-slot" id="slot-SP-3"><span class="pitcher-role">SP</span><span class="player-name">-</span></div>
+                        <div class="pitcher-slot" id="slot-SP-4"><span class="pitcher-role">SP</span><span class="player-name">-</span></div>
+
+                        <div class="pitcher-slot" id="slot-RP-1"><span class="pitcher-role">RP</span><span class="player-name">-</span></div>
+                        <div class="pitcher-slot" id="slot-RP-2"><span class="pitcher-role">RP</span><span class="player-name">-</span></div>
+                        <div class="pitcher-slot" id="slot-RP-3"><span class="pitcher-role">RP</span><span class="player-name">-</span></div>
+                        <div class="pitcher-slot" id="slot-RP-4"><span class="pitcher-role">RP</span><span class="player-name">-</span></div>
+
+                        <div class="pitcher-slot" id="slot-CL-1"><span class="pitcher-role">CL</span><span class="player-name">-</span></div>
                     </div>
                 </div>
             </div>
 
-            <!-- Pitching View -->
-            <div class="fantasy-card">
-                <h2 class="card-title">Pitching Staff</h2>
-                <div class="pitcher-list" id="pitcher-list-container">
-                    <!-- SP Slots -->
-                    <div class="pitcher-slot" id="slot-SP-1"><span class="pitcher-role">SP</span><span class="player-name">-</span></div>
-                    <div class="pitcher-slot" id="slot-SP-2"><span class="pitcher-role">SP</span><span class="player-name">-</span></div>
-                    <div class="pitcher-slot" id="slot-SP-3"><span class="pitcher-role">SP</span><span class="player-name">-</span></div>
-                    <div class="pitcher-slot" id="slot-SP-4"><span class="pitcher-role">SP</span><span class="player-name">-</span></div>
-
-                    <!-- RP Slots -->
-                    <div class="pitcher-slot" id="slot-RP-1"><span class="pitcher-role">RP</span><span class="player-name">-</span></div>
-                    <div class="pitcher-slot" id="slot-RP-2"><span class="pitcher-role">RP</span><span class="player-name">-</span></div>
-                    <div class="pitcher-slot" id="slot-RP-3"><span class="pitcher-role">RP</span><span class="player-name">-</span></div>
-                    <div class="pitcher-slot" id="slot-RP-4"><span class="pitcher-role">RP</span><span class="player-name">-</span></div>
-
-                    <!-- CL Slot -->
-                    <div class="pitcher-slot" id="slot-CL-1"><span class="pitcher-role">CL</span><span class="player-name">-</span></div>
-                </div>
-            </div>
-            <div style="text-align: right; margin-bottom: 20px;">
+            <div style="text-align: right; margin-top: 20px;">
                 <button id="saveRosterBtn" class="btn btn-primary">Save Roster</button>
             </div>
         </div>
