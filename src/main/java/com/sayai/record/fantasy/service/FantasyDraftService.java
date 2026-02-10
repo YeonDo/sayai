@@ -234,7 +234,7 @@ public class FantasyDraftService {
                 .participantId(request.getPlayerId())
                 .fantasyPlayerSeq(request.getFantasyPlayerSeq())
                 .actionType(actionType)
-                .details(isDrafting ? "Picked in Draft" : "Signed via FA")
+                .details(targetPlayer.getName() + " - " + (isDrafting ? "Picked in Draft" : "Signed via FA"))
                 .build();
         roasterLogRepository.save(logEntry);
 

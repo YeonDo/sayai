@@ -53,7 +53,8 @@ public class FantasyRosterService {
         roasterTransactionRepository.save(tx);
 
         // Log
-        logAction(gameSeq, requesterId, fantasyPlayerSeq, RoasterLog.LogActionType.WAIVER_RELEASE, "Waiver Requested");
+        FantasyPlayer player = fantasyPlayerRepository.findById(fantasyPlayerSeq).orElseThrow();
+        logAction(gameSeq, requesterId, fantasyPlayerSeq, RoasterLog.LogActionType.WAIVER_RELEASE, player.getName() + " - Waiver Requested");
     }
 
     @Transactional
@@ -69,6 +70,7 @@ public class FantasyRosterService {
         }
 
         Long playerSeq = Long.parseLong(tx.getGivingPlayerSeqs());
+        FantasyPlayer player = fantasyPlayerRepository.findById(playerSeq).orElseThrow();
         DraftPick pick = draftPickRepository.findByFantasyGameSeqAndFantasyPlayerSeq(tx.getFantasyGameSeq(), playerSeq)
                 .orElseThrow(() -> new IllegalStateException("Draft pick not found for player " + playerSeq));
 
@@ -85,7 +87,7 @@ public class FantasyRosterService {
             tx.setStatus(RoasterTransaction.TransactionStatus.APPROVED);
             tx.setTargetId(targetParticipantId);
 
-            logAction(tx.getFantasyGameSeq(), targetParticipantId, playerSeq, RoasterLog.LogActionType.WAIVER_CLAIM, "Claimed by " + targetParticipantId);
+            logAction(tx.getFantasyGameSeq(), targetParticipantId, playerSeq, RoasterLog.LogActionType.WAIVER_CLAIM, player.getName() + " - Claimed by " + targetParticipantId);
 
         } else if ("FA".equalsIgnoreCase(decision)) {
             // Move to FA (Delete Pick)
@@ -93,7 +95,7 @@ public class FantasyRosterService {
 
             tx.setStatus(RoasterTransaction.TransactionStatus.FA_MOVED);
 
-            logAction(tx.getFantasyGameSeq(), tx.getRequesterId(), playerSeq, RoasterLog.LogActionType.WAIVER_FA, "Moved to FA");
+            logAction(tx.getFantasyGameSeq(), tx.getRequesterId(), playerSeq, RoasterLog.LogActionType.WAIVER_FA, player.getName() + " - Moved to FA");
 
         } else {
             throw new IllegalArgumentException("Invalid decision: " + decision);
@@ -140,7 +142,10 @@ public class FantasyRosterService {
                 .build();
         roasterTransactionRepository.save(tx);
 
-        logAction(gameSeq, requesterId, null, RoasterLog.LogActionType.TRADE_REQ, "Trade Requested with " + targetId);
+        String givingNames = fantasyPlayerRepository.findAllById(givingPlayerSeqs).stream().map(FantasyPlayer::getName).collect(Collectors.joining(", "));
+        String receivingNames = fantasyPlayerRepository.findAllById(receivingPlayerSeqs).stream().map(FantasyPlayer::getName).collect(Collectors.joining(", "));
+
+        logAction(gameSeq, requesterId, null, RoasterLog.LogActionType.TRADE_REQ, "Trade Requested with " + targetId + " (Give: " + givingNames + " / Get: " + receivingNames + ")");
     }
 
     private List<DraftPick> validateTradePlayers(Long gameSeq, Long ownerId, List<Long> playerSeqs) {
@@ -237,7 +242,9 @@ public class FantasyRosterService {
             draftPickRepository.saveAll(receivingPicks);
 
             tx.setStatus(RoasterTransaction.TransactionStatus.APPROVED);
-            logAction(tx.getFantasyGameSeq(), tx.getRequesterId(), null, RoasterLog.LogActionType.TRADE_SUCCESS, "Trade Approved");
+            String givingNames = fantasyPlayerRepository.findAllById(givingSeqs).stream().map(FantasyPlayer::getName).collect(Collectors.joining(", "));
+            String receivingNames = fantasyPlayerRepository.findAllById(receivingSeqs).stream().map(FantasyPlayer::getName).collect(Collectors.joining(", "));
+            logAction(tx.getFantasyGameSeq(), tx.getRequesterId(), null, RoasterLog.LogActionType.TRADE_SUCCESS, "Trade Approved (Swapped " + givingNames + " <-> " + receivingNames + ")");
 
         } else if ("REJECT".equalsIgnoreCase(decision)) {
             // Revert Giving status

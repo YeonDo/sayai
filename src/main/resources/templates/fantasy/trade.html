@@ -5,21 +5,377 @@
 <head>
     <title>Fantasy League - Trade Room</title>
     <link rel="stylesheet" th:href="@{/css/fantasy.css}">
+    <style>
+        .tab-container {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+        .tab-button {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #666;
+        }
+        .tab-button.active {
+            color: var(--kbo-blue);
+            border-bottom: 2px solid var(--kbo-blue);
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .player-card-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .trade-col {
+            flex: 1;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 0 10px;
+        }
+        .btn-action {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+        }
+        .btn-waiver { background-color: #dc3545; }
+        .btn-fa { background-color: #28a745; }
+        .btn-trade { background-color: #007bff; }
+        .btn-disabled { background-color: #ccc; cursor: not-allowed; }
+    </style>
 </head>
 <body>
 <div layout:fragment="content">
     <div class="container">
-        <div class="fantasy-header">
+        <header class="fantasy-header">
             <h1>Trade Room</h1>
-        </div>
+            <select id="gameSelector" class="form-control" style="width: 250px; padding: 5px;">
+                <option value="">Loading Games...</option>
+            </select>
+        </header>
 
         <div th:replace="fragments/fantasy-nav :: nav(active='trade')"></div>
 
-        <div class="fantasy-card" style="text-align: center; padding: 50px;">
-            <h2>Coming Soon</h2>
-            <p>Trading functionality is currently under development.</p>
+        <div class="tab-container">
+            <button class="tab-button active" onclick="openTab('waiver')">Waiver (Release)</button>
+            <button class="tab-button" onclick="openTab('fa')">Free Agents (Sign)</button>
+            <button class="tab-button" onclick="openTab('trade')">Trade (Exchange)</button>
         </div>
+
+        <!-- WAIVER TAB -->
+        <div id="waiver" class="tab-content active">
+            <div class="fantasy-card">
+                <h3>My Team (Release Player)</h3>
+                <div id="waiverList">Loading...</div>
+            </div>
+        </div>
+
+        <!-- FA TAB -->
+        <div id="fa" class="tab-content">
+            <div class="fantasy-card">
+                <h3>Available Free Agents</h3>
+                <div id="faList">Loading...</div>
+            </div>
+        </div>
+
+        <!-- TRADE TAB -->
+        <div id="trade" class="tab-content">
+            <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+                <div class="trade-col">
+                    <h4>My Bench</h4>
+                    <div id="myBenchList">Loading...</div>
+                </div>
+                <div style="display:flex; flex-direction:column; justify-content:center; align-items:center;">
+                    <span style="font-size:2rem;">&harr;</span>
+                    <button class="btn-action btn-trade" onclick="proposeTrade()" style="margin-top:10px;">Propose Trade</button>
+                </div>
+                <div class="trade-col">
+                    <h4>Target Team</h4>
+                    <select id="targetParticipantSelector" class="form-control" style="width:100%; margin-bottom:10px;">
+                        <option value="">Select Target...</option>
+                    </select>
+                    <div id="targetBenchList">Select a team first.</div>
+                </div>
+            </div>
+        </div>
+
     </div>
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const currentUserId = 1; // Need logic to get current User ID or Player ID properly
+        // In Admin html we fetch user list. Here we assume we can get it or rely on backend session logic mostly.
+        // But for UI, we need to know "My" ID.
+        // Assuming there's a global variable or endpoint.
+        // For now hardcoded 1 or fetch from session endpoint if available.
+        // Let's assume hardcoded 1 for demo purposes as per previous context.
+
+        let currentGameSeq = null;
+
+        $(document).ready(function() {
+            loadMyGames();
+
+            $('#gameSelector').change(function() {
+                currentGameSeq = $(this).val();
+                if(currentGameSeq) loadTabContent();
+            });
+
+            $('#targetParticipantSelector').change(function() {
+                const targetId = $(this).val();
+                if(targetId) loadTargetBench(targetId);
+            });
+        });
+
+        function openTab(tabName) {
+            $('.tab-content').removeClass('active');
+            $('.tab-button').removeClass('active');
+            $('#' + tabName).addClass('active');
+            $(`button[onclick="openTab('${tabName}')"]`).addClass('active');
+            loadTabContent();
+        }
+
+        function loadMyGames() {
+            $.get('/apis/v1/fantasy/my-games?userId=' + currentUserId, function(games) {
+                const select = $('#gameSelector');
+                select.empty();
+                if (games.length === 0) {
+                    select.append('<option value="">No Games</option>');
+                    return;
+                }
+                games.sort((a, b) => b.seq - a.seq);
+                games.forEach(g => {
+                    select.append(`<option value="${g.seq}">${g.title}</option>`);
+                });
+                select.val(games[0].seq);
+                currentGameSeq = games[0].seq;
+                loadTabContent();
+                loadParticipants(); // For trade target selector
+            });
+        }
+
+        function loadTabContent() {
+            if(!currentGameSeq) return;
+            const activeTab = $('.tab-content.active').attr('id');
+
+            if (activeTab === 'waiver') loadWaiverList();
+            if (activeTab === 'fa') loadFAList();
+            if (activeTab === 'trade') loadMyBench();
+        }
+
+        // --- WAIVER ---
+        function loadWaiverList() {
+            $('#waiverList').text('Loading...');
+            $.get(`/apis/v1/fantasy/games/${currentGameSeq}/my-picks`, function(picks) {
+                const container = $('#waiverList');
+                container.empty();
+                if(picks.length === 0) {
+                    container.text('No players.');
+                    return;
+                }
+                picks.forEach(p => {
+                    const isNormal = (!p.pickStatus || p.pickStatus === 'NORMAL');
+                    const btnHtml = isNormal
+                        ? `<button class="btn-action btn-waiver" onclick="requestWaiver(${p.seq})">Release</button>`
+                        : `<span class="status-badge">${p.pickStatus}</span>`;
+
+                    const row = `
+                        <div class="player-card-row">
+                            <div>
+                                <strong>${p.name}</strong> (${p.team}, ${p.position}) <br>
+                                <small>Pos: ${p.assignedPosition || 'Bench'} | Cost: ${p.cost}</small>
+                            </div>
+                            <div>${btnHtml}</div>
+                        </div>
+                    `;
+                    container.append(row);
+                });
+            });
+        }
+
+        function requestWaiver(playerSeq) {
+            if(!confirm("Are you sure you want to release this player? (Admin approval required)")) return;
+            $.ajax({
+                url: '/apis/v1/fantasy/roster/waiver',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ gameSeq: currentGameSeq, fantasyPlayerSeq: playerSeq }),
+                success: function() {
+                    alert('Waiver Requested');
+                    loadWaiverList();
+                },
+                error: function(xhr) {
+                    alert('Error: ' + xhr.responseText);
+                }
+            });
+        }
+
+        // --- FA ---
+        function loadFAList() {
+            $('#faList').text('Loading...');
+            // Reuse available players API
+            $.get(`/apis/v1/fantasy/games/${currentGameSeq}/available-players?sort=cost_desc`, function(players) {
+                const container = $('#faList');
+                container.empty();
+                // Limit display to top 50 for performance
+                const displayPlayers = players.slice(0, 50);
+
+                displayPlayers.forEach(p => {
+                    const row = `
+                        <div class="player-card-row">
+                            <div>
+                                <strong>${p.name}</strong> (${p.team}, ${p.position}) <br>
+                                <small>Cost: ${p.cost}</small>
+                            </div>
+                            <div>
+                                <button class="btn-action btn-fa" onclick="signFA(${p.seq}, ${p.cost})">Sign</button>
+                            </div>
+                        </div>
+                    `;
+                    container.append(row);
+                });
+            });
+        }
+
+        function signFA(playerSeq, cost) {
+            if(!confirm(`Sign this player for cost ${cost}? (+5 penalty if roster full)`)) return;
+            // Uses Draft API
+            $.ajax({
+                url: '/apis/v1/fantasy/draft',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ fantasyGameSeq: currentGameSeq, fantasyPlayerSeq: playerSeq, playerId: currentUserId }),
+                success: function() {
+                    alert('Signed Successfully!');
+                    loadFAList();
+                },
+                error: function(xhr) {
+                    alert('Error: ' + xhr.responseText);
+                }
+            });
+        }
+
+        // --- TRADE ---
+        function loadParticipants() {
+            if(!currentGameSeq) return;
+            $.get(`/apis/v1/fantasy/games/${currentGameSeq}/participants`, function(parts) {
+                const select = $('#targetParticipantSelector');
+                select.empty();
+                select.append('<option value="">Select Target...</option>');
+                parts.forEach(p => {
+                    if (p.playerId != currentUserId) { // Don't trade with self
+                        select.append(`<option value="${p.playerId}">${p.teamName} (${p.userName})</option>`);
+                    }
+                });
+            });
+        }
+
+        function loadMyBench() {
+            $('#myBenchList').text('Loading...');
+            $.get(`/apis/v1/fantasy/games/${currentGameSeq}/my-picks`, function(picks) {
+                const container = $('#myBenchList');
+                container.empty();
+                // Filter Bench
+                const bench = picks.filter(p => p.assignedPosition && p.assignedPosition.includes('BENCH'));
+                if(bench.length === 0) {
+                    container.text('No bench players.');
+                    return;
+                }
+                bench.forEach(p => {
+                    const disabled = (p.pickStatus && p.pickStatus !== 'NORMAL');
+                    const row = `
+                        <div class="player-card-row">
+                            <label>
+                                <input type="checkbox" name="myTradePick" value="${p.seq}" ${disabled ? 'disabled' : ''}>
+                                ${p.name} (${p.team}) - ${p.pickStatus || 'NORMAL'}
+                            </label>
+                        </div>
+                    `;
+                    container.append(row);
+                });
+            });
+        }
+
+        function loadTargetBench(targetId) {
+            $('#targetBenchList').text('Loading...');
+            $.get(`/apis/v1/fantasy/games/${currentGameSeq}/players/${targetId}/picks`, function(picks) {
+                const container = $('#targetBenchList');
+                container.empty();
+                const bench = picks.filter(p => p.assignedPosition && p.assignedPosition.includes('BENCH'));
+                if(bench.length === 0) {
+                    container.text('No bench players.');
+                    return;
+                }
+                bench.forEach(p => {
+                    const disabled = (p.pickStatus && p.pickStatus !== 'NORMAL');
+                    const row = `
+                        <div class="player-card-row">
+                            <label>
+                                <input type="checkbox" name="targetTradePick" value="${p.seq}" ${disabled ? 'disabled' : ''}>
+                                ${p.name} (${p.team}) - ${p.pickStatus || 'NORMAL'}
+                            </label>
+                        </div>
+                    `;
+                    container.append(row);
+                });
+            });
+        }
+
+        function proposeTrade() {
+            const targetId = $('#targetParticipantSelector').val();
+            if(!targetId) { alert("Select a target team."); return; }
+
+            const giving = [];
+            $('input[name="myTradePick"]:checked').each(function() { giving.push($(this).val()); });
+            const receiving = [];
+            $('input[name="targetTradePick"]:checked').each(function() { receiving.push($(this).val()); });
+
+            if(giving.length === 0 || receiving.length === 0) {
+                alert("Select at least one player from each side.");
+                return;
+            }
+            if(giving.length > 2 || receiving.length > 2) {
+                alert("Max 2 players per side.");
+                return;
+            }
+
+            if(!confirm("Propose this trade?")) return;
+
+            $.ajax({
+                url: '/apis/v1/fantasy/roster/trade',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    gameSeq: currentGameSeq,
+                    targetId: targetId,
+                    givingPlayerSeqs: giving,
+                    receivingPlayerSeqs: receiving
+                }),
+                success: function() {
+                    alert('Trade Requested!');
+                    loadMyBench();
+                    loadTargetBench(targetId);
+                },
+                error: function(xhr) {
+                    alert('Error: ' + xhr.responseText);
+                }
+            });
+        }
+        /*]]>*/
+    </script>
 </div>
 </body>
 </html>
