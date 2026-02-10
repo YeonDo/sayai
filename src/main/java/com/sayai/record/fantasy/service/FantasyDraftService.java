@@ -208,13 +208,7 @@ public class FantasyDraftService {
 
         // 4. Save Pick
         // Auto-Assign Position Logic
-        String assignedPos = null;
-        if (isDrafting) {
-            assignedPos = determineInitialPosition(userPicks, targetPlayer);
-        } else {
-            // FA goes to Bench usually, or "BENCH" string
-            assignedPos = "BENCH";
-        }
+        String assignedPos = determineInitialPosition(userPicks, targetPlayer);
 
         DraftPick pick = DraftPick.builder()
                 .fantasyGameSeq(request.getFantasyGameSeq())
@@ -366,7 +360,7 @@ public class FantasyDraftService {
 
         String positionStr = newPlayer.getPosition() != null ? newPlayer.getPosition() : "";
         if (positionStr.trim().isEmpty()) {
-            return null; // Bench
+            return "BENCH";
         }
 
         String[] positions = positionStr.split(",");
@@ -380,10 +374,10 @@ public class FantasyDraftService {
             long rpCount = occupied.stream().filter(p -> p.equals("RP")).count();
             long clCount = occupied.stream().filter(p -> p.equals("CL")).count();
 
-            if (primaryPos.equals("SP")) return spCount < 4 ? "SP" : null;
-            if (primaryPos.equals("RP")) return rpCount < 4 ? "RP" : null;
-            if (primaryPos.equals("CL")) return clCount < 1 ? "CL" : null;
-            return null; // Bench
+            if (primaryPos.equals("SP")) return spCount < 4 ? "SP" : "BENCH";
+            if (primaryPos.equals("RP")) return rpCount < 4 ? "RP" : "BENCH";
+            if (primaryPos.equals("CL")) return clCount < 1 ? "CL" : "BENCH";
+            return "BENCH";
         } else {
             // Batter Logic
             if (!occupied.contains(primaryPos)) {
@@ -394,7 +388,7 @@ public class FantasyDraftService {
                 return "DH";
             }
             // Bench
-            return null;
+            return "BENCH";
         }
     }
 
@@ -451,7 +445,11 @@ public class FantasyDraftService {
             for (RosterUpdateDto.RosterEntry entry : updateDto.getEntries()) {
                 DraftPick pick = pickMap.get(entry.getFantasyPlayerSeq());
                 if (pick != null) {
-                    pick.setAssignedPosition(entry.getAssignedPosition());
+                    String pos = entry.getAssignedPosition();
+                    if (pos != null && pos.startsWith("BENCH")) {
+                        pos = "BENCH";
+                    }
+                    pick.setAssignedPosition(pos);
                 }
             }
         }
