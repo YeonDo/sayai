@@ -173,7 +173,8 @@ public class FantasyDraftService {
 
         // Roster Size Check for FA
         if (isFA) {
-            int limit = (game.getRuleType() == FantasyGame.RuleType.RULE_2) ? 21 : 20;
+            // Max 21 allowed for FA
+            int limit = 21;
             if (userPicks.size() >= limit) {
                 throw new IllegalStateException("Roster full (Max " + limit + ")");
             }
@@ -183,8 +184,15 @@ public class FantasyDraftService {
         if (game.getSalaryCap() != null && game.getSalaryCap() > 0) {
             int currentCost = currentTeam.stream().mapToInt(p -> p.getCost() == null ? 0 : p.getCost()).sum();
             int newPlayerCost = targetPlayer.getCost() == null ? 0 : targetPlayer.getCost();
-            if (currentCost + newPlayerCost > game.getSalaryCap()) {
-                throw new IllegalStateException("샐캡 초과: " + (currentCost + newPlayerCost) + " / " + game.getSalaryCap());
+
+            // Penalty check for 21st player
+            int penalty = 0;
+            if (isFA && userPicks.size() == 20) {
+                penalty = 5;
+            }
+
+            if (currentCost + newPlayerCost + penalty > game.getSalaryCap()) {
+                throw new IllegalStateException("샐캡 초과: " + (currentCost + newPlayerCost + penalty) + " / " + game.getSalaryCap());
             }
         }
 
@@ -193,41 +201,9 @@ public class FantasyDraftService {
                 request.getFantasyGameSeq(), request.getPlayerId())
                 .orElse(null);
 
-        // Validate draft rules (Composition, etc)
-        // For FA, we might want to skip specific draft rules like "First Pick Rule" or "Team Restriction" enforcement strictly?
-        // Or enforce them? Usually FA allows filling gaps.
-        // Rule2Validator enforces composition.
-        // If FA adds 21st player, canFit might fail if it expects 20.
-        // Rule2Validator.getTotalPlayerCount returns 20.
-        // If user has 20 players and adds 21st, validate() will likely fail if validator assumes max size.
-        // But validate() mainly checks "canFit".
-        // Rule2Validator.canFit uses backtrack with required slots + 2 bench.
-        // If we have 21 players, it might fail.
-        // Let's assume validation applies. If it fails for FA (21st player), we might need to bypass it or adjust validator.
-        // User requirement: "Rule2에서 영입으로 인한 로스터 사이즈는 21이 최대야"
-        // If I simply call validate, it checks composition.
-        // Let's rely on standard validation. If it fails due to size, we might need to adjust validator later.
-        // However, draftValidator.validate() doesn't check size limit directly, it checks composition.
-        // If 21st player is Bench, and Rule2 allows infinite bench?
-        // Rule2Validator: slots.put("BENCH", 2);
-        // It enforces EXACTLY 2 bench slots in total 20 players.
-        // So adding 3rd bench player will fail.
-        // We might need to relax validation for FA or handle it.
-        // For now, I will invoke validation only if Drafting. For FA, I enforce Salary Cap and Size (21).
-        // Is composition enforcement required for FA? Usually yes.
-        // But if Rule 2 strictly defines 20 slots, 21st player must be "Reserve" or "Extra Bench".
-        // Let's skip heavy draft validation for FA to allow the flexibility, as FA is usually less strict on "Team Restriction" etc.
-        // Or at least composition check might fail.
-
+        // Validate draft rules (Composition, etc) ONLY for DRAFTING
         if (isDrafting) {
              draftValidator.validate(game, targetPlayer, currentTeam, participant);
-        } else {
-             // For FA, maybe just basic checks? Or check foreigner limit?
-             // Foreigner limit is usually strict.
-             // Let's do a basic check manually or assume admin/user knows.
-             // Actually, Rule1Validator checks Foreigner limit.
-             // We should probably check Foreigner limit for FA too.
-             // But avoiding composition crash.
         }
 
         // 4. Save Pick
@@ -314,18 +290,7 @@ public class FantasyDraftService {
 
             messagingTemplate.convertAndSend("/topic/draft/" + request.getFantasyGameSeq(), event);
         } else {
-            // FA Event? Maybe just broadcast generic pick or special event
-             DraftEventDto event = DraftEventDto.builder()
-                    .type("FA_PICK")
-                    .fantasyGameSeq(request.getFantasyGameSeq())
-                    .playerId(request.getPlayerId())
-                    .fantasyPlayerSeq(request.getFantasyPlayerSeq())
-                    .playerName(targetPlayer.getName())
-                    .playerTeam(targetPlayer.getTeam())
-                    .pickNumber(pickNumber)
-                    .message("Player " + request.getPlayerId() + " signed " + targetPlayer.getName() + " (FA)")
-                    .build();
-             messagingTemplate.convertAndSend("/topic/draft/" + request.getFantasyGameSeq(), event);
+            // FA Event: Do not broadcast WebSocket message as requested
         }
     }
 
