@@ -1,7 +1,6 @@
 package com.sayai.record.fantasy.controller;
 
 import com.sayai.record.auth.entity.Member;
-import com.sayai.record.fantasy.dto.FantasyPlayerDto;
 import com.sayai.record.fantasy.service.FantasyRosterService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -44,21 +43,6 @@ public class FantasyRosterController {
         return ResponseEntity.ok("Trade requested");
     }
 
-    @GetMapping("/fa")
-    public ResponseEntity<List<FantasyPlayerDto>> getFAList(@RequestParam(name = "gameSeq") Long gameSeq) {
-        return ResponseEntity.ok(fantasyRosterService.getFAList(gameSeq));
-    }
-
-    @PostMapping("/fa")
-    public ResponseEntity<String> signFA(@AuthenticationPrincipal Member member,
-                                         @RequestBody SignFARequest request) {
-        if (member == null) {
-            return ResponseEntity.status(401).body("Unauthorized");
-        }
-        fantasyRosterService.signFA(request.getGameSeq(), member.getPlayerId(), request.getFantasyPlayerSeq());
-        return ResponseEntity.ok("FA Signed");
-    }
-
     @Data
     public static class WaiverRequest {
         private Long gameSeq;
@@ -71,11 +55,5 @@ public class FantasyRosterController {
         private Long targetId;
         private List<Long> givingPlayerSeqs;
         private List<Long> receivingPlayerSeqs;
-    }
-
-    @Data
-    public static class SignFARequest {
-        private Long gameSeq;
-        private Long fantasyPlayerSeq;
     }
 }

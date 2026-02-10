@@ -41,6 +41,7 @@ public class RoasterLog {
     }
 
     public enum LogActionType {
+        DRAFT_PICK,
         WAIVER_RELEASE,
         WAIVER_CLAIM,
         WAIVER_FA,

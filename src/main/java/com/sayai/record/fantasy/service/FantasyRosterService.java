@@ -1,6 +1,5 @@
 package com.sayai.record.fantasy.service;
 
-import com.sayai.record.fantasy.dto.FantasyPlayerDto;
 import com.sayai.record.fantasy.entity.*;
 import com.sayai.record.fantasy.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -254,83 +253,6 @@ public class FantasyRosterService {
         }
 
         roasterTransactionRepository.save(tx);
-    }
-
-    // --- FA Logic ---
-
-    @Transactional(readOnly = true)
-    public List<FantasyPlayerDto> getFAList(Long gameSeq) {
-        List<DraftPick> picks = draftPickRepository.findByFantasyGameSeq(gameSeq);
-        java.util.Set<Long> pickedSeqs = picks.stream()
-                .map(DraftPick::getFantasyPlayerSeq)
-                .collect(Collectors.toSet());
-
-        List<FantasyPlayer> available;
-        if (pickedSeqs.isEmpty()) {
-            available = fantasyPlayerRepository.findAll();
-        } else {
-            available = fantasyPlayerRepository.findBySeqNotIn(pickedSeqs);
-        }
-
-        return available.stream()
-                .map(FantasyPlayerDto::from)
-                .collect(Collectors.toList());
-    }
-
-    @Transactional
-    public void signFA(Long gameSeq, Long participantId, Long fantasyPlayerSeq) {
-        FantasyGame game = fantasyGameRepository.findById(gameSeq)
-                .orElseThrow(() -> new IllegalArgumentException("Game not found"));
-
-        if (game.getStatus() != FantasyGame.GameStatus.ONGOING) {
-             throw new IllegalStateException("Game is not ongoing");
-        }
-
-        boolean exists = draftPickRepository.existsByFantasyGameSeqAndFantasyPlayerSeq(gameSeq, fantasyPlayerSeq);
-        if (exists) {
-            throw new IllegalStateException("Player already picked");
-        }
-
-        FantasyPlayer player = fantasyPlayerRepository.findById(fantasyPlayerSeq)
-                .orElseThrow(() -> new IllegalArgumentException("Player not found"));
-
-        List<DraftPick> myPicks = draftPickRepository.findByFantasyGameSeqAndPlayerId(gameSeq, participantId);
-
-        // Check Roster Size
-        int limit = (game.getRuleType() == FantasyGame.RuleType.RULE_2) ? 21 : 20;
-        if (myPicks.size() >= limit) {
-             throw new IllegalStateException("Roster full (Max " + limit + ")");
-        }
-
-        // Check Cost
-        if (game.getSalaryCap() != null && game.getSalaryCap() > 0) {
-            int currentCost = 0;
-            List<Long> myPlayerSeqs = myPicks.stream().map(DraftPick::getFantasyPlayerSeq).collect(Collectors.toList());
-            if (!myPlayerSeqs.isEmpty()) {
-                currentCost = fantasyPlayerRepository.findAllById(myPlayerSeqs).stream()
-                        .mapToInt(p -> p.getCost() == null ? 0 : p.getCost())
-                        .sum();
-            }
-            int newCost = player.getCost() == null ? 0 : player.getCost();
-            if (currentCost + newCost > game.getSalaryCap()) {
-                throw new IllegalStateException("Salary Cap exceeded");
-            }
-        }
-
-        long count = draftPickRepository.countByFantasyGameSeq(gameSeq);
-
-        DraftPick pick = DraftPick.builder()
-                .fantasyGameSeq(gameSeq)
-                .playerId(participantId)
-                .fantasyPlayerSeq(fantasyPlayerSeq)
-                .pickNumber((int) count + 1)
-                .assignedPosition("BENCH")
-                .pickStatus(DraftPick.PickStatus.NORMAL)
-                .build();
-
-        draftPickRepository.save(pick);
-
-        logAction(gameSeq, participantId, fantasyPlayerSeq, RoasterLog.LogActionType.FA_ADD, "Signed FA");
     }
 
     private void logAction(Long gameSeq, Long participantId, Long playerSeq, RoasterLog.LogActionType type, String details) {
