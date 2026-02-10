@@ -1,5 +1,6 @@
 package com.sayai.record.fantasy.dto;
 
+import com.sayai.record.fantasy.entity.DraftPick;
 import com.sayai.record.fantasy.entity.FantasyPlayer;
 import lombok.Builder;
 import lombok.Getter;
@@ -17,6 +18,10 @@ public class FantasyPlayerDto {
     private String foreignerType;
     @Setter
     private String assignedPosition;
+    @Setter
+    private Long ownerId; // Owner (Participant ID)
+    @Setter
+    private String pickStatus; // NORMAL, WAIVER_REQ, TRADE_PENDING
 
     public static FantasyPlayerDto from(FantasyPlayer entity) {
         return FantasyPlayerDto.builder()

@@ -346,6 +346,8 @@ public class FantasyDraftService {
                     DraftPick pick = pickMap.get(p.getSeq());
                     if (pick != null) {
                         dto.setAssignedPosition(pick.getAssignedPosition());
+                        dto.setOwnerId(pick.getPlayerId());
+                        dto.setPickStatus(pick.getPickStatus() != null ? pick.getPickStatus().name() : "NORMAL");
                     }
                     return dto;
                 })
