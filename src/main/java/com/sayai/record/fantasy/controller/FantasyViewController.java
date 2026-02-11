@@ -22,11 +22,9 @@ public class FantasyViewController {
     private final MemberRepository memberRepository;
 
     @ModelAttribute
-    public void addAttributes(Model model, @AuthenticationPrincipal UserDetails userDetails) {
-        if (userDetails != null) {
-            Long playerId = memberRepository.findByUserId(userDetails.getUsername())
-                    .map(Member::getPlayerId)
-                    .orElse(null);
+    public void addAttributes(Model model, @AuthenticationPrincipal Member member) {
+        if (member != null) {
+            Long playerId = member.getPlayerId();
 
             if (playerId != null) {
                 model.addAttribute("currentUserId", playerId);

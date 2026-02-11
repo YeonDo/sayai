@@ -3,7 +3,7 @@ package com.sayai.record.auth.jwt;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
+import com.sayai.record.auth.entity.Member;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import jakarta.servlet.FilterChain;
@@ -13,6 +13,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
 
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -27,15 +28,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String userId = jwtTokenProvider.getUserId(token);
             String role = jwtTokenProvider.getRole(token);
             Long playerId = jwtTokenProvider.getPlayerId(token);
+            String name = jwtTokenProvider.getName(token);
 
-            UserDetails userDetails = new CustomUserDetails(
-                    userId,
-                    "",
-                    Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role)),
-                    playerId
-            );
+            Member member = Member.builder()
+                    .userId(userId)
+                    .playerId(playerId)
+                    .role(Member.Role.valueOf(role))
+                    .name(name != null ? name : "Unknown")
+                    .build();
 
-            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
+            List<SimpleGrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role));
+            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(member, "", authorities);
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }

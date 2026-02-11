@@ -39,11 +39,13 @@ public class FantasyDraftController {
     @PostMapping("/games/{gameSeq}/join")
     public ResponseEntity<String> joinGame(@PathVariable(name = "gameSeq") Long gameSeq,
                                            @RequestBody JoinRequest request,
-                                           @AuthenticationPrincipal UserDetails userDetails) {
+                                           @AuthenticationPrincipal Member member) {
+        if (member == null) {
+            return ResponseEntity.status(401).build();
+        }
         try {
-            Long playerId = getPlayerIdFromUserDetails(userDetails);
             // Ignore request.playerId if passed, use authenticated ID
-            fantasyDraftService.joinGame(gameSeq, playerId, request.getPreferredTeam(), request.getTeamName());
+            fantasyDraftService.joinGame(gameSeq, member.getPlayerId(), request.getPreferredTeam(), request.getTeamName());
             return ResponseEntity.ok("Joined successfully");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -52,12 +54,14 @@ public class FantasyDraftController {
 
     @PostMapping("/draft")
     public ResponseEntity<String> draftPlayer(@RequestBody DraftRequest request,
-                                              @AuthenticationPrincipal UserDetails userDetails) {
+                                              @AuthenticationPrincipal Member member) {
+        if (member == null) {
+            return ResponseEntity.status(401).build();
+        }
         try {
-            Long playerId = getPlayerIdFromUserDetails(userDetails);
-            if (!playerId.equals(request.getPlayerId())) {
+            if (!member.getPlayerId().equals(request.getPlayerId())) {
                  // Or just override
-                 request.setPlayerId(playerId);
+                 request.setPlayerId(member.getPlayerId());
             }
             fantasyDraftService.draftPlayer(request);
             return ResponseEntity.ok("Draft successful");
@@ -78,31 +82,26 @@ public class FantasyDraftController {
     @GetMapping("/games/{gameSeq}/my-picks")
     public ResponseEntity<List<FantasyPlayerDto>> getMyPicks(
             @PathVariable(name = "gameSeq") Long gameSeq,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        Long playerId = getPlayerIdFromUserDetails(userDetails);
-        return ResponseEntity.ok(fantasyDraftService.getPickedPlayers(gameSeq, playerId));
+            @AuthenticationPrincipal Member member) {
+        if (member == null) {
+            return ResponseEntity.status(401).build();
+        }
+        return ResponseEntity.ok(fantasyDraftService.getPickedPlayers(gameSeq, member.getPlayerId()));
     }
 
     @PostMapping("/games/{gameSeq}/my-team/save")
     public ResponseEntity<String> saveRoster(@PathVariable(name = "gameSeq") Long gameSeq,
                                              @RequestBody RosterUpdateDto request,
-                                             @AuthenticationPrincipal UserDetails userDetails) {
+                                             @AuthenticationPrincipal Member member) {
+        if (member == null) {
+            return ResponseEntity.status(401).build();
+        }
         try {
-            Long playerId = getPlayerIdFromUserDetails(userDetails);
-            fantasyDraftService.updateRoster(gameSeq, playerId, request);
+            fantasyDraftService.updateRoster(gameSeq, member.getPlayerId(), request);
             return ResponseEntity.ok("Roster saved");
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Save failed: " + e.getMessage());
         }
-    }
-
-    private Long getPlayerIdFromUserDetails(UserDetails userDetails) {
-        if (userDetails == null) {
-            throw new IllegalArgumentException("Authentication required");
-        }
-        return memberRepository.findByUserId(userDetails.getUsername())
-                .map(Member::getPlayerId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
     }
 
     @Getter

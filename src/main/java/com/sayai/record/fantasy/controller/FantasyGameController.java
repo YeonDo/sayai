@@ -29,15 +29,19 @@ public class FantasyGameController {
     private final FantasyParticipantRepository fantasyParticipantRepository;
 
     @GetMapping("/games")
-    public ResponseEntity<List<FantasyGameDto>> getGames(@AuthenticationPrincipal UserDetails userDetails) {
-        Long playerId = getPlayerIdFromUserDetails(userDetails);
-        return ResponseEntity.ok(fantasyGameService.getDashboardGames(playerId));
+    public ResponseEntity<List<FantasyGameDto>> getGames(@AuthenticationPrincipal Member member) {
+        if (member == null) {
+            return ResponseEntity.status(401).build();
+        }
+        return ResponseEntity.ok(fantasyGameService.getDashboardGames(member.getPlayerId()));
     }
 
     @GetMapping("/my-games")
-    public ResponseEntity<List<FantasyGameDto>> getMyGames(@AuthenticationPrincipal UserDetails userDetails) {
-        Long playerId = getPlayerIdFromUserDetails(userDetails);
-        return ResponseEntity.ok(fantasyGameService.getMyGames(playerId));
+    public ResponseEntity<List<FantasyGameDto>> getMyGames(@AuthenticationPrincipal Member member) {
+        if (member == null) {
+            return ResponseEntity.status(401).build();
+        }
+        return ResponseEntity.ok(fantasyGameService.getMyGames(member.getPlayerId()));
     }
 
     @GetMapping("/games/{gameSeq}/picks")
@@ -52,9 +56,11 @@ public class FantasyGameController {
 
     @PostMapping("/games/{gameSeq}/start")
     public ResponseEntity<String> startGame(@PathVariable(name = "gameSeq") Long gameSeq,
-                                            @AuthenticationPrincipal UserDetails userDetails) {
-        boolean isAdmin = userDetails.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+                                            @AuthenticationPrincipal Member member) {
+        if (member == null) {
+            return ResponseEntity.status(401).build();
+        }
+        boolean isAdmin = member.getRole() == Member.Role.ADMIN;
 
         if (!isAdmin) {
             return ResponseEntity.status(403).body("Only Admin can start the draft");
@@ -83,14 +89,6 @@ public class FantasyGameController {
         return ResponseEntity.ok(dtos);
     }
 
-    private Long getPlayerIdFromUserDetails(UserDetails userDetails) {
-        if (userDetails == null) {
-            throw new IllegalArgumentException("Authentication required");
-        }
-        return memberRepository.findByUserId(userDetails.getUsername())
-                .map(Member::getPlayerId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-    }
 
     @Data
     public static class ParticipantDto {

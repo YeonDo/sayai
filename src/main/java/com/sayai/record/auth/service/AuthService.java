@@ -25,7 +25,7 @@ public class AuthService {
             throw new IllegalArgumentException("Invalid userId or password");
         }
 
-        return jwtTokenProvider.createToken(member.getPlayerId(), member.getUserId(), member.getRole());
+        return jwtTokenProvider.createToken(member.getPlayerId(), member.getUserId(), member.getRole(), member.getName());
     }
 
     @Transactional(readOnly = true)

@@ -21,34 +21,29 @@ public class FantasyRosterController {
     private final MemberRepository memberRepository;
 
     @PostMapping("/waiver")
-    public ResponseEntity<String> requestWaiver(@AuthenticationPrincipal UserDetails userDetails,
+    public ResponseEntity<String> requestWaiver(@AuthenticationPrincipal Member member,
                                                 @RequestBody WaiverRequest request) {
-        Long playerId = getPlayerIdFromUserDetails(userDetails);
-        fantasyRosterService.requestWaiver(request.getGameSeq(), playerId, request.getFantasyPlayerSeq());
+        if (member == null) {
+            return ResponseEntity.status(401).build();
+        }
+        fantasyRosterService.requestWaiver(request.getGameSeq(), member.getPlayerId(), request.getFantasyPlayerSeq());
         return ResponseEntity.ok("Waiver requested");
     }
 
     @PostMapping("/trade")
-    public ResponseEntity<String> requestTrade(@AuthenticationPrincipal UserDetails userDetails,
+    public ResponseEntity<String> requestTrade(@AuthenticationPrincipal Member member,
                                                @RequestBody TradeRequest request) {
-        Long playerId = getPlayerIdFromUserDetails(userDetails);
+        if (member == null) {
+            return ResponseEntity.status(401).build();
+        }
         fantasyRosterService.requestTrade(
                 request.getGameSeq(),
-                playerId,
+                member.getPlayerId(),
                 request.getTargetId(),
                 request.getGivingPlayerSeqs(),
                 request.getReceivingPlayerSeqs()
         );
         return ResponseEntity.ok("Trade requested");
-    }
-
-    private Long getPlayerIdFromUserDetails(UserDetails userDetails) {
-        if (userDetails == null) {
-            throw new IllegalArgumentException("Authentication required");
-        }
-        return memberRepository.findByUserId(userDetails.getUsername())
-                .map(Member::getPlayerId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
     }
 
     @Data
