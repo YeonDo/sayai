@@ -64,11 +64,11 @@ class JwtAuthenticationFilterTest {
 
         assertNotNull(SecurityContextHolder.getContext().getAuthentication());
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        assertTrue(principal instanceof com.sayai.record.auth.entity.Member);
-        com.sayai.record.auth.entity.Member member = (com.sayai.record.auth.entity.Member) principal;
-        assertEquals(userId, member.getUserId());
-        assertEquals(playerId, member.getPlayerId());
-        assertEquals(name, member.getName());
+        assertTrue(principal instanceof CustomUserDetails);
+        CustomUserDetails userDetails = (CustomUserDetails) principal;
+        assertEquals(userId, userDetails.getUsername());
+        assertEquals(playerId, userDetails.getPlayerId());
+        assertEquals(name, userDetails.getName());
     }
 
     @Test

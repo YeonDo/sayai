@@ -3,7 +3,7 @@ package com.sayai.record.auth.jwt;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import com.sayai.record.auth.entity.Member;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import jakarta.servlet.FilterChain;
@@ -30,15 +30,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Long playerId = jwtTokenProvider.getPlayerId(token);
             String name = jwtTokenProvider.getName(token);
 
-            Member member = Member.builder()
-                    .userId(userId)
-                    .playerId(playerId)
-                    .role(Member.Role.valueOf(role))
-                    .name(name != null ? name : "Unknown")
-                    .build();
+            UserDetails userDetails = new CustomUserDetails(
+                    userId,
+                    "",
+                    Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role)),
+                    playerId,
+                    name != null ? name : "Unknown"
+            );
 
-            List<SimpleGrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role));
-            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(member, "", authorities);
+            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }

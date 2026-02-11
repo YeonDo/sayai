@@ -1,6 +1,6 @@
 package com.sayai.record.fantasy.controller;
 
-import com.sayai.record.auth.entity.Member;
+import com.sayai.record.auth.jwt.CustomUserDetails;
 import com.sayai.record.auth.repository.MemberRepository;
 import com.sayai.record.fantasy.dto.DraftRequest;
 import com.sayai.record.fantasy.dto.FantasyPlayerDto;
@@ -12,7 +12,6 @@ import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -39,13 +38,13 @@ public class FantasyDraftController {
     @PostMapping("/games/{gameSeq}/join")
     public ResponseEntity<String> joinGame(@PathVariable(name = "gameSeq") Long gameSeq,
                                            @RequestBody JoinRequest request,
-                                           @AuthenticationPrincipal Member member) {
-        if (member == null) {
+                                           @AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
         try {
             // Ignore request.playerId if passed, use authenticated ID
-            fantasyDraftService.joinGame(gameSeq, member.getPlayerId(), request.getPreferredTeam(), request.getTeamName());
+            fantasyDraftService.joinGame(gameSeq, userDetails.getPlayerId(), request.getPreferredTeam(), request.getTeamName());
             return ResponseEntity.ok("Joined successfully");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -54,14 +53,14 @@ public class FantasyDraftController {
 
     @PostMapping("/draft")
     public ResponseEntity<String> draftPlayer(@RequestBody DraftRequest request,
-                                              @AuthenticationPrincipal Member member) {
-        if (member == null) {
+                                              @AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
         try {
-            if (!member.getPlayerId().equals(request.getPlayerId())) {
+            if (!userDetails.getPlayerId().equals(request.getPlayerId())) {
                  // Or just override
-                 request.setPlayerId(member.getPlayerId());
+                 request.setPlayerId(userDetails.getPlayerId());
             }
             fantasyDraftService.draftPlayer(request);
             return ResponseEntity.ok("Draft successful");
@@ -82,22 +81,22 @@ public class FantasyDraftController {
     @GetMapping("/games/{gameSeq}/my-picks")
     public ResponseEntity<List<FantasyPlayerDto>> getMyPicks(
             @PathVariable(name = "gameSeq") Long gameSeq,
-            @AuthenticationPrincipal Member member) {
-        if (member == null) {
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
-        return ResponseEntity.ok(fantasyDraftService.getPickedPlayers(gameSeq, member.getPlayerId()));
+        return ResponseEntity.ok(fantasyDraftService.getPickedPlayers(gameSeq, userDetails.getPlayerId()));
     }
 
     @PostMapping("/games/{gameSeq}/my-team/save")
     public ResponseEntity<String> saveRoster(@PathVariable(name = "gameSeq") Long gameSeq,
                                              @RequestBody RosterUpdateDto request,
-                                             @AuthenticationPrincipal Member member) {
-        if (member == null) {
+                                             @AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
         try {
-            fantasyDraftService.updateRoster(gameSeq, member.getPlayerId(), request);
+            fantasyDraftService.updateRoster(gameSeq, userDetails.getPlayerId(), request);
             return ResponseEntity.ok("Roster saved");
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Save failed: " + e.getMessage());

@@ -1,6 +1,6 @@
 package com.sayai.record.auth.controller;
 
-import com.sayai.record.auth.entity.Member;
+import com.sayai.record.auth.jwt.CustomUserDetails;
 import com.sayai.record.auth.service.AuthService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,14 +25,14 @@ class AuthControllerPasswordTest {
 
     @Test
     void changePassword_shouldCallServiceAndReturnOk() {
-        Member member = mock(Member.class);
-        when(member.getPlayerId()).thenReturn(100L);
+        CustomUserDetails userDetails = mock(CustomUserDetails.class);
+        when(userDetails.getPlayerId()).thenReturn(100L);
 
         AuthController.ChangePasswordRequest request = new AuthController.ChangePasswordRequest();
         request.setCurrentPassword("oldPass");
         request.setNewPassword("newPass");
 
-        ResponseEntity<String> response = authController.changePassword(member, request);
+        ResponseEntity<String> response = authController.changePassword(userDetails, request);
 
         verify(authService).changePassword(100L, "oldPass", "newPass");
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();

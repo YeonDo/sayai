@@ -1,13 +1,12 @@
 package com.sayai.record.fantasy.controller;
 
-import com.sayai.record.auth.entity.Member;
+import com.sayai.record.auth.jwt.CustomUserDetails;
 import com.sayai.record.auth.repository.MemberRepository;
 import com.sayai.record.fantasy.service.FantasyRosterService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,24 +20,24 @@ public class FantasyRosterController {
     private final MemberRepository memberRepository;
 
     @PostMapping("/waiver")
-    public ResponseEntity<String> requestWaiver(@AuthenticationPrincipal Member member,
+    public ResponseEntity<String> requestWaiver(@AuthenticationPrincipal CustomUserDetails userDetails,
                                                 @RequestBody WaiverRequest request) {
-        if (member == null) {
+        if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
-        fantasyRosterService.requestWaiver(request.getGameSeq(), member.getPlayerId(), request.getFantasyPlayerSeq());
+        fantasyRosterService.requestWaiver(request.getGameSeq(), userDetails.getPlayerId(), request.getFantasyPlayerSeq());
         return ResponseEntity.ok("Waiver requested");
     }
 
     @PostMapping("/trade")
-    public ResponseEntity<String> requestTrade(@AuthenticationPrincipal Member member,
+    public ResponseEntity<String> requestTrade(@AuthenticationPrincipal CustomUserDetails userDetails,
                                                @RequestBody TradeRequest request) {
-        if (member == null) {
+        if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
         fantasyRosterService.requestTrade(
                 request.getGameSeq(),
-                member.getPlayerId(),
+                userDetails.getPlayerId(),
                 request.getTargetId(),
                 request.getGivingPlayerSeqs(),
                 request.getReceivingPlayerSeqs()

@@ -1,6 +1,6 @@
 package com.sayai.record.auth.controller;
 
-import com.sayai.record.auth.entity.Member;
+import com.sayai.record.auth.jwt.CustomUserDetails;
 import com.sayai.record.auth.service.AuthService;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -65,13 +65,13 @@ public class AuthController {
 
     @PostMapping("/password")
     public ResponseEntity<String> changePassword(
-            @AuthenticationPrincipal Member member,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody ChangePasswordRequest request) {
-        if (member == null) {
+        if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
         try {
-            authService.changePassword(member.getPlayerId(), request.getCurrentPassword(), request.getNewPassword());
+            authService.changePassword(userDetails.getPlayerId(), request.getCurrentPassword(), request.getNewPassword());
             return ResponseEntity.ok("Password changed successfully");
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -79,11 +79,11 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<UserInfo> getMe(@AuthenticationPrincipal Member member) {
-        if (member == null) {
+    public ResponseEntity<UserInfo> getMe(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
-        return ResponseEntity.ok(new UserInfo(member.getPlayerId(), member.getUserId(), member.getName()));
+        return ResponseEntity.ok(new UserInfo(userDetails.getPlayerId(), userDetails.getUsername(), userDetails.getName()));
     }
 
     @Data

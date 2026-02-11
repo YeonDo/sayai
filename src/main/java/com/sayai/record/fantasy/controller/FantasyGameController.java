@@ -1,6 +1,7 @@
 package com.sayai.record.fantasy.controller;
 
 import com.sayai.record.auth.entity.Member;
+import com.sayai.record.auth.jwt.CustomUserDetails;
 import com.sayai.record.auth.repository.MemberRepository;
 import com.sayai.record.fantasy.dto.DraftLogDto;
 import com.sayai.record.fantasy.dto.FantasyGameDetailDto;
@@ -12,7 +13,7 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,19 +30,19 @@ public class FantasyGameController {
     private final FantasyParticipantRepository fantasyParticipantRepository;
 
     @GetMapping("/games")
-    public ResponseEntity<List<FantasyGameDto>> getGames(@AuthenticationPrincipal Member member) {
-        if (member == null) {
+    public ResponseEntity<List<FantasyGameDto>> getGames(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
-        return ResponseEntity.ok(fantasyGameService.getDashboardGames(member.getPlayerId()));
+        return ResponseEntity.ok(fantasyGameService.getDashboardGames(userDetails.getPlayerId()));
     }
 
     @GetMapping("/my-games")
-    public ResponseEntity<List<FantasyGameDto>> getMyGames(@AuthenticationPrincipal Member member) {
-        if (member == null) {
+    public ResponseEntity<List<FantasyGameDto>> getMyGames(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
-        return ResponseEntity.ok(fantasyGameService.getMyGames(member.getPlayerId()));
+        return ResponseEntity.ok(fantasyGameService.getMyGames(userDetails.getPlayerId()));
     }
 
     @GetMapping("/games/{gameSeq}/picks")
@@ -56,11 +57,11 @@ public class FantasyGameController {
 
     @PostMapping("/games/{gameSeq}/start")
     public ResponseEntity<String> startGame(@PathVariable(name = "gameSeq") Long gameSeq,
-                                            @AuthenticationPrincipal Member member) {
-        if (member == null) {
+                                            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
-        boolean isAdmin = member.getRole() == Member.Role.ADMIN;
+        boolean isAdmin = userDetails.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
 
         if (!isAdmin) {
             return ResponseEntity.status(403).body("Only Admin can start the draft");
