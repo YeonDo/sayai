@@ -90,10 +90,13 @@
                 logs.forEach(log => {
                     let typeClass = '';
                     switch(log.actionType) {
-                        case 'DRAFT_PICK': typeClass = 'status-badge status-DRAFTING'; break;
+                        case 'DRAFT_PICK':
+                        case 'WAIVER_CLAIM':
+                        case 'FA_ADD': typeClass = 'status-badge status-DRAFTING'; break;
                         case 'TRADE_SUCCESS': typeClass = 'status-badge status-ONGOING'; break;
-                        case 'FA_ADD': typeClass = 'status-badge status-FINISHED'; break;
                         case 'WAIVER_RELEASE': typeClass = 'status-badge status-WAITING'; break;
+                        case 'WAIVER_FA' : typeClass = 'status-badge status-FINISHED'; break;
+                        case 'TRADE_REJECT' : typeClass = 'status-badge status-REJECT'; break;
                         default: typeClass = 'status-badge status-NORMAL';
                     }
 

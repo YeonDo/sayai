@@ -16,7 +16,7 @@ public class PostController {
     private final PostService postService;
 
     @GetMapping
-    public List<PostDto> getPosts(@RequestParam PostType type) {
+    public List<PostDto> getPosts(@RequestParam(name = "type") PostType type) {
         return postService.getPostsByType(type);
     }
 }

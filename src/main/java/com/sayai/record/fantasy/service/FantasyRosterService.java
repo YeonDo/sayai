@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -88,7 +89,10 @@ public class FantasyRosterService {
             tx.setStatus(RosterTransaction.TransactionStatus.APPROVED);
             tx.setTargetId(targetParticipantId);
 
-            logAction(tx.getFantasyGameSeq(), targetParticipantId, playerSeq, RosterLog.LogActionType.WAIVER_CLAIM, player.getName() + " - Claimed by " + targetParticipantId);
+            FantasyParticipant targetName = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(tx.getFantasyGameSeq(), targetParticipantId).orElseGet(null);
+            String targetTeamName = targetName.getTeamName();
+
+            logAction(tx.getFantasyGameSeq(), targetParticipantId, playerSeq, RosterLog.LogActionType.WAIVER_CLAIM, player.getName() + " - Claimed by " + targetTeamName);
 
         } else if ("FA".equalsIgnoreCase(decision)) {
             // Move to FA (Delete Pick)
@@ -146,7 +150,9 @@ public class FantasyRosterService {
         String givingNames = fantasyPlayerRepository.findAllById(givingPlayerSeqs).stream().map(FantasyPlayer::getName).collect(Collectors.joining(", "));
         String receivingNames = fantasyPlayerRepository.findAllById(receivingPlayerSeqs).stream().map(FantasyPlayer::getName).collect(Collectors.joining(", "));
 
-        logAction(gameSeq, requesterId, null, RosterLog.LogActionType.TRADE_REQ, "Trade Requested with " + targetId + " (Give: " + givingNames + " / Get: " + receivingNames + ")");
+        FantasyParticipant targetName = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(gameSeq, targetId).orElseGet(null);
+
+        logAction(gameSeq, requesterId, null, RosterLog.LogActionType.TRADE_REQ, "Trade Requested with " + targetName.getTeamName() + " (Give: " + givingNames + " / Get: " + receivingNames + ")");
     }
 
     private List<DraftPick> validateTradePlayers(Long gameSeq, Long ownerId, List<Long> playerSeqs) {

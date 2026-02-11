@@ -161,6 +161,9 @@
 .status-WAITING { background-color: #ffc107; color: #333; }
 .status-DRAFTING { background-color: #dc3545; animation: pulse 2s infinite; }
 .status-FINISHED { background-color: #007bff; }
+.status-NORMAL { background-color: #9C27B0; }
+.status-ONGOING { background-color: #28a745; animation: pulse 2s infinite; }
+.status-REJECT {background-color: #333333;}
 
 @keyframes pulse {
     0% { opacity: 1; }
@@ -476,5 +479,4 @@
 .tab-content {
     /* reuse my-team-container styles if possible, or flex */
 }
-.status-NORMAL { background-color: #9C27B0; }
-.status-ONGOING { background-color: #28a745; }
+
