@@ -5,22 +5,6 @@
 <head>
     <title>Fantasy League - My Team</title>
     <link rel="stylesheet" th:href="@{/css/fantasy.css}">
-    <style>
-        .roster-flex-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-        }
-        .roster-card {
-            flex: 1;
-            min-width: 300px;
-        }
-        @media (max-width: 768px) {
-            .roster-flex-container {
-                flex-direction: column;
-            }
-        }
-    </style>
 </head>
 <body>
 <div layout:fragment="content">
@@ -35,56 +19,86 @@
         <div th:replace="fragments/fantasy-nav :: nav(active='my-team')"></div>
 
         <div id="roster-view" class="my-team-container" style="display:none;">
-            <!-- Salary Cap Status (Top Right) -->
-            <div style="display: flex; justify-content: flex-end; margin-bottom: 15px;">
-                <div class="fantasy-card" style="padding: 10px 20px; display: inline-block; margin:0;">
-                    <span id="salaryCapInfo" style="font-weight:bold; font-size: 1.1rem; color: #666;">Salary Cap: Loading...</span>
+            <!-- Field View -->
+            <div class="fantasy-card">
+                <h2 class="card-title">Fielding & Batting</h2>
+                <div class="baseball-field">
+                    <!-- Positions -->
+                    <div class="field-position pos-c" id="slot-C">
+                        <span class="pos-label">C</span>
+                        <span class="player-name">-</span>
+                    </div>
+                    <div class="field-position pos-1b" id="slot-1B">
+                        <span class="pos-label">1B</span>
+                        <span class="player-name">-</span>
+                    </div>
+                    <div class="field-position pos-2b" id="slot-2B">
+                        <span class="pos-label">2B</span>
+                        <span class="player-name">-</span>
+                    </div>
+                    <div class="field-position pos-3b" id="slot-3B">
+                        <span class="pos-label">3B</span>
+                        <span class="player-name">-</span>
+                    </div>
+                    <div class="field-position pos-ss" id="slot-SS">
+                        <span class="pos-label">SS</span>
+                        <span class="player-name">-</span>
+                    </div>
+                    <div class="field-position pos-lf" id="slot-LF">
+                        <span class="pos-label">LF</span>
+                        <span class="player-name">-</span>
+                    </div>
+                    <div class="field-position pos-cf" id="slot-CF">
+                        <span class="pos-label">CF</span>
+                        <span class="player-name">-</span>
+                    </div>
+                    <div class="field-position pos-rf" id="slot-RF">
+                        <span class="pos-label">RF</span>
+                        <span class="player-name">-</span>
+                    </div>
+                    <!-- DH at Bottom Right -->
+                    <div class="field-position pos-dh" id="slot-DH">
+                        <span class="pos-label">DH</span>
+                        <span class="player-name">-</span>
+                    </div>
+
+                    <!-- Bench Slots -->
+                    <div class="field-position pos-bench-1" id="slot-BENCH-1">
+                        <span class="pos-label">BN</span>
+                        <span class="player-name">-</span>
+                    </div>
+                    <div class="field-position pos-bench-2" id="slot-BENCH-2">
+                        <span class="pos-label">BN</span>
+                        <span class="player-name">-</span>
+                    </div>
+                    <div class="field-position pos-bench-3" id="slot-BENCH-3">
+                        <span class="pos-label">BN</span>
+                        <span class="player-name">-</span>
+                    </div>
                 </div>
             </div>
 
-            <div class="roster-flex-container">
-                <!-- Field View -->
-                <div class="fantasy-card roster-card">
-                    <h2 class="card-title">Fielding & Batting</h2>
-                    <div class="baseball-field">
-                        <!-- Positions -->
-                        <div class="field-position pos-c" id="slot-C"><span class="pos-label">C</span><span class="player-name">-</span></div>
-                        <div class="field-position pos-1b" id="slot-1B"><span class="pos-label">1B</span><span class="player-name">-</span></div>
-                        <div class="field-position pos-2b" id="slot-2B"><span class="pos-label">2B</span><span class="player-name">-</span></div>
-                        <div class="field-position pos-3b" id="slot-3B"><span class="pos-label">3B</span><span class="player-name">-</span></div>
-                        <div class="field-position pos-ss" id="slot-SS"><span class="pos-label">SS</span><span class="player-name">-</span></div>
-                        <div class="field-position pos-lf" id="slot-LF"><span class="pos-label">LF</span><span class="player-name">-</span></div>
-                        <div class="field-position pos-cf" id="slot-CF"><span class="pos-label">CF</span><span class="player-name">-</span></div>
-                        <div class="field-position pos-rf" id="slot-RF"><span class="pos-label">RF</span><span class="player-name">-</span></div>
-                        <div class="field-position pos-dh" id="slot-DH"><span class="pos-label">DH</span><span class="player-name">-</span></div>
+            <!-- Pitching View -->
+            <div class="fantasy-card">
+                <h2 class="card-title">Pitching Staff</h2>
+                <div class="pitcher-list" id="pitcher-list-container">
+                    <!-- SP Slots -->
+                    <div class="pitcher-slot" id="slot-SP-1"><span class="pitcher-role">SP</span><span class="player-name">-</span></div>
+                    <div class="pitcher-slot" id="slot-SP-2"><span class="pitcher-role">SP</span><span class="player-name">-</span></div>
+                    <div class="pitcher-slot" id="slot-SP-3"><span class="pitcher-role">SP</span><span class="player-name">-</span></div>
+                    <div class="pitcher-slot" id="slot-SP-4"><span class="pitcher-role">SP</span><span class="player-name">-</span></div>
 
-                        <!-- Bench Slots -->
-                        <div class="field-position pos-bench-1" id="slot-BENCH-1"><span class="pos-label">BN</span><span class="player-name">-</span></div>
-                        <div class="field-position pos-bench-2" id="slot-BENCH-2"><span class="pos-label">BN</span><span class="player-name">-</span></div>
-                        <div class="field-position pos-bench-3" id="slot-BENCH-3"><span class="pos-label">BN</span><span class="player-name">-</span></div>
-                    </div>
-                </div>
+                    <!-- RP Slots -->
+                    <div class="pitcher-slot" id="slot-RP-1"><span class="pitcher-role">RP</span><span class="player-name">-</span></div>
+                    <div class="pitcher-slot" id="slot-RP-2"><span class="pitcher-role">RP</span><span class="player-name">-</span></div>
+                    <div class="pitcher-slot" id="slot-RP-3"><span class="pitcher-role">RP</span><span class="player-name">-</span></div>
+                    <div class="pitcher-slot" id="slot-RP-4"><span class="pitcher-role">RP</span><span class="player-name">-</span></div>
 
-                <!-- Pitching View -->
-                <div class="fantasy-card roster-card">
-                    <h2 class="card-title">Pitching Staff</h2>
-                    <div class="pitcher-list" id="pitcher-list-container">
-                        <div class="pitcher-slot" id="slot-SP-1"><span class="pitcher-role">SP</span><span class="player-name">-</span></div>
-                        <div class="pitcher-slot" id="slot-SP-2"><span class="pitcher-role">SP</span><span class="player-name">-</span></div>
-                        <div class="pitcher-slot" id="slot-SP-3"><span class="pitcher-role">SP</span><span class="player-name">-</span></div>
-                        <div class="pitcher-slot" id="slot-SP-4"><span class="pitcher-role">SP</span><span class="player-name">-</span></div>
-
-                        <div class="pitcher-slot" id="slot-RP-1"><span class="pitcher-role">RP</span><span class="player-name">-</span></div>
-                        <div class="pitcher-slot" id="slot-RP-2"><span class="pitcher-role">RP</span><span class="player-name">-</span></div>
-                        <div class="pitcher-slot" id="slot-RP-3"><span class="pitcher-role">RP</span><span class="player-name">-</span></div>
-                        <div class="pitcher-slot" id="slot-RP-4"><span class="pitcher-role">RP</span><span class="player-name">-</span></div>
-
-                        <div class="pitcher-slot" id="slot-CL-1"><span class="pitcher-role">CL</span><span class="player-name">-</span></div>
-                    </div>
+                    <!-- CL Slot -->
+                    <div class="pitcher-slot" id="slot-CL-1"><span class="pitcher-role">CL</span><span class="player-name">-</span></div>
                 </div>
             </div>
-
-            <div style="text-align: right; margin-top: 20px;">
+            <div style="text-align: right; margin-bottom: 20px;">
                 <button id="saveRosterBtn" class="btn btn-primary">Save Roster</button>
             </div>
         </div>
@@ -98,7 +112,6 @@
     <script th:inline="javascript">
         /*<![CDATA[*/
         let selectedSlotId = null;
-        let gameSalaryCap = null;
 
         $(document).ready(function() {
             loadMyGames();
@@ -106,10 +119,7 @@
             $('#gameSelector').change(function() {
                 const seq = $(this).val();
                 if (seq) {
-                    $.get(`/apis/v1/fantasy/games/${seq}/details`, function(d) {
-                        gameSalaryCap = d.salaryCap;
-                        loadRoster(seq);
-                    });
+                    loadRoster(seq);
                 }
             });
 
@@ -152,7 +162,8 @@
             const pA = slotA.data('player');
             const pB = slotB.data('player');
 
-            // If both are empty, nothing to do
+            // If both are empty, nothing to do, but technically valid? Or invalid?
+            // Let's say valid, nothing changes.
             if (!pA && !pB) return true;
 
             // Check if pA fits in slotB
@@ -273,12 +284,8 @@
 
                 // Select first and load
                 select.val(games[0].seq);
-
-                $.get(`/apis/v1/fantasy/games/${games[0].seq}/details`, function(d) {
-                    gameSalaryCap = d.salaryCap;
-                    loadRoster(games[0].seq);
-                    $('#roster-view').show();
-                });
+                loadRoster(games[0].seq);
+                $('#roster-view').show();
             }).fail(function() {
                 // If API fails or no games
                 select.append('<option value="">Error Loading</option>');
@@ -298,10 +305,8 @@
                 const spCount = { count: 1 };
                 const rpCount = { count: 1 };
                 let benchCount = 1;
-                let totalCost = 0;
 
                 players.forEach(p => {
-                    totalCost += (p.cost || 0);
                     let placed = false;
 
                     // Try to use assignedPosition first
@@ -309,11 +314,14 @@
                         const ap = p.assignedPosition;
                         // Handle Specific Bench
                         if (ap.startsWith('BENCH')) {
+                            // ap might be BENCH-1, BENCH-2 or just BENCH
+                            // If BENCH-X, try exact match
                             if (ap.includes('-')) {
                                 if (fillSlotById('slot-' + ap, p)) {
                                     placed = true;
                                 }
                             }
+                            // If exact match failed or was generic 'BENCH', fall through to heuristic below
                         } else if (ap === 'SP') {
                             if (assignPitcher('SP', spCount, p)) placed = true;
                         } else if (ap === 'RP') {
@@ -321,13 +329,15 @@
                         } else if (ap === 'CL') {
                             if (fillSlotById('slot-CL-1', p)) placed = true;
                         } else {
+                            // Handle Specific Field (1B, C, etc)
+                            // Only if slot is free
                             if (fillSlotById('slot-' + ap, p)) {
                                 placed = true;
                             }
                         }
                     }
 
-                    // Fallback
+                    // Fallback: If not placed yet (null assignedPosition, full slots, or collision)
                     if (!placed) {
                          if (benchCount <= 3) {
                              fillSlotById('slot-BENCH-' + benchCount, p);
@@ -335,15 +345,6 @@
                          }
                     }
                 });
-
-                // Update Salary Cap
-                if (gameSalaryCap) {
-                    $('#salaryCapInfo').text(`Salary Cap: ${totalCost} / ${gameSalaryCap}`);
-                    if(totalCost > gameSalaryCap) $('#salaryCapInfo').css('color', 'red');
-                    else $('#salaryCapInfo').css('color', '#28a745');
-                } else {
-                    $('#salaryCapInfo').text('Salary Cap: No Limit');
-                }
             });
         }
 
@@ -361,15 +362,21 @@
         function saveRoster(gameSeq) {
              const updates = [];
 
+             // Iterate all slots
              $('.field-position, .pitcher-slot').each(function() {
                  const player = $(this).data('player');
                  if (player) {
                      const slotId = $(this).attr('id'); // e.g. slot-1B, slot-SP-1, slot-BENCH-1
                      let assignedPos = slotId.replace('slot-', '');
 
+                     // Normalize Pitchers
                      if (assignedPos.startsWith('SP-')) assignedPos = 'SP';
                      if (assignedPos.startsWith('RP-')) assignedPos = 'RP';
                      if (assignedPos.startsWith('CL-')) assignedPos = 'CL';
+
+                     // Bench kept as BENCH-1, BENCH-2 etc to preserve order if possible
+                     // Or normalize to BENCH?
+                     // Let's keep specific to allow persistence of bench order
 
                      updates.push({
                          fantasyPlayerSeq: player.seq,
@@ -392,8 +399,22 @@
              });
         }
 
+        function isPitcher(pos) {
+            return ['SP', 'RP', 'CL'].includes(pos);
+        }
+
+        function fillSlot(pos, player) {
+            const slot = $(`#slot-${pos}`);
+            if (slot.length) {
+                // Attach Data
+                slot.data('player', player);
+                renderSlot(slot, player);
+            }
+        }
+
         function assignPitcher(type, counterObj, player) {
             if (counterObj.count <= 4) {
+                // Try to fill next slot
                 if (fillPitcherSlot(`${type}-${counterObj.count}`, player)) {
                     counterObj.count++;
                     return true;
