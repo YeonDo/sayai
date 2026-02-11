@@ -4,14 +4,8 @@ import com.sayai.record.fantasy.dto.DraftEventDto;
 import com.sayai.record.fantasy.dto.DraftRequest;
 import com.sayai.record.fantasy.dto.FantasyPlayerDto;
 import com.sayai.record.fantasy.dto.RosterUpdateDto;
-import com.sayai.record.fantasy.entity.DraftPick;
-import com.sayai.record.fantasy.entity.FantasyGame;
-import com.sayai.record.fantasy.entity.FantasyParticipant;
-import com.sayai.record.fantasy.entity.FantasyPlayer;
-import com.sayai.record.fantasy.repository.DraftPickRepository;
-import com.sayai.record.fantasy.repository.FantasyGameRepository;
-import com.sayai.record.fantasy.repository.FantasyParticipantRepository;
-import com.sayai.record.fantasy.repository.FantasyPlayerRepository;
+import com.sayai.record.fantasy.entity.*;
+import com.sayai.record.fantasy.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
@@ -41,6 +35,7 @@ public class FantasyDraftService {
     private final DraftPickRepository draftPickRepository;
     private final FantasyGameRepository fantasyGameRepository;
     private final FantasyParticipantRepository fantasyParticipantRepository;
+    private final RosterLogRepository rosterLogRepository;
     private final DraftValidator draftValidator;
     private final SimpMessagingTemplate messagingTemplate;
     private final ObjectProvider<DraftScheduler> draftSchedulerProvider;
@@ -86,6 +81,8 @@ public class FantasyDraftService {
         }
 
         // 1. Get all picks for this game
+        // Players in WAIVER_REQ or TRADE_PENDING still have DraftPick records,
+        // so they are correctly excluded from available players by this logic.
         Set<Long> pickedPlayerSeqs;
         if (gameSeq == null || gameSeq == 0L) {
             pickedPlayerSeqs = Collections.emptySet();
@@ -128,14 +125,28 @@ public class FantasyDraftService {
         FantasyGame game = fantasyGameRepository.findById(request.getFantasyGameSeq())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid Game Seq"));
 
-        if (game.getStatus() != FantasyGame.GameStatus.DRAFTING) {
-            throw new IllegalStateException("드래프트 중이 아닙니다");
+        boolean isFA = (game.getStatus() == FantasyGame.GameStatus.ONGOING);
+        boolean isDrafting = (game.getStatus() == FantasyGame.GameStatus.DRAFTING);
+
+        if (!isDrafting && !isFA) {
+            throw new IllegalStateException("Drafting or FA signing is not active (Status: " + game.getStatus() + ")");
         }
 
-        // Check Turn
-        NextPickInfo nextPick = getNextPickInfo(game);
-        if (!nextPick.pickerId.equals(request.getPlayerId())) {
-            throw new IllegalStateException("당신의 차례가 아닙니다: " + nextPick.pickerId);
+        int pickNumber = 0;
+        NextPickInfo nextPick = null;
+
+        if (isDrafting) {
+            // Check Turn
+            nextPick = getNextPickInfo(game);
+            if (!nextPick.pickerId.equals(request.getPlayerId())) {
+                throw new IllegalStateException("당신의 차례가 아닙니다: " + nextPick.pickerId);
+            }
+            long count = draftPickRepository.countByFantasyGameSeq(request.getFantasyGameSeq());
+            pickNumber = (int) count + 1;
+        } else {
+            // FA Logic
+            long count = draftPickRepository.countByFantasyGameSeq(request.getFantasyGameSeq());
+            pickNumber = (int) count + 1;
         }
 
         // 2. Check availability
@@ -160,30 +171,44 @@ public class FantasyDraftService {
                 .collect(Collectors.toSet());
         List<FantasyPlayer> currentTeam = fantasyPlayerRepository.findAllById(pickedSeqs);
 
+        // Roster Size Check for FA
+        if (isFA) {
+            // Max 21 allowed for FA
+            int limit = 21;
+            if (userPicks.size() >= limit) {
+                throw new IllegalStateException("Roster full (Max " + limit + ")");
+            }
+        }
+
         // Salary Cap Check
         if (game.getSalaryCap() != null && game.getSalaryCap() > 0) {
             int currentCost = currentTeam.stream().mapToInt(p -> p.getCost() == null ? 0 : p.getCost()).sum();
             int newPlayerCost = targetPlayer.getCost() == null ? 0 : targetPlayer.getCost();
-            if (currentCost + newPlayerCost > game.getSalaryCap()) {
-                throw new IllegalStateException("샐캡 초과: " + (currentCost + newPlayerCost) + " / " + game.getSalaryCap());
+
+            // Penalty check for 21st player
+            int penalty = 0;
+            if (isFA && userPicks.size() == 20) {
+                penalty = 5;
+            }
+
+            if (currentCost + newPlayerCost + penalty > game.getSalaryCap()) {
+                throw new IllegalStateException("샐캡 초과: " + (currentCost + newPlayerCost + penalty) + " / " + game.getSalaryCap());
             }
         }
 
         // Get Participant Info (needed for Rule 2)
         FantasyParticipant participant = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(
                 request.getFantasyGameSeq(), request.getPlayerId())
-                .orElse(null); // Might be null if user didn't join explicitly (Rule 1 usually allows ad-hoc?)
-                                // Actually better to require join for consistent logic, but let's handle null gracefully for Rule 1.
+                .orElse(null);
 
-        draftValidator.validate(game, targetPlayer, currentTeam, participant);
+        // Validate draft rules (Composition, etc) ONLY for DRAFTING
+        if (isDrafting) {
+             draftValidator.validate(game, targetPlayer, currentTeam, participant);
+        }
 
         // 4. Save Pick
         // Auto-Assign Position Logic
         String assignedPos = determineInitialPosition(userPicks, targetPlayer);
-
-        // Calculate pick number
-        long count = draftPickRepository.countByFantasyGameSeq(request.getFantasyGameSeq());
-        int pickNumber = (int) count + 1;
 
         DraftPick pick = DraftPick.builder()
                 .fantasyGameSeq(request.getFantasyGameSeq())
@@ -191,60 +216,76 @@ public class FantasyDraftService {
                 .fantasyPlayerSeq(request.getFantasyPlayerSeq())
                 .pickNumber(pickNumber)
                 .assignedPosition(assignedPos)
+                .pickStatus(DraftPick.PickStatus.NORMAL)
                 .build();
 
         draftPickRepository.save(pick);
 
-        // Update Deadline for NEXT pick
-        if (game.getDraftTimeLimit() != null && game.getDraftTimeLimit() > 0) {
-            game.setNextPickDeadline(LocalDateTime.now().plusMinutes(game.getDraftTimeLimit()));
-            // No need to save game explicitly if transaction handles dirty check, but safest to save or rely on transactional
-        }
-
-        // Get NEXT Pick Info
-        NextPickInfo nextNext = getNextPickInfo(game);
-
-        // Check for Draft Completion
-        long totalPicks = draftPickRepository.countByFantasyGameSeq(request.getFantasyGameSeq());
-        List<FantasyParticipant> participants = fantasyParticipantRepository.findByFantasyGameSeq(request.getFantasyGameSeq());
-
-        int totalPlayersPerParticipant = draftValidator.getTotalPlayerCount(game.getRuleType());
-
-        boolean isFinished = false;
-        if (!participants.isEmpty() && totalPicks >= participants.size() * (long)totalPlayersPerParticipant) {
-            game.setStatus(FantasyGame.GameStatus.ONGOING);
-            game.setNextPickDeadline(null);
-            fantasyGameRepository.save(game); // Ensure status persist
-            isFinished = true;
-            if (TransactionSynchronizationManager.isActualTransactionActive()) {
-                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                    @Override
-                    public void afterCommit() {
-                        draftSchedulerProvider.getObject().removeActiveGame(request.getFantasyGameSeq());
-                    }
-                });
-            } else {
-                draftSchedulerProvider.getObject().removeActiveGame(request.getFantasyGameSeq());
-            }
-        }
-
-        // Broadcast Event
-        DraftEventDto event = DraftEventDto.builder()
-                .type(isFinished ? "FINISH" : "PICK")
+        // Log to RosterLog
+        RosterLog.LogActionType actionType = isDrafting ? RosterLog.LogActionType.DRAFT_PICK : RosterLog.LogActionType.FA_ADD;
+        RosterLog logEntry = RosterLog.builder()
                 .fantasyGameSeq(request.getFantasyGameSeq())
-                .playerId(request.getPlayerId())
+                .participantId(request.getPlayerId())
                 .fantasyPlayerSeq(request.getFantasyPlayerSeq())
-                .playerName(targetPlayer.getName())
-                .playerTeam(targetPlayer.getTeam())
-                .pickNumber(pickNumber)
-                .message(isFinished ? "Draft Completed!" : "Player " + request.getPlayerId() + " picked " + targetPlayer.getName() + " (Pick #" + pickNumber + ")")
-                .nextPickerId(isFinished ? null : nextNext.pickerId)
-                .nextPickDeadline(game.getNextPickDeadline() != null ? game.getNextPickDeadline().atZone(ZoneId.of("UTC")) : null)
-                .round(isFinished ? null : nextNext.round)
-                .pickInRound(isFinished ? null : nextNext.pickInRound)
+                .actionType(actionType)
+                .details(targetPlayer.getName() + " - " + (isDrafting ? "Picked in Draft" : "Signed via FA"))
                 .build();
+        rosterLogRepository.save(logEntry);
 
-        messagingTemplate.convertAndSend("/topic/draft/" + request.getFantasyGameSeq(), event);
+
+        if (isDrafting) {
+            // Update Deadline for NEXT pick
+            if (game.getDraftTimeLimit() != null && game.getDraftTimeLimit() > 0) {
+                game.setNextPickDeadline(LocalDateTime.now().plusMinutes(game.getDraftTimeLimit()));
+            }
+
+            // Get NEXT Pick Info
+             NextPickInfo nextNext = getNextPickInfo(game);
+
+            // Check for Draft Completion
+            long totalPicks = draftPickRepository.countByFantasyGameSeq(request.getFantasyGameSeq());
+            List<FantasyParticipant> participants = fantasyParticipantRepository.findByFantasyGameSeq(request.getFantasyGameSeq());
+
+            int totalPlayersPerParticipant = draftValidator.getTotalPlayerCount(game.getRuleType());
+
+            boolean isFinished = false;
+            if (!participants.isEmpty() && totalPicks >= participants.size() * (long)totalPlayersPerParticipant) {
+                game.setStatus(FantasyGame.GameStatus.ONGOING);
+                game.setNextPickDeadline(null);
+                fantasyGameRepository.save(game); // Ensure status persist
+                isFinished = true;
+                if (TransactionSynchronizationManager.isActualTransactionActive()) {
+                    TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            draftSchedulerProvider.getObject().removeActiveGame(request.getFantasyGameSeq());
+                        }
+                    });
+                } else {
+                    draftSchedulerProvider.getObject().removeActiveGame(request.getFantasyGameSeq());
+                }
+            }
+
+            // Broadcast Event
+            DraftEventDto event = DraftEventDto.builder()
+                    .type(isFinished ? "FINISH" : "PICK")
+                    .fantasyGameSeq(request.getFantasyGameSeq())
+                    .playerId(request.getPlayerId())
+                    .fantasyPlayerSeq(request.getFantasyPlayerSeq())
+                    .playerName(targetPlayer.getName())
+                    .playerTeam(targetPlayer.getTeam())
+                    .pickNumber(pickNumber)
+                    .message(isFinished ? "Draft Completed!" : "Player " + request.getPlayerId() + " picked " + targetPlayer.getName() + " (Pick #" + pickNumber + ")")
+                    .nextPickerId(isFinished ? null : nextNext.pickerId)
+                    .nextPickDeadline(game.getNextPickDeadline() != null ? game.getNextPickDeadline().atZone(ZoneId.of("UTC")) : null)
+                    .round(isFinished ? null : nextNext.round)
+                    .pickInRound(isFinished ? null : nextNext.pickInRound)
+                    .build();
+
+            messagingTemplate.convertAndSend("/topic/draft/" + request.getFantasyGameSeq(), event);
+        } else {
+            // FA Event: Do not broadcast WebSocket message as requested
+        }
     }
 
     public static class NextPickInfo {
@@ -299,6 +340,8 @@ public class FantasyDraftService {
                     DraftPick pick = pickMap.get(p.getSeq());
                     if (pick != null) {
                         dto.setAssignedPosition(pick.getAssignedPosition());
+                        dto.setOwnerId(pick.getPlayerId());
+                        dto.setPickStatus(pick.getPickStatus() != null ? pick.getPickStatus().name() : "NORMAL");
                     }
                     return dto;
                 })
@@ -317,7 +360,7 @@ public class FantasyDraftService {
 
         String positionStr = newPlayer.getPosition() != null ? newPlayer.getPosition() : "";
         if (positionStr.trim().isEmpty()) {
-            return null; // Bench
+            return "BENCH";
         }
 
         String[] positions = positionStr.split(",");
@@ -331,10 +374,10 @@ public class FantasyDraftService {
             long rpCount = occupied.stream().filter(p -> p.equals("RP")).count();
             long clCount = occupied.stream().filter(p -> p.equals("CL")).count();
 
-            if (primaryPos.equals("SP")) return spCount < 4 ? "SP" : null;
-            if (primaryPos.equals("RP")) return rpCount < 4 ? "RP" : null;
-            if (primaryPos.equals("CL")) return clCount < 1 ? "CL" : null;
-            return null; // Bench
+            if (primaryPos.equals("SP")) return spCount < 4 ? "SP" : "BENCH";
+            if (primaryPos.equals("RP")) return rpCount < 4 ? "RP" : "BENCH";
+            if (primaryPos.equals("CL")) return clCount < 1 ? "CL" : "BENCH";
+            return "BENCH";
         } else {
             // Batter Logic
             if (!occupied.contains(primaryPos)) {
@@ -345,7 +388,7 @@ public class FantasyDraftService {
                 return "DH";
             }
             // Bench
-            return null;
+            return "BENCH";
         }
     }
 
@@ -402,7 +445,11 @@ public class FantasyDraftService {
             for (RosterUpdateDto.RosterEntry entry : updateDto.getEntries()) {
                 DraftPick pick = pickMap.get(entry.getFantasyPlayerSeq());
                 if (pick != null) {
-                    pick.setAssignedPosition(entry.getAssignedPosition());
+                    String pos = entry.getAssignedPosition();
+                    if (pos != null && pos.startsWith("BENCH")) {
+                        pos = "BENCH";
+                    }
+                    pick.setAssignedPosition(pos);
                 }
             }
         }

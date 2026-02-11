@@ -165,6 +165,31 @@
         </div>
     </div>
 
+    <!-- Transaction Modal -->
+    <div id="transactionModal" class="modal-overlay" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div class="modal-container" style="background: white; padding: 20px; border-radius: 8px; width: 1000px; max-width: 95%; max-height: 90vh; display: flex; flex-direction: column; position: relative;">
+            <div class="modal-header" style="border-bottom: 1px solid #eee; margin-bottom: 15px; display: flex; justify-content: space-between; flex-shrink: 0;">
+                <h3 style="margin: 0;">Manage Transactions</h3>
+                <button onclick="closeTransactionModal()" style="background:none; border:none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            </div>
+            <div class="modal-body" style="overflow-y: auto; flex-grow: 1;">
+                <table class="fantasy-table">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Requester</th>
+                            <th>Target/Detail</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionListBody">
+                    </tbody>
+                </table>
+                <div id="txNoData" style="text-align:center; padding:10px; display:none;">No pending transactions.</div>
+            </div>
+        </div>
+    </div>
+
     <!-- User Modal -->
     <div id="userModal" class="modal-overlay" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
         <div class="modal-container" style="background: white; padding: 20px; border-radius: 8px; width: 400px; max-width: 90%; max-height: 90vh; display: flex; flex-direction: column; position: relative;">
@@ -360,6 +385,107 @@
             });
         }
 
+        // --- Transaction Management ---
+        let currentTxGameSeq = null;
+        let gameParticipants = [];
+
+        function openTransactionModal(gameSeq) {
+            currentTxGameSeq = gameSeq;
+            $('#transactionModal').css('display', 'flex');
+            $('#transactionListBody').empty();
+            $('#txNoData').show().text('Loading...');
+
+            // Fetch Participants first for dropdown
+            $.get(`/apis/v1/admin/fantasy/games/${gameSeq}/participants`, function(participants) {
+                gameParticipants = participants;
+                loadTransactions(gameSeq);
+            });
+        }
+
+        function closeTransactionModal() {
+            $('#transactionModal').hide();
+        }
+
+        function loadTransactions(gameSeq) {
+            $.get(`/apis/v1/admin/fantasy/transactions?gameSeq=${gameSeq}&status=REQUESTED`, function(txs) {
+                const tbody = $('#transactionListBody');
+                tbody.empty();
+                if(txs.length === 0) {
+                    $('#txNoData').show().text('No pending transactions.');
+                    return;
+                }
+                $('#txNoData').hide();
+
+                txs.forEach(tx => {
+                    let actionHtml = '';
+                    if (tx.type === 'WAIVER') {
+                        // Dropdown for claim target
+                        let options = `<option value="">Select Team...</option>`;
+                        gameParticipants.forEach(p => {
+                            if(p.playerId != tx.requesterId) {
+                                options += `<option value="${p.playerId}">${p.teamName}</option>`;
+                            }
+                        });
+
+                        actionHtml = `
+                            <div style="display:flex; gap:5px; align-items:center;">
+                                <select id="claim-target-${tx.seq}" style="width:120px;">${options}</select>
+                                <button class="btn-primary" onclick="processTx(${tx.seq}, 'CLAIM')">Claim</button>
+                                <button class="btn-primary" style="background-color:#dc3545;" onclick="processTx(${tx.seq}, 'FA')">Release to FA</button>
+                            </div>
+                        `;
+                    } else {
+                        // Trade
+                        actionHtml = `
+                            <button class="btn-primary" onclick="processTx(${tx.seq}, 'APPROVE')">Approve</button>
+                            <button class="btn-primary" style="background-color:#dc3545;" onclick="processTx(${tx.seq}, 'REJECT')">Reject</button>
+                        `;
+                    }
+
+                    const row = `
+                        <tr>
+                            <td>${tx.type}</td>
+                            <td>${tx.requesterId}</td>
+                            <td>
+                                Give: ${tx.givingPlayerSeqs}<br>
+                                Recv: ${tx.receivingPlayerSeqs || (tx.type === 'TRADE' ? tx.targetId : '-')}
+                            </td>
+                            <td>${actionHtml}</td>
+                        </tr>
+                    `;
+                    tbody.append(row);
+                });
+            });
+        }
+
+        function processTx(seq, decision) {
+            let targetId = null;
+            if (decision === 'CLAIM') {
+                targetId = $(`#claim-target-${seq}`).val();
+                if (!targetId) {
+                    alert("Please select a target team for claim.");
+                    return;
+                }
+            }
+
+            if(!confirm(`Process this transaction as ${decision}?`)) return;
+
+            $.ajax({
+                url: `/apis/v1/admin/fantasy/transactions/${seq}/process`,
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ decision: decision, targetParticipantId: targetId }),
+                success: function() {
+                    alert('Processed successfully');
+                    loadTransactions(currentTxGameSeq);
+                },
+                error: function(xhr) {
+                    alert('Error: ' + xhr.responseText);
+                }
+            });
+        }
+
+        // --- Scoring Logic ---
         let currentScoringGameSeq = null;
         let currentScoringRound = null;
 
@@ -374,20 +500,12 @@
             $('#saveScoreBtn').hide();
             $('#scoringMsg').show().text("Select a round to input scores.");
 
-            // Fetch game details to get rounds
             $.get(`/apis/v1/fantasy/games/${gameSeq}/details`, function(data) {
-                // Check if 'rounds' property exists in DTO. If not, maybe use gameDuration parser or just 0.
-                // Assuming backend added it to DTO. If not, I might need to add it to DTO in Java.
-                // Wait, in previous step I added rounds to Entity but did I add to DTO?
-                // I need to check FantasyGameDetailDto.
-                // Proceed assuming it's there or I will fix backend.
                 const totalRounds = data.rounds || 0;
-
                 if (totalRounds < 1) {
                     btnContainer.html('<span>No rounds defined for this game.</span>');
                     return;
                 }
-
                 for(let i=1; i<=totalRounds; i++) {
                     btnContainer.append(`<button class="btn btn-draft" style="background-color: #6c757d;" onclick="loadRoundScores(${i})">Round ${i}</button>`);
                 }
@@ -415,7 +533,7 @@
         function copyExportText() {
             const copyText = document.getElementById("exportText");
             copyText.select();
-            copyText.setSelectionRange(0, 99999); // Mobile
+            copyText.setSelectionRange(0, 99999);
             navigator.clipboard.writeText(copyText.value).then(function() {
                 alert("Copied to clipboard!");
             }, function(err) {
@@ -428,17 +546,12 @@
             $('#scoringMsg').text("Loading...");
             $('#scoringTable').hide();
             $('#saveScoreBtn').hide();
-
-            // Highlight button
             $('#roundButtons button').css('background-color', '#6c757d');
-            // Assuming order matches index+1 roughly, but better to use `this` if passed
-            // For simplicity just reset all and let user know which is active by UI update or just content load.
 
             $.get(`/apis/v1/admin/fantasy/games/${currentScoringGameSeq}/participants`, function(participants) {
                 $.get(`/apis/v1/admin/fantasy/games/${currentScoringGameSeq}/scores/${round}`, function(existingScores) {
                     renderScoringTable(participants, existingScores);
                 }).fail(function() {
-                    // If 404 or empty, just render blanks
                     renderScoringTable(participants, []);
                 });
             });
@@ -447,8 +560,6 @@
         function renderScoringTable(participants, scores) {
             const tbody = $('#scoringTableBody');
             tbody.empty();
-
-            // Map scores by playerId
             const scoreMap = {};
             if(scores) {
                 scores.forEach(s => scoreMap[s.playerId] = s);
@@ -509,7 +620,6 @@
                 data: JSON.stringify(entries),
                 success: function() {
                     alert('Scores saved and calculated!');
-                    // Optionally close or reload
                 },
                 error: function(xhr) {
                     alert('Error saving scores: ' + xhr.responseText);
@@ -553,8 +663,11 @@
                                     </select>
                                     <button onclick="updateStatus(${game.seq})" class="btn-draft">Update</button>
                                     ${game.status === 'WAITING' ? `<button onclick="startDraft(${game.seq})" class="btn-primary" style="margin-left: 10px;">Start Draft</button>` : ''}
-                                    ${(game.status === 'ONGOING' || game.status === 'FINISHED') ? `<button onclick="openScoringModal(${game.seq})" class="btn-primary" style="margin-left: 10px; background-color: #6f42c1;">Scoring</button>
-                                    <button onclick="openExportModal(${game.seq})" class="btn-primary" style="margin-left: 10px; background-color: #28a745;">Export</button>` : ''}
+                                    ${(game.status === 'ONGOING' || game.status === 'FINISHED') ? `
+                                        <button onclick="openScoringModal(${game.seq})" class="btn-primary" style="margin-left: 10px; background-color: #6f42c1;">Scoring</button>
+                                        <button onclick="openExportModal(${game.seq})" class="btn-primary" style="margin-left: 10px; background-color: #28a745;">Export</button>
+                                        <button onclick="openTransactionModal(${game.seq})" class="btn-primary" style="margin-left: 10px; background-color: #fd7e14;">Transactions</button>
+                                    ` : ''}
                                 </div>
                             </td>
                         </tr>
