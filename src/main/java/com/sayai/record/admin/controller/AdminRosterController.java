@@ -1,6 +1,6 @@
 package com.sayai.record.admin.controller;
 
-import com.sayai.record.fantasy.entity.RoasterTransaction;
+import com.sayai.record.fantasy.entity.RosterTransaction;
 import com.sayai.record.fantasy.service.FantasyRosterService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +17,7 @@ public class AdminRosterController {
     private final FantasyRosterService fantasyRosterService;
 
     @GetMapping("/transactions")
-    public ResponseEntity<List<RoasterTransaction>> getTransactions(@RequestParam(name = "gameSeq") Long gameSeq,
+    public ResponseEntity<List<RosterTransaction>> getTransactions(@RequestParam(name = "gameSeq") Long gameSeq,
                                                                     @RequestParam(name = "status", required = false) String status) {
         return ResponseEntity.ok(fantasyRosterService.getTransactions(gameSeq, status));
     }

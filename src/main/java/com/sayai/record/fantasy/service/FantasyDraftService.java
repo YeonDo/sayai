@@ -35,7 +35,7 @@ public class FantasyDraftService {
     private final DraftPickRepository draftPickRepository;
     private final FantasyGameRepository fantasyGameRepository;
     private final FantasyParticipantRepository fantasyParticipantRepository;
-    private final RoasterLogRepository roasterLogRepository;
+    private final RosterLogRepository rosterLogRepository;
     private final DraftValidator draftValidator;
     private final SimpMessagingTemplate messagingTemplate;
     private final ObjectProvider<DraftScheduler> draftSchedulerProvider;
@@ -221,16 +221,16 @@ public class FantasyDraftService {
 
         draftPickRepository.save(pick);
 
-        // Log to RoasterLog
-        RoasterLog.LogActionType actionType = isDrafting ? RoasterLog.LogActionType.DRAFT_PICK : RoasterLog.LogActionType.FA_ADD;
-        RoasterLog logEntry = RoasterLog.builder()
+        // Log to RosterLog
+        RosterLog.LogActionType actionType = isDrafting ? RosterLog.LogActionType.DRAFT_PICK : RosterLog.LogActionType.FA_ADD;
+        RosterLog logEntry = RosterLog.builder()
                 .fantasyGameSeq(request.getFantasyGameSeq())
                 .participantId(request.getPlayerId())
                 .fantasyPlayerSeq(request.getFantasyPlayerSeq())
                 .actionType(actionType)
                 .details(targetPlayer.getName() + " - " + (isDrafting ? "Picked in Draft" : "Signed via FA"))
                 .build();
-        roasterLogRepository.save(logEntry);
+        rosterLogRepository.save(logEntry);
 
 
         if (isDrafting) {

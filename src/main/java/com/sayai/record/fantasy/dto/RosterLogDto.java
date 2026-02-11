@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 
 @Getter
 @Builder
-public class RoasterLogDto {
+public class RosterLogDto {
     private Long seq;
     private String playerName;
     private String playerTeam;

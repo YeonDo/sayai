@@ -2,13 +2,13 @@ package com.sayai.record.fantasy.controller;
 
 import com.sayai.record.auth.entity.Member;
 import com.sayai.record.auth.repository.MemberRepository;
-import com.sayai.record.fantasy.dto.RoasterLogDto;
+import com.sayai.record.fantasy.dto.RosterLogDto;
 import com.sayai.record.fantasy.entity.FantasyParticipant;
 import com.sayai.record.fantasy.entity.FantasyPlayer;
-import com.sayai.record.fantasy.entity.RoasterLog;
+import com.sayai.record.fantasy.entity.RosterLog;
 import com.sayai.record.fantasy.repository.FantasyParticipantRepository;
 import com.sayai.record.fantasy.repository.FantasyPlayerRepository;
-import com.sayai.record.fantasy.repository.RoasterLogRepository;
+import com.sayai.record.fantasy.repository.RosterLogRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
@@ -28,21 +28,21 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class FantasyLogController {
 
-    private final RoasterLogRepository roasterLogRepository;
+    private final RosterLogRepository rosterLogRepository;
     private final FantasyPlayerRepository fantasyPlayerRepository;
     private final FantasyParticipantRepository fantasyParticipantRepository;
     private final MemberRepository memberRepository;
 
     @GetMapping("/games/{gameSeq}/logs")
-    public ResponseEntity<List<RoasterLogDto>> getLogs(@PathVariable(name = "gameSeq") Long gameSeq) {
+    public ResponseEntity<List<RosterLogDto>> getLogs(@PathVariable(name = "gameSeq") Long gameSeq) {
         // Sort by timestamp ASC as requested ("점점 로그가 밑으로 쌓이는거야")
-        List<RoasterLog> logs = roasterLogRepository.findAll(Sort.by(Sort.Direction.ASC, "timestamp")).stream()
+        List<RosterLog> logs = rosterLogRepository.findAll(Sort.by(Sort.Direction.ASC, "timestamp")).stream()
                 .filter(l -> l.getFantasyGameSeq().equals(gameSeq))
                 .collect(Collectors.toList());
 
         // Batch fetch players
         Set<Long> playerSeqs = logs.stream()
-                .map(RoasterLog::getFantasyPlayerSeq)
+                .map(RosterLog::getFantasyPlayerSeq)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
         Map<Long, FantasyPlayer> playerMap = fantasyPlayerRepository.findAllById(playerSeqs).stream()
@@ -60,16 +60,16 @@ public class FantasyLogController {
 
         // If team name missing from Participant table (e.g. log from before join? Unlikely), fallback to User Name.
         // Or just show ID. Let's try to fetch Member names too for fallback.
-        Set<Long> participantIds = logs.stream().map(RoasterLog::getParticipantId).filter(Objects::nonNull).collect(Collectors.toSet());
+        Set<Long> participantIds = logs.stream().map(RosterLog::getParticipantId).filter(Objects::nonNull).collect(Collectors.toSet());
         Map<Long, String> memberNames = memberRepository.findAllById(participantIds).stream()
                 .collect(Collectors.toMap(Member::getPlayerId, Member::getName));
 
-        List<RoasterLogDto> dtos = logs.stream().map(log -> {
+        List<RosterLogDto> dtos = logs.stream().map(log -> {
             FantasyPlayer p = playerMap.get(log.getFantasyPlayerSeq());
             String pName = "", pTeam = "", pPos = "";
 
-            boolean showDetails = log.getActionType() == RoasterLog.LogActionType.DRAFT_PICK
-                               || log.getActionType() == RoasterLog.LogActionType.FA_ADD
+            boolean showDetails = log.getActionType() == RosterLog.LogActionType.DRAFT_PICK
+                               || log.getActionType() == RosterLog.LogActionType.FA_ADD
                                || log.getActionType().name().startsWith("WAIVER_");
 
             if (p != null) {
@@ -91,7 +91,7 @@ public class FantasyLogController {
             String partName = participantTeamNames.getOrDefault(log.getParticipantId(),
                     memberNames.getOrDefault(log.getParticipantId(), String.valueOf(log.getParticipantId())));
 
-            return RoasterLogDto.builder()
+            return RosterLogDto.builder()
                     .seq(log.getSeq())
                     .playerName(pName)
                     .playerTeam(pTeam)
