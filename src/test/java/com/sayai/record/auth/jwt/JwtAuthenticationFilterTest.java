@@ -52,9 +52,11 @@ class JwtAuthenticationFilterTest {
 
         when(jwtTokenProvider.resolveToken(request)).thenReturn(token);
         when(jwtTokenProvider.validateToken(token)).thenReturn(true);
+        String name = "Test Name";
         when(jwtTokenProvider.getUserId(token)).thenReturn(userId);
         when(jwtTokenProvider.getRole(token)).thenReturn(role);
         when(jwtTokenProvider.getPlayerId(token)).thenReturn(playerId);
+        when(jwtTokenProvider.getName(token)).thenReturn(name);
 
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
@@ -66,6 +68,7 @@ class JwtAuthenticationFilterTest {
         CustomUserDetails userDetails = (CustomUserDetails) principal;
         assertEquals(userId, userDetails.getUsername());
         assertEquals(playerId, userDetails.getPlayerId());
+        assertEquals(name, userDetails.getName());
     }
 
     @Test

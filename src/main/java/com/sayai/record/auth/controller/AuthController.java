@@ -83,8 +83,7 @@ public class AuthController {
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
-        String name = authService.getUserName(userDetails.getUsername());
-        return ResponseEntity.ok(new UserInfo(userDetails.getPlayerId(), userDetails.getUsername(), name));
+        return ResponseEntity.ok(new UserInfo(userDetails.getPlayerId(), userDetails.getUsername(), userDetails.getName()));
     }
 
     @Data

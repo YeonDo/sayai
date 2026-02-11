@@ -13,6 +13,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
 
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -27,12 +28,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String userId = jwtTokenProvider.getUserId(token);
             String role = jwtTokenProvider.getRole(token);
             Long playerId = jwtTokenProvider.getPlayerId(token);
+            String name = jwtTokenProvider.getName(token);
 
             UserDetails userDetails = new CustomUserDetails(
                     userId,
                     "",
                     Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role)),
-                    playerId
+                    playerId,
+                    name != null ? name : "Unknown"
             );
 
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());

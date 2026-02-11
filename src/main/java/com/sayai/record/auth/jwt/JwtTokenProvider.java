@@ -29,10 +29,11 @@ public class JwtTokenProvider {
         this.secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
     }
 
-    public String createToken(Long playerId, String userId, Member.Role role) {
+    public String createToken(Long playerId, String userId, Member.Role role, String name) {
         Claims claims = Jwts.claims().setSubject(userId);
         claims.put("playerId", playerId);
         claims.put("role", role.name());
+        claims.put("name", name);
 
         Date now = new Date();
         Date validity = new Date(now.getTime() + tokenValidityInMilliseconds);
@@ -81,5 +82,9 @@ public class JwtTokenProvider {
 
     public String getRole(String token) {
         return Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token).getBody().get("role", String.class);
+    }
+
+    public String getName(String token) {
+        return Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token).getBody().get("name", String.class);
     }
 }

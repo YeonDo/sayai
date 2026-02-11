@@ -1,11 +1,10 @@
 package com.sayai.record.fantasy.controller;
 
-import com.sayai.record.auth.entity.Member;
+import com.sayai.record.auth.jwt.CustomUserDetails;
 import com.sayai.record.auth.repository.MemberRepository;
 import com.sayai.record.fantasy.service.FantasyGameService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,11 +21,9 @@ public class FantasyViewController {
     private final MemberRepository memberRepository;
 
     @ModelAttribute
-    public void addAttributes(Model model, @AuthenticationPrincipal UserDetails userDetails) {
+    public void addAttributes(Model model, @AuthenticationPrincipal CustomUserDetails userDetails) {
         if (userDetails != null) {
-            Long playerId = memberRepository.findByUserId(userDetails.getUsername())
-                    .map(Member::getPlayerId)
-                    .orElse(null);
+            Long playerId = userDetails.getPlayerId();
 
             if (playerId != null) {
                 model.addAttribute("currentUserId", playerId);
