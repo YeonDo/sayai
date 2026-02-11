@@ -476,3 +476,5 @@
 .tab-content {
     /* reuse my-team-container styles if possible, or flex */
 }
+.status-NORMAL { background-color: #9C27B0; }
+.status-ONGOING { background-color: #28a745; }
