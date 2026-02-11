@@ -47,13 +47,20 @@ public class HitService {
         }
     }
     public List<PlayerDto> findAllByPeriod(LocalDate startDate, LocalDate endDate){
-        List<PlayerDto> result = new ArrayList<>();
         List<PlayerInterface> dtos = hitRepository.getPlayerByPeriod(startDate, endDate);
         List<HitterStatDto> statDtos = hitterBoardRepository.getPlayerByPeriod(startDate,endDate);
+
+        java.util.Map<Long, HitterStatDto> statMap = new java.util.HashMap<>();
+        for (HitterStatDto statDto : statDtos) {
+            statMap.put(statDto.getPlayerId(), statDto);
+        }
+
+        List<PlayerDto> result = new ArrayList<>();
         for(PlayerInterface dto : dtos){
-            for(HitterStatDto statDto: statDtos)
-                if(statDto.getPlayerId().equals(dto.getId()))
-                    result.add(interfaceToDto(dto, statDto));
+            HitterStatDto statDto = statMap.get(dto.getId());
+            if(statDto != null) {
+                result.add(interfaceToDto(dto, statDto));
+            }
         }
         return result;
     }
