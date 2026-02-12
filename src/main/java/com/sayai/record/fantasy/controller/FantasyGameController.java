@@ -45,10 +45,6 @@ public class FantasyGameController {
         return ResponseEntity.ok(fantasyGameService.getMyGames(userDetails.getPlayerId()));
     }
 
-    @GetMapping("/games/{gameSeq}/picks")
-    public ResponseEntity<List<DraftLogDto>> getDraftPicks(@PathVariable(name = "gameSeq") Long gameSeq) {
-        return ResponseEntity.ok(fantasyGameService.getDraftPicks(gameSeq));
-    }
 
     @GetMapping("/games/{gameSeq}/details")
     public ResponseEntity<FantasyGameDetailDto> getGameDetails(@PathVariable(name = "gameSeq") Long gameSeq) {

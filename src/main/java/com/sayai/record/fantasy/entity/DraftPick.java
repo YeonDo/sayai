@@ -4,6 +4,7 @@ import lombok.*;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Getter
 @Setter
@@ -41,7 +42,7 @@ public class DraftPick {
     @PrePersist
     public void prePersist() {
         if (this.pickedAt == null) {
-            this.pickedAt = LocalDateTime.now();
+            this.pickedAt = LocalDateTime.now(ZoneId.of("UTC"));
         }
         if (this.pickStatus == null) {
             this.pickStatus = PickStatus.NORMAL;

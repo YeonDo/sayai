@@ -153,6 +153,16 @@
                     const firstPos = p.playerPosition ? p.playerPosition.split(',')[0].trim().toLowerCase() : '';
                     const posClass = 'pos-' + firstPos;
 
+                    // Parse UTC Date
+                    let timeStr = '';
+                    if (p.pickedAt) {
+                        let dateStr = p.pickedAt;
+                        if (!dateStr.endsWith('Z') && !dateStr.includes('+')) {
+                            dateStr += 'Z'; // Force UTC interpretation
+                        }
+                        timeStr = new Date(dateStr).toLocaleString();
+                    }
+
                     const row = `
                         <tr>
                             <td>${p.pickNumber}</td>
@@ -160,7 +170,7 @@
                             <td>${p.playerTeam || ''}</td>
                             <td><span class="${posClass}" style="font-weight:bold;">${p.playerPosition || ''}</span></td>
                             <td>${p.pickedByTeamName || ''}</td>
-                            <td>${p.pickedAt ? new Date(p.pickedAt).toLocaleTimeString() : ''}</td>
+                            <td>${timeStr}</td>
                         </tr>
                     `;
                     tbody.append(row);
@@ -194,8 +204,15 @@
                         default: typeClass = 'status-badge status-NORMAL';
                     }
 
-                    // Format Time
-                    const timeStr = log.timestamp ? new Date(log.timestamp).toLocaleString() : '';
+                    // Parse UTC Date
+                    let timeStr = '';
+                    if (log.timestamp) {
+                        let dateStr = log.timestamp;
+                        if (!dateStr.endsWith('Z') && !dateStr.includes('+')) {
+                            dateStr += 'Z'; // Force UTC interpretation
+                        }
+                        timeStr = new Date(dateStr).toLocaleString();
+                    }
 
                     const row = `
                         <tr>
