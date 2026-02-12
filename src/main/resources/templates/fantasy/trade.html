@@ -310,7 +310,7 @@
         }
 
         function requestWaiver(playerSeq) {
-            if(!confirm("Are you sure you want to release this player? (Admin approval required)")) return;
+            if(!confirm("선수를 방출하시겠습니까? 되돌릴 수 없습니다.")) return;
             $.ajax({
                 url: '/apis/v1/fantasy/roster/waiver',
                 type: 'POST',

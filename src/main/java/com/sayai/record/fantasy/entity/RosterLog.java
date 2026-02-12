@@ -4,6 +4,7 @@ import lombok.*;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Getter
 @Setter
@@ -37,7 +38,7 @@ public class RosterLog {
 
     @PrePersist
     public void prePersist() {
-        this.timestamp = LocalDateTime.now();
+        this.timestamp = LocalDateTime.now(ZoneId.of("UTC"));
     }
 
     public enum LogActionType {

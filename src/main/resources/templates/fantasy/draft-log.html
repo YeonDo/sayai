@@ -18,11 +18,43 @@
 
         <div th:replace="fragments/fantasy-nav :: nav(active='log')"></div>
 
-        <div class="fantasy-card">
-            <h2 class="card-title">Transaction History</h2>
-            <div class="table-responsive">
-                <table class="fantasy-table">
-                    <thead>
+        <!-- Tabs -->
+        <div class="tabs-header">
+            <button class="tab-btn active" id="draft-tab" onclick="switchTab('draft')">DRAFT LOG</button>
+            <button class="tab-btn" id="transaction-tab" onclick="switchTab('transaction')">TRANSACTION LOG</button>
+        </div>
+
+        <!-- Draft Tab Content -->
+        <div id="draft-content" class="tab-content-area">
+            <div class="fantasy-card">
+                <h2 class="card-title">Draft Picks</h2>
+                <div class="table-responsive">
+                    <table class="fantasy-table">
+                        <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Player</th>
+                            <th>Team</th>
+                            <th>Position</th>
+                            <th>Picked By</th>
+                            <th>Time</th>
+                        </tr>
+                        </thead>
+                        <tbody id="draftLogBody">
+                        <!-- Content -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transaction Tab Content -->
+        <div id="transaction-content" class="tab-content-area" style="display:none;">
+            <div class="fantasy-card">
+                <h2 class="card-title">Transaction History</h2>
+                <div class="table-responsive">
+                    <table class="fantasy-table">
+                        <thead>
                         <tr>
                             <th>#</th>
                             <th>Player</th>
@@ -33,11 +65,12 @@
                             <th>Details</th>
                             <th>Time</th>
                         </tr>
-                    </thead>
-                    <tbody id="logBody">
+                        </thead>
+                        <tbody id="logBody">
                         <!-- Content -->
-                    </tbody>
-                </table>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -45,15 +78,44 @@
     <script th:inline="javascript">
         /*<![CDATA[*/
         const currentUserId = 1;
+        let currentTab = 'draft';
 
         $(document).ready(function() {
             loadMyGames();
 
             $('#gameSelector').change(function() {
                 const seq = $(this).val();
-                if(seq) loadLogs(seq);
+                if(seq) reloadCurrentTab();
             });
         });
+
+        function switchTab(tabName) {
+            currentTab = tabName;
+            // Update UI classes
+            $('.tab-btn').removeClass('active');
+            $('#' + tabName + '-tab').addClass('active');
+
+            if (tabName === 'draft') {
+                $('#draft-content').show();
+                $('#transaction-content').hide();
+            } else {
+                $('#draft-content').hide();
+                $('#transaction-content').show();
+            }
+
+            reloadCurrentTab();
+        }
+
+        function reloadCurrentTab() {
+            const seq = $('#gameSelector').val();
+            if (seq) {
+                if (currentTab === 'draft') {
+                    loadDraftLog(seq);
+                } else {
+                    loadTransactionLogs(seq);
+                }
+            }
+        }
 
         function loadMyGames() {
             $.get('/apis/v1/fantasy/my-games?userId=' + currentUserId, function(games) {
@@ -68,16 +130,58 @@
                     select.append(`<option value="${g.seq}">${g.title}</option>`);
                 });
                 select.val(games[0].seq);
-                loadLogs(games[0].seq);
+                reloadCurrentTab();
             }).fail(function() {
                  $('#gameSelector').html('<option value="">Error loading games</option>');
             });
         }
 
-        function loadLogs(seq) {
+        function loadDraftLog(seq) {
+            const tbody = $('#draftLogBody');
+            tbody.empty();
+            tbody.append('<tr><td colspan="6">Loading...</td></tr>');
+
+            $.get(`/apis/v1/fantasy/games/${seq}/picks`, function(picks) {
+                tbody.empty();
+                if (picks.length === 0) {
+                    tbody.append('<tr><td colspan="6">No picks yet.</td></tr>');
+                    return;
+                }
+
+                picks.forEach(p => {
+                    // Use position color classes
+                    const firstPos = p.playerPosition ? p.playerPosition.split(',')[0].trim().toLowerCase() : '';
+                    const posClass = 'pos-' + firstPos;
+
+                    // Parse UTC Date
+                    let timeStr = '';
+                    if (p.pickedAt) {
+                        let dateStr = p.pickedAt;
+                        if (!dateStr.endsWith('Z') && !dateStr.includes('+')) {
+                            dateStr += 'Z'; // Force UTC interpretation
+                        }
+                        timeStr = new Date(dateStr).toLocaleString();
+                    }
+
+                    const row = `
+                        <tr>
+                            <td>${p.pickNumber}</td>
+                            <td>${p.playerName || ''}</td>
+                            <td>${p.playerTeam || ''}</td>
+                            <td><span class="${posClass}" style="font-weight:bold;">${p.playerPosition || ''}</span></td>
+                            <td>${p.pickedByTeamName || ''}</td>
+                            <td>${timeStr}</td>
+                        </tr>
+                    `;
+                    tbody.append(row);
+                });
+            });
+        }
+
+        function loadTransactionLogs(seq) {
             const tbody = $('#logBody');
             tbody.empty();
-            tbody.append('<tr><td colspan="8">Loading...</td></tr>');
+            tbody.append('<tr><td colspan="8">Loading Transactions...</td></tr>');
 
             $.get(`/apis/v1/fantasy/games/${seq}/logs`, function(logs) {
                 tbody.empty();
@@ -100,8 +204,15 @@
                         default: typeClass = 'status-badge status-NORMAL';
                     }
 
-                    // Format Time
-                    const timeStr = new Date(log.timestamp).toLocaleString();
+                    // Parse UTC Date
+                    let timeStr = '';
+                    if (log.timestamp) {
+                        let dateStr = log.timestamp;
+                        if (!dateStr.endsWith('Z') && !dateStr.includes('+')) {
+                            dateStr += 'Z'; // Force UTC interpretation
+                        }
+                        timeStr = new Date(dateStr).toLocaleString();
+                    }
 
                     const row = `
                         <tr>
