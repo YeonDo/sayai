@@ -327,7 +327,9 @@ public class FantasyDraftService {
     @Transactional(readOnly = true)
     public List<FantasyPlayerDto> getPickedPlayers(Long gameSeq, Long playerId) {
         // Fetch picks
-        List<DraftPick> picks = draftPickRepository.findByFantasyGameSeqAndPlayerId(gameSeq, playerId);
+        List<DraftPick> picks = draftPickRepository.findByFantasyGameSeqAndPlayerId(gameSeq, playerId).stream()
+                .filter(pick -> pick.getPickStatus() != DraftPick.PickStatus.WAIVER_REQ)
+                .collect(Collectors.toList());
 
         // Map Player Seq to DraftPick for easy access
         Map<Long, DraftPick> pickMap = picks.stream()
