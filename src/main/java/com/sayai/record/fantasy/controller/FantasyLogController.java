@@ -2,6 +2,7 @@ package com.sayai.record.fantasy.controller;
 
 import com.sayai.record.auth.entity.Member;
 import com.sayai.record.auth.repository.MemberRepository;
+import com.sayai.record.fantasy.dto.DraftLogDto;
 import com.sayai.record.fantasy.dto.RosterLogDto;
 import com.sayai.record.fantasy.entity.DraftPick;
 import com.sayai.record.fantasy.entity.FantasyParticipant;
@@ -31,63 +32,9 @@ import java.util.stream.Collectors;
 public class FantasyLogController {
 
     private final RosterLogRepository rosterLogRepository;
-    private final DraftPickRepository draftPickRepository;
     private final FantasyPlayerRepository fantasyPlayerRepository;
     private final FantasyParticipantRepository fantasyParticipantRepository;
     private final MemberRepository memberRepository;
-
-    @GetMapping("/games/{gameSeq}/draft-picks")
-    public ResponseEntity<List<RosterLogDto>> getDraftPicks(@PathVariable(name = "gameSeq") Long gameSeq) {
-        List<DraftPick> picks = draftPickRepository.findByFantasyGameSeqOrderByPickNumberAsc(gameSeq);
-
-        // Batch fetch players
-        Set<Long> playerSeqs = picks.stream()
-                .map(DraftPick::getFantasyPlayerSeq)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
-        Map<Long, FantasyPlayer> playerMap = fantasyPlayerRepository.findAllById(playerSeqs).stream()
-                .collect(Collectors.toMap(FantasyPlayer::getSeq, java.util.function.Function.identity()));
-
-        // Batch fetch participants
-        Map<Long, String> participantTeamNames = fantasyParticipantRepository.findByFantasyGameSeq(gameSeq).stream()
-                .collect(Collectors.toMap(FantasyParticipant::getPlayerId,
-                        p -> p.getTeamName() != null ? p.getTeamName() : "Unknown Team"));
-
-        Set<Long> pickerIds = picks.stream()
-                .map(DraftPick::getPlayerId)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
-
-        Map<Long, String> memberNames = memberRepository.findAllById(pickerIds).stream()
-                .collect(Collectors.toMap(Member::getPlayerId, Member::getName));
-
-        List<RosterLogDto> dtos = picks.stream().map(pick -> {
-            FantasyPlayer p = playerMap.get(pick.getFantasyPlayerSeq());
-            String pName = "", pTeam = "", pPos = "";
-
-            if (p != null) {
-                pName = p.getName();
-                pTeam = p.getTeam();
-                pPos = p.getPosition();
-            }
-
-            String partName = participantTeamNames.getOrDefault(pick.getPlayerId(),
-                    memberNames.getOrDefault(pick.getPlayerId(), String.valueOf(pick.getPlayerId())));
-
-            return RosterLogDto.builder()
-                    .seq(pick.getSeq())
-                    .playerName(pName)
-                    .playerTeam(pTeam)
-                    .playerPosition(pPos)
-                    .participantName(partName)
-                    .actionType("DRAFT_PICK")
-                    .details("Pick #" + pick.getPickNumber())
-                    .timestamp(pick.getPickedAt())
-                    .build();
-        }).collect(Collectors.toList());
-
-        return ResponseEntity.ok(dtos);
-    }
 
     @GetMapping("/games/{gameSeq}/logs")
     public ResponseEntity<List<RosterLogDto>> getLogs(@PathVariable(name = "gameSeq") Long gameSeq) {

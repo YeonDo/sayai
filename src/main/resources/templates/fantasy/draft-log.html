@@ -24,10 +24,37 @@
             <button class="tab-btn" id="transaction-tab" onclick="switchTab('transaction')">TRANSACTION LOG</button>
         </div>
 
-        <div class="fantasy-card">
-            <div class="table-responsive">
-                <table class="fantasy-table">
-                    <thead>
+        <!-- Draft Tab Content -->
+        <div id="draft-content" class="tab-content-area">
+            <div class="fantasy-card">
+                <h2 class="card-title">Draft Picks</h2>
+                <div class="table-responsive">
+                    <table class="fantasy-table">
+                        <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Player</th>
+                            <th>Team</th>
+                            <th>Position</th>
+                            <th>Picked By</th>
+                            <th>Time</th>
+                        </tr>
+                        </thead>
+                        <tbody id="draftLogBody">
+                        <!-- Content -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transaction Tab Content -->
+        <div id="transaction-content" class="tab-content-area" style="display:none;">
+            <div class="fantasy-card">
+                <h2 class="card-title">Transaction History</h2>
+                <div class="table-responsive">
+                    <table class="fantasy-table">
+                        <thead>
                         <tr>
                             <th>#</th>
                             <th>Player</th>
@@ -38,11 +65,12 @@
                             <th>Details</th>
                             <th>Time</th>
                         </tr>
-                    </thead>
-                    <tbody id="logBody">
+                        </thead>
+                        <tbody id="logBody">
                         <!-- Content -->
-                    </tbody>
-                </table>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -50,7 +78,6 @@
     <script th:inline="javascript">
         /*<![CDATA[*/
         const currentUserId = 1;
-
         let currentTab = 'draft';
 
         $(document).ready(function() {
@@ -67,6 +94,15 @@
             // Update UI classes
             $('.tab-btn').removeClass('active');
             $('#' + tabName + '-tab').addClass('active');
+
+            if (tabName === 'draft') {
+                $('#draft-content').show();
+                $('#transaction-content').hide();
+            } else {
+                $('#draft-content').hide();
+                $('#transaction-content').show();
+            }
+
             reloadCurrentTab();
         }
 
@@ -74,7 +110,7 @@
             const seq = $('#gameSelector').val();
             if (seq) {
                 if (currentTab === 'draft') {
-                    loadDraftLogs(seq);
+                    loadDraftLog(seq);
                 } else {
                     loadTransactionLogs(seq);
                 }
@@ -100,54 +136,35 @@
             });
         }
 
-        function renderLogs(logs) {
-            const tbody = $('#logBody');
+        function loadDraftLog(seq) {
+            const tbody = $('#draftLogBody');
             tbody.empty();
-            if (logs.length === 0) {
-                tbody.append('<tr><td colspan="8">No records found.</td></tr>');
-                return;
-            }
+            tbody.append('<tr><td colspan="6">Loading...</td></tr>');
 
-            let index = 1;
-            logs.forEach(log => {
-                let typeClass = '';
-                switch(log.actionType) {
-                    case 'DRAFT_PICK':
-                    case 'WAIVER_CLAIM':
-                    case 'FA_ADD': typeClass = 'status-badge status-DRAFTING'; break;
-                    case 'TRADE_SUCCESS': typeClass = 'status-badge status-ONGOING'; break;
-                    case 'WAIVER_RELEASE': typeClass = 'status-badge status-WAITING'; break;
-                    case 'WAIVER_FA' : typeClass = 'status-badge status-FINISHED'; break;
-                    case 'TRADE_REJECT' : typeClass = 'status-badge status-REJECT'; break;
-                    default: typeClass = 'status-badge status-NORMAL';
+            $.get(`/apis/v1/fantasy/games/${seq}/picks`, function(picks) {
+                tbody.empty();
+                if (picks.length === 0) {
+                    tbody.append('<tr><td colspan="6">No picks yet.</td></tr>');
+                    return;
                 }
 
-                // Format Time
-                const timeStr = log.timestamp ? new Date(log.timestamp).toLocaleString() : '';
+                picks.forEach(p => {
+                    // Use position color classes
+                    const firstPos = p.playerPosition ? p.playerPosition.split(',')[0].trim().toLowerCase() : '';
+                    const posClass = 'pos-' + firstPos;
 
-                const row = `
-                    <tr>
-                        <td>${index++}</td>
-                        <td>${log.playerName || ''}</td>
-                        <td>${log.playerTeam || ''}</td>
-                        <td>${log.playerPosition || ''}</td>
-                        <td>${log.participantName || ''}</td>
-                        <td><span class="${typeClass}">${log.actionType}</span></td>
-                        <td>${log.details || ''}</td>
-                        <td>${timeStr}</td>
-                    </tr>
-                `;
-                tbody.append(row);
-            });
-        }
-
-        function loadDraftLogs(seq) {
-            const tbody = $('#logBody');
-            tbody.empty();
-            tbody.append('<tr><td colspan="8">Loading Draft Log...</td></tr>');
-
-            $.get(`/apis/v1/fantasy/games/${seq}/draft-picks`, function(logs) {
-                renderLogs(logs);
+                    const row = `
+                        <tr>
+                            <td>${p.pickNumber}</td>
+                            <td>${p.playerName || ''}</td>
+                            <td>${p.playerTeam || ''}</td>
+                            <td><span class="${posClass}" style="font-weight:bold;">${p.playerPosition || ''}</span></td>
+                            <td>${p.pickedByTeamName || ''}</td>
+                            <td>${p.pickedAt ? new Date(p.pickedAt).toLocaleTimeString() : ''}</td>
+                        </tr>
+                    `;
+                    tbody.append(row);
+                });
             });
         }
 
@@ -157,7 +174,43 @@
             tbody.append('<tr><td colspan="8">Loading Transactions...</td></tr>');
 
             $.get(`/apis/v1/fantasy/games/${seq}/logs`, function(logs) {
-                renderLogs(logs);
+                tbody.empty();
+                if (logs.length === 0) {
+                    tbody.append('<tr><td colspan="8">No history yet.</td></tr>');
+                    return;
+                }
+
+                let index = 1;
+                logs.forEach(log => {
+                    let typeClass = '';
+                    switch(log.actionType) {
+                        case 'DRAFT_PICK':
+                        case 'WAIVER_CLAIM':
+                        case 'FA_ADD': typeClass = 'status-badge status-DRAFTING'; break;
+                        case 'TRADE_SUCCESS': typeClass = 'status-badge status-ONGOING'; break;
+                        case 'WAIVER_RELEASE': typeClass = 'status-badge status-WAITING'; break;
+                        case 'WAIVER_FA' : typeClass = 'status-badge status-FINISHED'; break;
+                        case 'TRADE_REJECT' : typeClass = 'status-badge status-REJECT'; break;
+                        default: typeClass = 'status-badge status-NORMAL';
+                    }
+
+                    // Format Time
+                    const timeStr = log.timestamp ? new Date(log.timestamp).toLocaleString() : '';
+
+                    const row = `
+                        <tr>
+                            <td>${index++}</td>
+                            <td>${log.playerName || ''}</td>
+                            <td>${log.playerTeam || ''}</td>
+                            <td>${log.playerPosition || ''}</td>
+                            <td>${log.participantName || ''}</td>
+                            <td><span class="${typeClass}">${log.actionType}</span></td>
+                            <td>${log.details || ''}</td>
+                            <td>${timeStr}</td>
+                        </tr>
+                    `;
+                    tbody.append(row);
+                });
             });
         }
         /*]]>*/
