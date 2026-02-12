@@ -18,8 +18,13 @@
 
         <div th:replace="fragments/fantasy-nav :: nav(active='log')"></div>
 
+        <!-- Tabs -->
+        <div class="tabs-header">
+            <button class="tab-btn active" id="draft-tab" onclick="switchTab('draft')">DRAFT LOG</button>
+            <button class="tab-btn" id="transaction-tab" onclick="switchTab('transaction')">TRANSACTION LOG</button>
+        </div>
+
         <div class="fantasy-card">
-            <h2 class="card-title">Transaction History</h2>
             <div class="table-responsive">
                 <table class="fantasy-table">
                     <thead>
@@ -46,14 +51,35 @@
         /*<![CDATA[*/
         const currentUserId = 1;
 
+        let currentTab = 'draft';
+
         $(document).ready(function() {
             loadMyGames();
 
             $('#gameSelector').change(function() {
                 const seq = $(this).val();
-                if(seq) loadLogs(seq);
+                if(seq) reloadCurrentTab();
             });
         });
+
+        function switchTab(tabName) {
+            currentTab = tabName;
+            // Update UI classes
+            $('.tab-btn').removeClass('active');
+            $('#' + tabName + '-tab').addClass('active');
+            reloadCurrentTab();
+        }
+
+        function reloadCurrentTab() {
+            const seq = $('#gameSelector').val();
+            if (seq) {
+                if (currentTab === 'draft') {
+                    loadDraftLogs(seq);
+                } else {
+                    loadTransactionLogs(seq);
+                }
+            }
+        }
 
         function loadMyGames() {
             $.get('/apis/v1/fantasy/my-games?userId=' + currentUserId, function(games) {
@@ -68,55 +94,70 @@
                     select.append(`<option value="${g.seq}">${g.title}</option>`);
                 });
                 select.val(games[0].seq);
-                loadLogs(games[0].seq);
+                reloadCurrentTab();
             }).fail(function() {
                  $('#gameSelector').html('<option value="">Error loading games</option>');
             });
         }
 
-        function loadLogs(seq) {
+        function renderLogs(logs) {
             const tbody = $('#logBody');
             tbody.empty();
-            tbody.append('<tr><td colspan="8">Loading...</td></tr>');
+            if (logs.length === 0) {
+                tbody.append('<tr><td colspan="8">No records found.</td></tr>');
+                return;
+            }
 
-            $.get(`/apis/v1/fantasy/games/${seq}/logs`, function(logs) {
-                tbody.empty();
-                if (logs.length === 0) {
-                    tbody.append('<tr><td colspan="8">No history yet.</td></tr>');
-                    return;
+            let index = 1;
+            logs.forEach(log => {
+                let typeClass = '';
+                switch(log.actionType) {
+                    case 'DRAFT_PICK':
+                    case 'WAIVER_CLAIM':
+                    case 'FA_ADD': typeClass = 'status-badge status-DRAFTING'; break;
+                    case 'TRADE_SUCCESS': typeClass = 'status-badge status-ONGOING'; break;
+                    case 'WAIVER_RELEASE': typeClass = 'status-badge status-WAITING'; break;
+                    case 'WAIVER_FA' : typeClass = 'status-badge status-FINISHED'; break;
+                    case 'TRADE_REJECT' : typeClass = 'status-badge status-REJECT'; break;
+                    default: typeClass = 'status-badge status-NORMAL';
                 }
 
-                let index = 1;
-                logs.forEach(log => {
-                    let typeClass = '';
-                    switch(log.actionType) {
-                        case 'DRAFT_PICK':
-                        case 'WAIVER_CLAIM':
-                        case 'FA_ADD': typeClass = 'status-badge status-DRAFTING'; break;
-                        case 'TRADE_SUCCESS': typeClass = 'status-badge status-ONGOING'; break;
-                        case 'WAIVER_RELEASE': typeClass = 'status-badge status-WAITING'; break;
-                        case 'WAIVER_FA' : typeClass = 'status-badge status-FINISHED'; break;
-                        case 'TRADE_REJECT' : typeClass = 'status-badge status-REJECT'; break;
-                        default: typeClass = 'status-badge status-NORMAL';
-                    }
+                // Format Time
+                const timeStr = log.timestamp ? new Date(log.timestamp).toLocaleString() : '';
 
-                    // Format Time
-                    const timeStr = new Date(log.timestamp).toLocaleString();
+                const row = `
+                    <tr>
+                        <td>${index++}</td>
+                        <td>${log.playerName || ''}</td>
+                        <td>${log.playerTeam || ''}</td>
+                        <td>${log.playerPosition || ''}</td>
+                        <td>${log.participantName || ''}</td>
+                        <td><span class="${typeClass}">${log.actionType}</span></td>
+                        <td>${log.details || ''}</td>
+                        <td>${timeStr}</td>
+                    </tr>
+                `;
+                tbody.append(row);
+            });
+        }
 
-                    const row = `
-                        <tr>
-                            <td>${index++}</td>
-                            <td>${log.playerName || ''}</td>
-                            <td>${log.playerTeam || ''}</td>
-                            <td>${log.playerPosition || ''}</td>
-                            <td>${log.participantName || ''}</td>
-                            <td><span class="${typeClass}">${log.actionType}</span></td>
-                            <td>${log.details || ''}</td>
-                            <td>${timeStr}</td>
-                        </tr>
-                    `;
-                    tbody.append(row);
-                });
+        function loadDraftLogs(seq) {
+            const tbody = $('#logBody');
+            tbody.empty();
+            tbody.append('<tr><td colspan="8">Loading Draft Log...</td></tr>');
+
+            $.get(`/apis/v1/fantasy/games/${seq}/draft-picks`, function(logs) {
+                renderLogs(logs);
+            });
+        }
+
+        function loadTransactionLogs(seq) {
+            const tbody = $('#logBody');
+            tbody.empty();
+            tbody.append('<tr><td colspan="8">Loading Transactions...</td></tr>');
+
+            $.get(`/apis/v1/fantasy/games/${seq}/logs`, function(logs) {
+                renderLogs(logs);
             });
         }
         /*]]>*/

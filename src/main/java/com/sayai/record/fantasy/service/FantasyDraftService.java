@@ -222,15 +222,17 @@ public class FantasyDraftService {
         draftPickRepository.save(pick);
 
         // Log to RosterLog
-        RosterLog.LogActionType actionType = isDrafting ? RosterLog.LogActionType.DRAFT_PICK : RosterLog.LogActionType.FA_ADD;
-        RosterLog logEntry = RosterLog.builder()
-                .fantasyGameSeq(request.getFantasyGameSeq())
-                .participantId(request.getPlayerId())
-                .fantasyPlayerSeq(request.getFantasyPlayerSeq())
-                .actionType(actionType)
-                .details(targetPlayer.getName() + " - " + (isDrafting ? "Picked in Draft" : "Signed via FA"))
-                .build();
-        rosterLogRepository.save(logEntry);
+        if (!isDrafting) {
+            RosterLog.LogActionType actionType = RosterLog.LogActionType.FA_ADD;
+            RosterLog logEntry = RosterLog.builder()
+                    .fantasyGameSeq(request.getFantasyGameSeq())
+                    .participantId(request.getPlayerId())
+                    .fantasyPlayerSeq(request.getFantasyPlayerSeq())
+                    .actionType(actionType)
+                    .details(targetPlayer.getName() + " - Signed via FA")
+                    .build();
+            rosterLogRepository.save(logEntry);
+        }
 
 
         if (isDrafting) {

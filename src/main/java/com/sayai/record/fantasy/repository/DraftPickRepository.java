@@ -8,6 +8,7 @@ import java.util.Optional;
 
 public interface DraftPickRepository extends JpaRepository<DraftPick, Long> {
     List<DraftPick> findByFantasyGameSeq(Long fantasyGameSeq);
+    List<DraftPick> findByFantasyGameSeqOrderByPickNumberAsc(Long fantasyGameSeq);
     List<DraftPick> findByPlayerId(Long playerId);
     List<DraftPick> findByFantasyGameSeqAndPlayerId(Long fantasyGameSeq, Long playerId);
     Optional<DraftPick> findByFantasyGameSeqAndFantasyPlayerSeq(Long fantasyGameSeq, Long fantasyPlayerSeq);
