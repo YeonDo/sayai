@@ -9,4 +9,5 @@ import java.util.Optional;
 public interface FantasyParticipantRepository extends JpaRepository<FantasyParticipant, Long> {
     Optional<FantasyParticipant> findByFantasyGameSeqAndPlayerId(Long fantasyGameSeq, Long playerId);
     List<FantasyParticipant> findByFantasyGameSeq(Long fantasyGameSeq);
+    List<FantasyParticipant> findByPlayerId(Long playerId);
 }
