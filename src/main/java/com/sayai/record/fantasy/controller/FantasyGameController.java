@@ -40,7 +40,7 @@ public class FantasyGameController {
 
     @GetMapping("/my-games")
     public ResponseEntity<List<FantasyGameDto>> getMyGames(@AuthenticationPrincipal CustomUserDetails userDetails,
-                                                           @RequestParam(required = false) FantasyGame.GameStatus status) {
+                                                           @RequestParam(name = "status", required = false) FantasyGame.GameStatus status) {
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
