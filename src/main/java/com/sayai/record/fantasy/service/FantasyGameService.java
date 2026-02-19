@@ -68,7 +68,7 @@ public class FantasyGameService {
     }
 
     @Transactional(readOnly = true)
-    public List<FantasyGameDto> getMyGames(Long userId) {
+    public List<FantasyGameDto> getMyGames(Long userId, FantasyGame.GameStatus status) {
         // Find games where user participated
         List<FantasyParticipant> myParticipations = fantasyParticipantRepository.findAll().stream()
                 .filter(p -> p.getPlayerId().equals(userId))
@@ -79,6 +79,10 @@ public class FantasyGameService {
                 .collect(Collectors.toList());
 
         List<FantasyGame> games = fantasyGameRepository.findAllById(gameSeqs);
+
+        if (status != null) {
+            games = games.stream().filter(g -> g.getStatus() == status).collect(Collectors.toList());
+        }
 
         return games.stream().map(FantasyGameDto::from).collect(Collectors.toList());
     }

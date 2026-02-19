@@ -234,7 +234,7 @@
 
         function loadMyGames() {
             // Passing userId just in case backend requires it, but AuthPrincipal usually handles it
-            $.get('/apis/v1/fantasy/my-games', function(games) {
+            $.get('/apis/v1/fantasy/my-games?status=ONGOING', function(games) {
                 const select = $('#gameSelector');
                 select.empty();
                 if (games.length === 0) {
