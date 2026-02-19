@@ -6,6 +6,7 @@ import com.sayai.record.auth.repository.MemberRepository;
 import com.sayai.record.fantasy.dto.DraftLogDto;
 import com.sayai.record.fantasy.dto.FantasyGameDetailDto;
 import com.sayai.record.fantasy.dto.FantasyGameDto;
+import com.sayai.record.fantasy.entity.FantasyGame;
 import com.sayai.record.fantasy.entity.FantasyParticipant;
 import com.sayai.record.fantasy.repository.FantasyParticipantRepository;
 import com.sayai.record.fantasy.service.FantasyGameService;
@@ -38,11 +39,12 @@ public class FantasyGameController {
     }
 
     @GetMapping("/my-games")
-    public ResponseEntity<List<FantasyGameDto>> getMyGames(@AuthenticationPrincipal CustomUserDetails userDetails) {
+    public ResponseEntity<List<FantasyGameDto>> getMyGames(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                                           @RequestParam(name = "status", required = false) FantasyGame.GameStatus status) {
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
-        return ResponseEntity.ok(fantasyGameService.getMyGames(userDetails.getPlayerId()));
+        return ResponseEntity.ok(fantasyGameService.getMyGames(userDetails.getPlayerId(), status));
     }
 
 
