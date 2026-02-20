@@ -11,4 +11,5 @@ public interface FantasyParticipantRepository extends JpaRepository<FantasyParti
     Optional<FantasyParticipant> findByFantasyGameSeqAndPlayerId(Long fantasyGameSeq, Long playerId);
     List<FantasyParticipant> findByFantasyGameSeq(Long fantasyGameSeq);
     List<FantasyParticipant> findByFantasyGameSeqIn(Collection<Long> fantasyGameSeqs);
+    List<FantasyParticipant> findByPlayerId(Long playerId);
 }

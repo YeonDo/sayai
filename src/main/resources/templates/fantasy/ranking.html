@@ -209,9 +209,6 @@
                     const p = (key) => {
                         const rank = rankMap[key][teamName];
                         const val = stats[key];
-                        const fixed = (key === 'avg') ? 3 : (key === 'era' || key === 'whip' || key === 'totalPoints') ? 2 : 0; // Point usually integer? But totalPoints in DTO is double.
-                        // Wait, 'Point' column in image is round point. In DTO it's 'totalPoints' field of FantasyScoreDto.
-                        // And image shows 120, 110 (integers?). Let's use 1 decimal for points.
                         if (val === null || val === undefined) return '';
 
                         let displayVal = val;
