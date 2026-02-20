@@ -43,9 +43,7 @@ public class FantasyGameService {
 
         // 2. Get all participants for these games to calculate counts and check join status
         List<Long> gameSeqs = games.stream().map(FantasyGame::getSeq).collect(Collectors.toList());
-        List<FantasyParticipant> participants = fantasyParticipantRepository.findAll().stream()
-                .filter(p -> gameSeqs.contains(p.getFantasyGameSeq()))
-                .collect(Collectors.toList());
+        List<FantasyParticipant> participants = gameSeqs.isEmpty() ? Collections.emptyList() : fantasyParticipantRepository.findByFantasyGameSeqIn(gameSeqs);
 
         Map<Long, Long> countMap = participants.stream()
                 .collect(Collectors.groupingBy(FantasyParticipant::getFantasyGameSeq, Collectors.counting()));
