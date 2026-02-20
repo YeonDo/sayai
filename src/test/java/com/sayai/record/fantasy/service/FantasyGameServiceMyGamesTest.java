@@ -46,7 +46,7 @@ class FantasyGameServiceMyGamesTest {
 
         FantasyParticipant p1 = FantasyParticipant.builder().fantasyGameSeq(gameSeq1).playerId(userId).build();
         FantasyParticipant p2 = FantasyParticipant.builder().fantasyGameSeq(gameSeq2).playerId(userId).build();
-        when(fantasyParticipantRepository.findAll()).thenReturn(Arrays.asList(p1, p2));
+        when(fantasyParticipantRepository.findByPlayerId(userId)).thenReturn(Arrays.asList(p1, p2));
 
         FantasyGame g1 = FantasyGame.builder().seq(gameSeq1).status(FantasyGame.GameStatus.ONGOING).title("Game1").build();
         FantasyGame g2 = FantasyGame.builder().seq(gameSeq2).status(FantasyGame.GameStatus.FINISHED).title("Game2").build();
@@ -65,7 +65,7 @@ class FantasyGameServiceMyGamesTest {
 
         FantasyParticipant p1 = FantasyParticipant.builder().fantasyGameSeq(gameSeq1).playerId(userId).build();
         FantasyParticipant p2 = FantasyParticipant.builder().fantasyGameSeq(gameSeq2).playerId(userId).build();
-        when(fantasyParticipantRepository.findAll()).thenReturn(Arrays.asList(p1, p2));
+        when(fantasyParticipantRepository.findByPlayerId(userId)).thenReturn(Arrays.asList(p1, p2));
 
         FantasyGame g1 = FantasyGame.builder().seq(gameSeq1).status(FantasyGame.GameStatus.ONGOING).title("Game1").build();
         FantasyGame g2 = FantasyGame.builder().seq(gameSeq2).status(FantasyGame.GameStatus.FINISHED).title("Game2").build();
