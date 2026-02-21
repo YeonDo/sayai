@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <title>Mock Draft Log</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
@@ -113,38 +114,57 @@
             tbody.empty();
             tbody.append('<tr><td colspan="6">Loading...</td></tr>');
 
-            $.get(`/apis/v1/fantasy/games/${seq}/logs?type=DRAFT`, function(logs) {
-                tbody.empty();
-                if (logs.length === 0) {
-                    tbody.append('<tr><td colspan="6">No picks yet.</td></tr>');
-                    return;
-                }
+            // Fetch Participants first to get count (N)
+            $.get(`/apis/v1/fantasy/games/${seq}/participants`, function(participants) {
+                const N = participants.length || 10; // Fallback if 0 (should not happen)
 
-                logs.forEach(log => {
-                    const firstPos = log.playerPosition ? log.playerPosition.split(',')[0].trim().toLowerCase() : '';
-                    const posClass = 'pos-' + firstPos;
-
-                    let timeStr = '';
-                    if (log.timestamp) {
-                        let dateStr = log.timestamp;
-                        if (!dateStr.endsWith('Z') && !dateStr.includes('+')) {
-                            dateStr += 'Z';
-                        }
-                        timeStr = new Date(dateStr).toLocaleString();
+                $.get(`/apis/v1/fantasy/games/${seq}/logs?type=DRAFT`, function(logs) {
+                    tbody.empty();
+                    if (logs.length === 0) {
+                        tbody.append('<tr><td colspan="6">No picks yet.</td></tr>');
+                        return;
                     }
 
-                    const row = `
-                        <tr>
-                            <td>${log.seq}</td>
-                            <td>${log.playerName || ''}</td>
-                            <td>${log.playerTeam || ''}</td>
-                            <td><span class="${posClass}" style="font-weight:bold;">${log.playerPosition || ''}</span></td>
-                            <td>${log.participantName || ''}</td>
-                            <td>${timeStr}</td>
-                        </tr>
-                    `;
-                    tbody.append(row);
+                    logs.forEach((log, index) => {
+                        // Use position color classes
+                        const firstPos = log.playerPosition ? log.playerPosition.split(',')[0].trim().toLowerCase() : '';
+                        const posClass = 'pos-' + firstPos;
+
+                        // Parse UTC Date
+                        let timeStr = '';
+                        if (log.timestamp) {
+                            let dateStr = log.timestamp;
+                            if (!dateStr.endsWith('Z') && !dateStr.includes('+')) {
+                                dateStr += 'Z'; // Force UTC interpretation
+                            }
+                            timeStr = new Date(dateStr).toLocaleString();
+                        }
+
+                        // Calculate Round-Pick Format
+                        // 1R - 1pick (1픽)
+                        // N = Participant Count
+                        // pickNum = index + 1 (Assuming logs are sorted by time asc)
+                        const pickNum = index + 1;
+                        const round = Math.ceil(pickNum / N);
+                        const pickInRound = (pickNum - 1) % N + 1;
+                        const displayPick = `${round}R - ${pickInRound}pick (${pickNum}픽)`;
+
+
+                        const row = `
+                            <tr>
+                                <td>${displayPick}</td>
+                                <td>${log.playerName || ''}</td>
+                                <td>${log.playerTeam || ''}</td>
+                                <td><span class="${posClass}" style="font-weight:bold;">${log.playerPosition || ''}</span></td>
+                                <td>${log.participantName || ''}</td>
+                                <td>${timeStr}</td>
+                            </tr>
+                        `;
+                        tbody.append(row);
+                    });
                 });
+            }).fail(function() {
+                tbody.html('<tr><td colspan="6">Error loading data.</td></tr>');
             });
         }
 
