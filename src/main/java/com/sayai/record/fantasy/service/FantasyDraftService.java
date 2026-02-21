@@ -223,7 +223,7 @@ public class FantasyDraftService {
 
         // Log to RosterLog
         RosterLog.LogActionType actionType = isDrafting ? RosterLog.LogActionType.DRAFT_PICK : RosterLog.LogActionType.FA_ADD;
-        String logDetails = isDrafting ? "Draft Pick #" + pickNumber : targetPlayer.getName() + " - Signed via FA";
+        String logDetails = isDrafting ? "Draft Pick #" + pickNumber + (request.isAutoPick() ? " (Auto)" : "") : targetPlayer.getName() + " - Signed via FA";
 
         RosterLog logEntry = RosterLog.builder()
                 .fantasyGameSeq(request.getFantasyGameSeq())
@@ -547,6 +547,7 @@ public class FantasyDraftService {
             req.setFantasyGameSeq(gameSeq);
             req.setFantasyPlayerSeq(selected.getSeq());
             req.setPlayerId(playerId);
+            req.setAutoPick(true);
             draftPlayer(req);
         } else {
             // Log or handle no valid pick found

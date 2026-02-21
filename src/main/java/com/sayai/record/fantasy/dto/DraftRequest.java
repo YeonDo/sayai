@@ -13,4 +13,6 @@ public class DraftRequest {
     private Long fantasyGameSeq;
     private Long playerId;
     private Long fantasyPlayerSeq;
+    @Builder.Default
+    private boolean isAutoPick = false;
 }
