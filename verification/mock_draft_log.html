@@ -162,6 +162,8 @@
                         `;
                         tbody.append(row);
                     });
+                }).fail(function() {
+                    tbody.html('<tr><td colspan="6">Error loading data.</td></tr>');
                 });
             }).fail(function() {
                 tbody.html('<tr><td colspan="6">Error loading data.</td></tr>');
