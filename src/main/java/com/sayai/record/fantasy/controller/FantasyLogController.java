@@ -17,6 +17,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -89,11 +90,14 @@ public class FantasyLogController {
     }
 
     @GetMapping("/games/{gameSeq}/logs")
-    public ResponseEntity<List<RosterLogDto>> getLogs(@PathVariable(name = "gameSeq") Long gameSeq) {
-        // Sort by timestamp ASC as requested ("점점 로그가 밑으로 쌓이는거야")
-        List<RosterLog> logs = rosterLogRepository.findAll(Sort.by(Sort.Direction.ASC, "timestamp")).stream()
-                .filter(l -> l.getFantasyGameSeq().equals(gameSeq))
-                .collect(Collectors.toList());
+    public ResponseEntity<List<RosterLogDto>> getLogs(@PathVariable(name = "gameSeq") Long gameSeq,
+                                                      @RequestParam(name = "type", required = false) String type) {
+        List<RosterLog> logs;
+        if ("DRAFT".equals(type)) {
+            logs = rosterLogRepository.findByFantasyGameSeqAndActionTypeOrderByTimestampAsc(gameSeq, RosterLog.LogActionType.DRAFT_PICK);
+        } else {
+            logs = rosterLogRepository.findByFantasyGameSeqAndActionTypeNotOrderByTimestampAsc(gameSeq, RosterLog.LogActionType.DRAFT_PICK);
+        }
 
         // Batch fetch players
         Set<Long> playerSeqs = logs.stream()

@@ -1,82 +1,56 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="~{layout/default}">
+<html>
 <head>
-    <title>Fantasy League - Logs</title>
-    <link rel="stylesheet" th:href="@{/css/fantasy.css}">
+    <meta charset="UTF-8">
+    <title>Mock Draft Log</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        .fantasy-table { width: 100%; border-collapse: collapse; }
+        .fantasy-table th, .fantasy-table td { border: 1px solid #ccc; padding: 8px; }
+        .pos-sp { color: red; }
+        .status-badge { padding: 4px; border-radius: 4px; color: white; }
+        .status-DRAFTING { background-color: blue; }
+        .tab-content-area { padding: 20px; }
+    </style>
 </head>
 <body>
-<div layout:fragment="content">
     <div class="container">
-        <header class="fantasy-header">
-            <h1>Game Logs</h1>
-            <select id="gameSelector" class="form-control" style="width: 250px; padding: 5px;">
-                <option value="">Loading Games...</option>
-            </select>
-        </header>
+        <select id="gameSelector">
+            <option value="">Loading Games...</option>
+        </select>
 
-        <div th:replace="fragments/fantasy-nav :: nav(active='log')"></div>
-
-        <!-- Tabs -->
         <div class="tabs-header">
             <button class="tab-btn active" id="draft-tab" onclick="switchTab('draft')">DRAFT LOG</button>
             <button class="tab-btn" id="transaction-tab" onclick="switchTab('transaction')">TRANSACTION LOG</button>
         </div>
 
-        <!-- Draft Tab Content -->
         <div id="draft-content" class="tab-content-area">
-            <div class="fantasy-card">
-                <h2 class="card-title">Draft Picks</h2>
-                <div class="table-responsive">
-                    <table class="fantasy-table">
-                        <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Player</th>
-                            <th>Team</th>
-                            <th>Position</th>
-                            <th>Picked By</th>
-                            <th>Time</th>
-                        </tr>
-                        </thead>
-                        <tbody id="draftLogBody">
-                        <!-- Content -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            <h2>Draft Picks</h2>
+            <table class="fantasy-table">
+                <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Player</th>
+                    <th>Team</th>
+                    <th>Position</th>
+                    <th>Picked By</th>
+                    <th>Time</th>
+                </tr>
+                </thead>
+                <tbody id="draftLogBody">
+                </tbody>
+            </table>
         </div>
 
-        <!-- Transaction Tab Content -->
         <div id="transaction-content" class="tab-content-area" style="display:none;">
-            <div class="fantasy-card">
-                <h2 class="card-title">Transaction History</h2>
-                <div class="table-responsive">
-                    <table class="fantasy-table">
-                        <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Player</th>
-                            <th>Team</th>
-                            <th>Position</th>
-                            <th>Participant</th>
-                            <th>Action Type</th>
-                            <th>Details</th>
-                            <th>Time</th>
-                        </tr>
-                        </thead>
-                        <tbody id="logBody">
-                        <!-- Content -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            <h2>Transaction History</h2>
+            <table class="fantasy-table">
+                <tbody id="logBody"></tbody>
+            </table>
         </div>
     </div>
 
-    <script th:inline="javascript">
-        /*<![CDATA[*/
+    <script>
         const currentUserId = 1;
         let currentTab = 'draft';
 
@@ -91,7 +65,6 @@
 
         function switchTab(tabName) {
             currentTab = tabName;
-            // Update UI classes
             $('.tab-btn').removeClass('active');
             $('#' + tabName + '-tab').addClass('active');
 
@@ -198,59 +171,8 @@
         }
 
         function loadTransactionLogs(seq) {
-            const tbody = $('#logBody');
-            tbody.empty();
-            tbody.append('<tr><td colspan="8">Loading Transactions...</td></tr>');
-
-            $.get(`/apis/v1/fantasy/games/${seq}/logs`, function(logs) {
-                tbody.empty();
-                if (logs.length === 0) {
-                    tbody.append('<tr><td colspan="8">No history yet.</td></tr>');
-                    return;
-                }
-
-                let index = 1;
-                logs.forEach(log => {
-                    let typeClass = '';
-                    switch(log.actionType) {
-                        case 'DRAFT_PICK':
-                        case 'WAIVER_CLAIM':
-                        case 'FA_ADD': typeClass = 'status-badge status-DRAFTING'; break;
-                        case 'TRADE_SUCCESS': typeClass = 'status-badge status-ONGOING'; break;
-                        case 'WAIVER_RELEASE': typeClass = 'status-badge status-WAITING'; break;
-                        case 'WAIVER_FA' : typeClass = 'status-badge status-FINISHED'; break;
-                        case 'TRADE_REJECT' : typeClass = 'status-badge status-REJECT'; break;
-                        default: typeClass = 'status-badge status-NORMAL';
-                    }
-
-                    // Parse UTC Date
-                    let timeStr = '';
-                    if (log.timestamp) {
-                        let dateStr = log.timestamp;
-                        if (!dateStr.endsWith('Z') && !dateStr.includes('+')) {
-                            dateStr += 'Z'; // Force UTC interpretation
-                        }
-                        timeStr = new Date(dateStr).toLocaleString();
-                    }
-
-                    const row = `
-                        <tr>
-                            <td>${index++}</td>
-                            <td>${log.playerName || ''}</td>
-                            <td>${log.playerTeam || ''}</td>
-                            <td>${log.playerPosition || ''}</td>
-                            <td>${log.participantName || ''}</td>
-                            <td><span class="${typeClass}">${log.actionType}</span></td>
-                            <td>${log.details || ''}</td>
-                            <td>${timeStr}</td>
-                        </tr>
-                    `;
-                    tbody.append(row);
-                });
-            });
+            // omitted for brevity as we test draft log
         }
-        /*]]>*/
     </script>
-</div>
 </body>
 </html>
