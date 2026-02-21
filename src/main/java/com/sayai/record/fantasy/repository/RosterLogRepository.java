@@ -9,4 +9,7 @@ import java.util.List;
 @Repository
 public interface RosterLogRepository extends JpaRepository<RosterLog, Long> {
     List<RosterLog> findByFantasyGameSeqOrderByTimestampDesc(Long fantasyGameSeq);
+
+    List<RosterLog> findByFantasyGameSeqAndActionTypeOrderByTimestampAsc(Long fantasyGameSeq, RosterLog.LogActionType actionType);
+    List<RosterLog> findByFantasyGameSeqAndActionTypeNotOrderByTimestampAsc(Long fantasyGameSeq, RosterLog.LogActionType actionType);
 }

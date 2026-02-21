@@ -141,22 +141,22 @@
             tbody.empty();
             tbody.append('<tr><td colspan="6">Loading...</td></tr>');
 
-            $.get(`/apis/v1/fantasy/games/${seq}/picks`, function(picks) {
+            $.get(`/apis/v1/fantasy/games/${seq}/logs?type=DRAFT`, function(logs) {
                 tbody.empty();
-                if (picks.length === 0) {
+                if (logs.length === 0) {
                     tbody.append('<tr><td colspan="6">No picks yet.</td></tr>');
                     return;
                 }
 
-                picks.forEach(p => {
+                logs.forEach(log => {
                     // Use position color classes
-                    const firstPos = p.playerPosition ? p.playerPosition.split(',')[0].trim().toLowerCase() : '';
+                    const firstPos = log.playerPosition ? log.playerPosition.split(',')[0].trim().toLowerCase() : '';
                     const posClass = 'pos-' + firstPos;
 
                     // Parse UTC Date
                     let timeStr = '';
-                    if (p.pickedAt) {
-                        let dateStr = p.pickedAt;
+                    if (log.timestamp) {
+                        let dateStr = log.timestamp;
                         if (!dateStr.endsWith('Z') && !dateStr.includes('+')) {
                             dateStr += 'Z'; // Force UTC interpretation
                         }
@@ -165,11 +165,11 @@
 
                     const row = `
                         <tr>
-                            <td>${p.pickNumber}</td>
-                            <td>${p.playerName || ''}</td>
-                            <td>${p.playerTeam || ''}</td>
-                            <td><span class="${posClass}" style="font-weight:bold;">${p.playerPosition || ''}</span></td>
-                            <td>${p.pickedByTeamName || ''}</td>
+                            <td>${log.seq}</td>
+                            <td>${log.playerName || ''}</td>
+                            <td>${log.playerTeam || ''}</td>
+                            <td><span class="${posClass}" style="font-weight:bold;">${log.playerPosition || ''}</span></td>
+                            <td>${log.participantName || ''}</td>
                             <td>${timeStr}</td>
                         </tr>
                     `;
