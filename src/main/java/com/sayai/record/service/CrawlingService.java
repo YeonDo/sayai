@@ -107,6 +107,13 @@ public class CrawlingService {
                 .homeScore(homeScore).awayScore(awayScore).result(result).build();
         Game saveGame = gameService.saveGame(game);
 
+        List<Player> allPlayers = playerService.getAllPlayers();
+        Map<String, Player> playerCache = allPlayers.stream()
+            .collect(Collectors.toMap(
+                p -> "임환용".equals(p.getName()) ? "임강록" : p.getName(),
+                java.util.function.Function.identity(),
+                (p1, p2) -> p1
+            ));
 
         List<Hit> hitList = new ArrayList<>();
         List<Pitch> pitchList = new ArrayList<>();
@@ -155,7 +162,11 @@ public class CrawlingService {
         long gameseq = 1L;
         for(int i=0; i<numRows1; i++){
             String name = hittable[i][0].split(" ")[1];
-            Player player = playerService.getPlayerByName(name).get();
+            String lookupName = "임환용".equals(name) ? "임강록" : name;
+            Player player = playerCache.get(lookupName);
+            if (player == null) {
+                player = playerService.getPlayerByName(name).orElseThrow(NoSuchElementException::new);
+            }
             Long hitseq = 1L;
             for(int j=1; j<12; j++){
                 if(!hittable[i][j].isEmpty()){
@@ -228,7 +239,11 @@ public class CrawlingService {
             }else{
                 inn = Long.parseLong(innStr)*3;
             }
-            Player player = playerService.getPlayerByName(name).get();
+            String lookupName = "임환용".equals(name) ? "임강록" : name;
+            Player player = playerCache.get(lookupName);
+            if (player == null) {
+                player = playerService.getPlayerByName(name).orElseThrow(NoSuchElementException::new);
+            }
             Pitch pitch = (Pitch.builder().game(saveGame).clubId(15387L).player(player).result(pitchtable[i][1])
                     .inning(inn).batter(Long.parseLong(pitchtable[i][3])).hitter(Long.parseLong(pitchtable[i][4]))
                     .pHit(Long.parseLong(pitchtable[i][5]))).pHomerun(Long.parseLong(pitchtable[i][6]))
@@ -320,7 +335,10 @@ public class CrawlingService {
         for(int i=1; i<pitcherBoardList.size(); i++){
             if(pitchStack == 0){
                 if(pitcherIdx >= pitcherSize) {
-                    Player randomPlayer = playerService.getPlayerByName("강은비").get();
+                    Player randomPlayer = playerCache.get("강은비");
+                    if (randomPlayer == null) {
+                        randomPlayer = playerService.getPlayerByName("강은비").orElseThrow(NoSuchElementException::new);
+                    }
                     pitch = Pitch.builder().player(randomPlayer).batter(100L).build();
                 }else
                     pitch = pitchList.get(pitcherIdx);

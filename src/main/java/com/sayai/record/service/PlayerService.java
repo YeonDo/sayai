@@ -37,6 +37,10 @@ public class PlayerService {
         return playerRepository.findPlayerByName(name);
     }
 
+    public List<Player> getAllPlayers() {
+        return playerRepository.findAll();
+    }
+
 
     public List<PitcherDto> getPitcherList(LocalDate startDate, LocalDate endDate){
         List<PitcherDto> result = new ArrayList<>();
