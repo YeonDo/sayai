@@ -150,10 +150,10 @@ public class AdminController {
             return ResponseEntity.badRequest().body(errorMessage);
         }
 
-        if (memberRepository.existsById(request.getPlayerId())) {
-            return ResponseEntity.badRequest().body("Player ID already exists");
-        }
-        if (memberRepository.findByUserId(request.getUserId()).isPresent()) {
+        if (memberRepository.existsByPlayerIdOrUserId(request.getPlayerId(), request.getUserId())) {
+            if (memberRepository.existsById(request.getPlayerId())) {
+                return ResponseEntity.badRequest().body("Player ID already exists");
+            }
             return ResponseEntity.badRequest().body("User ID already exists");
         }
 
