@@ -289,26 +289,32 @@ public class FantasyGameService {
         }
         sb.append("\n");
 
+        int teams = allBatters.size();
+
         // Batters (9 rows)
         for (int i = 0; i < 9; i++) {
-            for (List<String> teamBatters : allBatters) {
+            for (int t = 0; t < teams; t++) {
+                List<String> teamBatters = allBatters.get(t);
                 if (i < teamBatters.size()) {
                     sb.append(teamBatters.get(i));
                 }
-                sb.append("\t");
+                sb.append('\t');
             }
-            sb.append("\n");
+            sb.append('\n');
         }
+
+        int pitcherTeams = allPitchers.size();
 
         // Pitchers (9 rows)
         for (int i = 0; i < 9; i++) {
-            for (List<String> teamPitchers : allPitchers) {
+            for (int t = 0; t < pitcherTeams; t++) {
+                List<String> teamPitchers = allPitchers.get(t);
                 if (i < teamPitchers.size()) {
                     sb.append(teamPitchers.get(i));
                 }
-                sb.append("\t");
+                sb.append('\t');
             }
-            sb.append("\n");
+            sb.append('\n');
         }
 
         return sb.toString();
