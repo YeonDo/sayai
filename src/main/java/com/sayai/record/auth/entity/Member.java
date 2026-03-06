@@ -3,6 +3,7 @@ package com.sayai.record.auth.entity;
 import lombok.*;
 
 import jakarta.persistence.*;
+import java.io.Serializable;
 
 @Getter
 @Setter
@@ -11,7 +12,7 @@ import jakarta.persistence.*;
 @Builder
 @Table(name = "app_users")
 @Entity
-public class Member {
+public class Member implements Serializable {
 
     @Id
     private Long playerId;
