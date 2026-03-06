@@ -105,8 +105,7 @@ class AdminControllerTest {
         BindingResult bindingResult = mock(BindingResult.class);
         when(bindingResult.hasErrors()).thenReturn(false);
 
-        when(memberRepository.existsById(10L)).thenReturn(false);
-        when(memberRepository.findByUserId("newUser")).thenReturn(java.util.Optional.empty());
+        when(memberRepository.existsByPlayerIdOrUserId(10L, "newUser")).thenReturn(false);
         when(passwordEncoder.encode("pass")).thenReturn("encoded");
 
         ResponseEntity<String> response = adminController.createUser(req, bindingResult);
