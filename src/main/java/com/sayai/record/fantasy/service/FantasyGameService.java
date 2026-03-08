@@ -66,7 +66,7 @@ public class FantasyGameService {
     }
 
     @Transactional(readOnly = true)
-    public List<FantasyGameDto> getMyGames(Long userId, FantasyGame.GameStatus status) {
+    public List<FantasyGameDto> getMyGames(Long userId, FantasyGame.GameStatus status, FantasyGame.RuleType type) {
         // Find games where user participated
         List<FantasyParticipant> myParticipations = fantasyParticipantRepository.findByPlayerId(userId);
 
@@ -78,6 +78,10 @@ public class FantasyGameService {
 
         if (status != null) {
             games = games.stream().filter(g -> g.getStatus() == status).collect(Collectors.toList());
+        }
+
+        if (type != null) {
+            games = games.stream().filter(g -> g.getRuleType() == type).collect(Collectors.toList());
         }
 
         return games.stream().map(FantasyGameDto::from).collect(Collectors.toList());
