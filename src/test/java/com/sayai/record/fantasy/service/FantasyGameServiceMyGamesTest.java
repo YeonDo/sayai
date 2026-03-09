@@ -52,7 +52,7 @@ class FantasyGameServiceMyGamesTest {
         FantasyGame g2 = FantasyGame.builder().seq(gameSeq2).status(FantasyGame.GameStatus.FINISHED).title("Game2").build();
         when(fantasyGameRepository.findAllById(Arrays.asList(gameSeq1, gameSeq2))).thenReturn(Arrays.asList(g1, g2));
 
-        List<FantasyGameDto> result = fantasyGameService.getMyGames(userId, null);
+        List<FantasyGameDto> result = fantasyGameService.getMyGames(userId, null, null);
 
         assertEquals(2, result.size());
     }
@@ -71,7 +71,7 @@ class FantasyGameServiceMyGamesTest {
         FantasyGame g2 = FantasyGame.builder().seq(gameSeq2).status(FantasyGame.GameStatus.FINISHED).title("Game2").build();
         when(fantasyGameRepository.findAllById(Arrays.asList(gameSeq1, gameSeq2))).thenReturn(Arrays.asList(g1, g2));
 
-        List<FantasyGameDto> result = fantasyGameService.getMyGames(userId, FantasyGame.GameStatus.ONGOING);
+        List<FantasyGameDto> result = fantasyGameService.getMyGames(userId, FantasyGame.GameStatus.ONGOING, null);
 
         assertEquals(1, result.size());
         assertEquals(FantasyGame.GameStatus.ONGOING, result.get(0).getStatus());
