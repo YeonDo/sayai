@@ -154,10 +154,17 @@
 
             $('#joinForm').submit(function(e) {
                 e.preventDefault();
+
+                const teamName = $('#joinTeamName').val();
+                if (teamName.replace(/\s/g, '').length < 5) {
+                    alert('팀명은 공백을 제외하고 5자 이상이어야 합니다.');
+                    return false;
+                }
+
                 const seq = $('#joinGameSeq').val();
                 const data = {
                     preferredTeam: $('#joinPrefTeam').val(),
-                    teamName: $('#joinTeamName').val()
+                    teamName: teamName
                 };
 
                 $.ajax({
