@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import com.sayai.record.fantasy.repository.RosterLogRepository;
 import org.mockito.MockitoAnnotations;
 
 import java.time.LocalDateTime;
@@ -36,6 +37,10 @@ class FantasyDraftServiceAutoPickTest {
     private org.springframework.messaging.simp.SimpMessagingTemplate messagingTemplate;
     @Mock
     private org.springframework.beans.factory.ObjectProvider<DraftScheduler> draftSchedulerProvider;
+
+
+    @Mock
+    private RosterLogRepository rosterLogRepository;
 
     @InjectMocks
     private FantasyDraftService fantasyDraftService;
