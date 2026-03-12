@@ -1,0 +1,50 @@
+--- src/main/java/com/sayai/record/fantasy/service/FantasyDraftService.java
++++ src/main/java/com/sayai/record/fantasy/service/FantasyDraftService.java
+@@ -180,9 +180,14 @@
+             }
+         }
+
++        // Get Participant Info
++        FantasyParticipant participant = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(
++                request.getFantasyGameSeq(), request.getPlayerId())
++                .orElse(null);
++
+         // Salary Cap Check
+         if (game.getSalaryCap() != null && game.getSalaryCap() > 0) {
+-            int currentCost = currentTeam.stream().mapToInt(p -> p.getCost() == null ? 0 : p.getCost()).sum();
++            int currentCost = com.sayai.record.fantasy.util.SalaryCapCalculator.calculateTeamCost(game, participant, currentTeam);
+             int newPlayerCost = targetPlayer.getCost() == null ? 0 : targetPlayer.getCost();
+
+             // Penalty check for 21st player
+@@ -196,11 +201,6 @@
+             }
+         }
+
+-        // Get Participant Info (needed for Rule 2)
+-        FantasyParticipant participant = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(
+-                request.getFantasyGameSeq(), request.getPlayerId())
+-                .orElse(null);
+-
+         // Validate draft rules (Composition, etc) ONLY for DRAFTING
+         if (isDrafting) {
+              draftValidator.validate(game, targetPlayer, currentTeam, participant);
+@@ -490,7 +490,9 @@
+             available = fantasyPlayerRepository.findBySeqNotIn(pickedPlayerSeqs);
+         }
+
+-        FantasyParticipant participant = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(gameSeq, playerId).orElseThrow();
++        FantasyParticipant participant = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(gameSeq, playerId).orElse(null);
++        if (participant == null) participant = FantasyParticipant.builder().playerId(playerId).build();
++
+         List<FantasyPlayer> candidates = available;
+
+         // First Pick Rule for Auto Pick (applies to both Rule 1 and Rule 2 if enabled)
+@@ -520,7 +522,7 @@
+
+         int currentCost = 0;
+         if (game.getSalaryCap() != null && game.getSalaryCap() > 0) {
+-            currentCost = currentTeam.stream().mapToInt(p -> p.getCost() == null ? 0 : p.getCost()).sum();
++            currentCost = com.sayai.record.fantasy.util.SalaryCapCalculator.calculateTeamCost(game, participant, currentTeam);
+         }
+
+         FantasyPlayer selected = null;
