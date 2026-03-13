@@ -72,14 +72,14 @@ public class FantasyDraftController {
     }
 
     @GetMapping("/games/{gameSeq}/players/{playerId}/picks")
-    public ResponseEntity<List<FantasyPlayerDto>> getPickedPlayers(
+    public ResponseEntity<com.sayai.record.fantasy.dto.MyPicksResponseDto> getPickedPlayers(
             @PathVariable(name = "gameSeq") Long gameSeq,
             @PathVariable(name = "playerId") Long playerId) {
         return ResponseEntity.ok(fantasyDraftService.getPickedPlayers(gameSeq, playerId));
     }
 
     @GetMapping("/games/{gameSeq}/my-picks")
-    public ResponseEntity<List<FantasyPlayerDto>> getMyPicks(
+    public ResponseEntity<com.sayai.record.fantasy.dto.MyPicksResponseDto> getMyPicks(
             @PathVariable(name = "gameSeq") Long gameSeq,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         if (userDetails == null) {

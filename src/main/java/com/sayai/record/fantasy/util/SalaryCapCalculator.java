@@ -8,8 +8,10 @@ import java.util.List;
 
 public class SalaryCapCalculator {
 
-    public static int calculateTeamCost(FantasyGame game, FantasyParticipant participant, List<FantasyPlayer> team) {
-        if (team == null || team.isEmpty()) return 0;
+    public static SalaryCapResult calculateTeamCost(FantasyGame game, FantasyParticipant participant, List<FantasyPlayer> team) {
+        if (team == null || team.isEmpty()) {
+            return SalaryCapResult.builder().totalCost(0).build();
+        }
 
         int totalCost = 0;
         int maxDiscountableCost = -1;
@@ -35,8 +37,17 @@ public class SalaryCapCalculator {
             int originalCost = maxDiscountableCost;
             int discountedCost = (int) Math.round(originalCost / 2.0);
             totalCost = totalCost - originalCost + discountedCost;
+
+            return SalaryCapResult.builder()
+                    .totalCost(totalCost)
+                    .discountedPlayerSeq(discountTarget.getSeq())
+                    .originalCost(originalCost)
+                    .discountedCost(discountedCost)
+                    .build();
         }
 
-        return totalCost;
+        return SalaryCapResult.builder()
+                .totalCost(totalCost)
+                .build();
     }
 }

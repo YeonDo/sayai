@@ -1,0 +1,21 @@
+--- src/main/java/com/sayai/record/fantasy/service/FantasyGameService.java
++++ src/main/java/com/sayai/record/fantasy/service/FantasyGameService.java
+@@ -361,10 +361,12 @@
+         List<ParticipantRosterDto> rosterDtos = participants.stream().map(p -> {
+             List<DraftPick> myPicks = picksByParticipant.getOrDefault(p.getPlayerId(), Collections.emptyList());
++            List<FantasyPlayer> pRoster = new java.util.ArrayList<>();
+             List<FantasyPlayerDto> roster = myPicks.stream()
+                     .map(pick -> {
+                         FantasyPlayer fp = fantasyPlayers.get(pick.getFantasyPlayerSeq());
+                         if (fp == null) return null;
++                        pRoster.add(fp);
+                         FantasyPlayerDto dto = FantasyPlayerDto.from(fp);
+                         dto.setAssignedPosition(pick.getAssignedPosition());
+                         return dto;
+@@ -377,6 +379,7 @@
+                     .preferredTeam(p.getPreferredTeam())
+                     .draftOrder(p.getDraftOrder())
+                     .roster(roster)
++                    .totalCost(com.sayai.record.fantasy.util.SalaryCapCalculator.calculateTeamCost(game, p, pRoster, true))
+                     .build();
+         }).collect(Collectors.toList());
