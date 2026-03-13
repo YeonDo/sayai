@@ -187,9 +187,8 @@ public class FantasyDraftService {
 
         // Salary Cap Check
         if (game.getSalaryCap() != null && game.getSalaryCap() > 0) {
-            List<FantasyPlayer> hypotheticalTeam = new java.util.ArrayList<>(currentTeam);
-            hypotheticalTeam.add(targetPlayer);
-            int projectedCost = com.sayai.record.fantasy.util.SalaryCapCalculator.calculateTeamCost(game, participant, hypotheticalTeam).getTotalCost();
+            int currentCost = com.sayai.record.fantasy.util.SalaryCapCalculator.calculateTeamCost(game, participant, currentTeam).getTotalCost();
+            int newPlayerCost = targetPlayer.getCost() == null ? 0 : targetPlayer.getCost();
 
             // Penalty check for 21st player
             int penalty = 0;
@@ -197,8 +196,8 @@ public class FantasyDraftService {
                 penalty = 5;
             }
 
-            if (projectedCost + penalty > game.getSalaryCap()) {
-                throw new IllegalStateException("샐캡 초과: " + (projectedCost + penalty) + " / " + game.getSalaryCap());
+            if (currentCost + newPlayerCost + penalty > game.getSalaryCap()) {
+                throw new IllegalStateException("샐캡 초과: " + (currentCost + newPlayerCost + penalty) + " / " + game.getSalaryCap());
             }
         }
 
@@ -339,31 +338,24 @@ public class FantasyDraftService {
         Set<Long> pickedSeqs = pickMap.keySet();
         List<FantasyPlayer> players = fantasyPlayerRepository.findAllById(pickedSeqs);
 
-        // Fetch participant and game to calculate current cost with potential discount
-        FantasyGame game = fantasyGameRepository.findById(gameSeq)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid game"));
-        FantasyParticipant participant = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(gameSeq, playerId)
-                .orElse(null);
-
+        int currentCost = 0;
         com.sayai.record.fantasy.util.SalaryCapResult capResult = null;
-        if (participant != null) {
+        if (game != null && game.getSalaryCap() != null && game.getSalaryCap() > 0) {
+            FantasyParticipant participant = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(gameSeq, playerId).orElse(null);
             capResult = com.sayai.record.fantasy.util.SalaryCapCalculator.calculateTeamCost(game, participant, players);
-        }
+            currentCost = capResult.getTotalCost();
 
-        final com.sayai.record.fantasy.util.SalaryCapResult finalCapResult = capResult;
-
-        List<FantasyPlayerDto> dtoList = players.stream()
+        List<FantasyPlayerDto> dtos = players.stream()
                 .map(p -> {
                     FantasyPlayerDto dto = FantasyPlayerDto.from(p);
-                    DraftPick pick = pickMap.get(p.getSeq());
+                    if (capResult != null && capResult.getDiscountedPlayerSeq() != null && capResult.getDiscountedPlayerSeq().equals(p.getSeq())) {
+                        dto.setDiscounted(true);
+                        dto.setCost(capResult.getDiscountedCost());
+                    }
                     if (pick != null) {
                         dto.setAssignedPosition(pick.getAssignedPosition());
                         dto.setOwnerId(pick.getPlayerId());
                         dto.setPickStatus(pick.getPickStatus() != null ? pick.getPickStatus().name() : "NORMAL");
-                    }
-                    if (finalCapResult != null && p.getSeq().equals(finalCapResult.getDiscountedPlayerSeq())) {
-                        dto.setDiscounted(true);
-                        dto.setCost(finalCapResult.getDiscountedCost());
                     }
                     return dto;
                 })
@@ -373,10 +365,7 @@ public class FantasyDraftService {
                 }))
                 .collect(Collectors.toList());
 
-        int currentCost = (capResult != null) ? capResult.getTotalCost() :
-            players.stream().mapToInt(p -> p.getCost() == null ? 0 : p.getCost()).sum();
-
-        return new com.sayai.record.fantasy.dto.MyPicksResponseDto(dtoList, currentCost);
+        return new com.sayai.record.fantasy.dto.MyPicksResponseDto(dtos, currentCost);
     }
 
     private String determineInitialPosition(List<DraftPick> existingPicks, FantasyPlayer newPlayer) {
@@ -544,8 +533,8 @@ public class FantasyDraftService {
         }
 
         int currentCost = 0;
-        if (game.getSalaryCap() != null && game.getSalaryCap() > 0) {
-            currentCost = com.sayai.record.fantasy.util.SalaryCapCalculator.calculateTeamCost(game, participant, currentTeam).getTotalCost();
+        com.sayai.record.fantasy.util.SalaryCapResult capResult = null;
+            currentCost = com.sayai.record.fantasy.util.SalaryCapCalculator.calculateTeamCost(game, participant, currentTeam);
         }
 
         FantasyPlayer selected = null;
@@ -553,11 +542,8 @@ public class FantasyDraftService {
             try {
                 // Salary Cap Check
                 if (game.getSalaryCap() != null && game.getSalaryCap() > 0) {
-                    List<FantasyPlayer> hypotheticalTeam = new java.util.ArrayList<>(currentTeam);
-                    hypotheticalTeam.add(p);
-                    int projectedCost = com.sayai.record.fantasy.util.SalaryCapCalculator.calculateTeamCost(game, participant, hypotheticalTeam).getTotalCost();
-
-                    if (projectedCost > game.getSalaryCap()) {
+                    int newCost = p.getCost() == null ? 0 : p.getCost();
+                    if (currentCost + newCost > game.getSalaryCap()) {
                         continue;
                     }
                 }

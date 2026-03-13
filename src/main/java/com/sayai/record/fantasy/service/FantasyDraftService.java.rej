@@ -1,0 +1,11 @@
+--- FantasyDraftService.java
++++ FantasyDraftService.java
+@@ -535,7 +535,7 @@
+
+         int currentCost = 0;
+         if (game.getSalaryCap() != null && game.getSalaryCap() > 0) {
+-            currentCost = com.sayai.record.fantasy.util.SalaryCapCalculator.calculateTeamCost(game, participant, currentTeam);
++            currentCost = com.sayai.record.fantasy.util.SalaryCapCalculator.calculateTeamCost(game, participant, currentTeam).getTotalCost();
+         }
+
+         FantasyPlayer selected = null;

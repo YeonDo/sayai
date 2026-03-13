@@ -1,0 +1,27 @@
+--- src/main/java/com/sayai/record/fantasy/service/FantasyDraftService.java
++++ src/main/java/com/sayai/record/fantasy/service/FantasyDraftService.java
+@@ -345,6 +345,7 @@
+             FantasyParticipant participant = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(gameSeq, playerId).orElse(null);
+             capResult = com.sayai.record.fantasy.util.SalaryCapCalculator.calculateTeamCost(game, participant, players);
+             currentCost = capResult.getTotalCost();
++        }
+
+         List<FantasyPlayerDto> dtos = players.stream()
+                 .map(p -> {
+@@ -353,6 +354,7 @@
+                         dto.setDiscounted(true);
+                         dto.setCost(capResult.getDiscountedCost());
+                     }
++                    DraftPick pick = pickMap.get(p.getSeq());
+                     if (pick != null) {
+                         dto.setAssignedPosition(pick.getAssignedPosition());
+                         dto.setOwnerId(pick.getPlayerId());
+@@ -529,15 +531,16 @@
+
+         int currentCost = 0;
+         if (game.getSalaryCap() != null && game.getSalaryCap() > 0) {
+-            currentCost = com.sayai.record.fantasy.util.SalaryCapCalculator.calculateTeamCost(game, participant, currentTeam);
++            currentCost = com.sayai.record.fantasy.util.SalaryCapCalculator.calculateTeamCost(game, participant, currentTeam).getTotalCost();
+         }
+
+         FantasyPlayer selected = null;

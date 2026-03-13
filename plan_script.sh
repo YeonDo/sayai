@@ -1,0 +1,1 @@
+sed -i 's/            currentCost = com.sayai.record.fantasy.util.SalaryCapCalculator.calculateTeamCost(game, participant, currentTeam);/            currentCost = com.sayai.record.fantasy.util.SalaryCapCalculator.calculateTeamCost(game, participant, currentTeam).getTotalCost();/g' src/main/java/com/sayai/record/fantasy/service/FantasyDraftService.java

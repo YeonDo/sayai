@@ -1,0 +1,23 @@
+--- src/main/resources/templates/fantasy/draft.html
++++ src/main/resources/templates/fantasy/draft.html
+@@ -482,11 +482,10 @@
+             $.get(`/apis/v1/fantasy/games/${gameSeq}/players/${userId}/picks`, function(data) {
+                 const list = $('#my-picks-list');
+                 list.empty();
+-                let totalCost = 0;
+-                data.forEach(player => {
++                let totalCost = data.currentCost;
++                data.picks.forEach(player => {
+                     const firstPos = player.position ? player.position.split(',')[0].trim().toLowerCase() : '';
+                     let cssClass = 'pos-' + firstPos;
+                     if(firstPos === 'cl') cssClass = 'pos-cl';
+-                    totalCost += (player.cost || 0);
+
+                     list.append(`
+                         <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
+-                            <strong>${player.name}</strong> <span class="position-badge ${cssClass}">${player.position}</span>
+-                            <span style="float:right; font-size:0.9rem; color:#666;">${player.cost || 0}</span>
++                            <strong>${player.name}</strong> <span class="position-badge ${cssClass}">${player.position}</span>
++                            <span style="float:right; font-size:0.9rem; color:#666;">${player.cost || 0} ${player.discounted ? "<span style='color:green;'>(Discounted)</span>" : ""}</span>
+                         </li>
+                     `);
