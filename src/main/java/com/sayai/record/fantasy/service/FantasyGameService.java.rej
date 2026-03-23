@@ -1,0 +1,10 @@
+--- FantasyGameService.java
++++ FantasyGameService.java
+@@ -381,7 +381,7 @@
+                     .preferredTeam(p.getPreferredTeam())
+                     .draftOrder(p.getDraftOrder())
+                     .roster(roster)
+-                    .totalCost(com.sayai.record.fantasy.util.SalaryCapCalculator.calculateTeamCost(game, p, pRoster))
++                    .totalCost(com.sayai.record.fantasy.util.SalaryCapCalculator.calculateTeamCost(game, p, pRoster, true))
+                     .build();
+         }).collect(Collectors.toList());

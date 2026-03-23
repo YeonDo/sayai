@@ -254,7 +254,7 @@
                             ${player.name} <span style="font-weight:normal; font-size:0.8rem; color:#666;">(${player.team})</span>
                         </div>
                         <div><strong>Pos:</strong> ${player.position}</div>
-                        <div><strong>Cost:</strong> ${player.cost || 0}</div>
+                        <div><strong>Cost:</strong> ${player.cost || 0} ${player.discounted ? "<span style=\"color:green;font-size:0.8rem;\">(Discounted)</span>" : ""}</div>
                         <div style="margin-top:5px; font-size:0.8rem; color:#555;">
                             <strong>Stats:</strong><br>${player.stats || '-'}
                         </div>
@@ -301,7 +301,8 @@
             selectedSlotId = null;
 
             // Use my-picks endpoint which uses token ID
-            $.get(`/apis/v1/fantasy/games/${gameSeq}/my-picks`, function(players) {
+            $.get(`/apis/v1/fantasy/games/${gameSeq}/my-picks`, function(data) {
+                let players = data.picks || [];
                 const spCount = { count: 1 };
                 const rpCount = { count: 1 };
                 let benchCount = 1;

@@ -280,28 +280,28 @@ public class FantasyRosterService {
         List<DraftPick> targetPicks = draftPickRepository.findByFantasyGameSeqAndPlayerId(gameSeq, targetId);
 
         // Calculate Requester New Cost
-        int requesterCost = calculateTeamCostAfterTrade(requesterPicks, givingSeqs, receivingSeqs);
+        FantasyParticipant requesterParticipant = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(gameSeq, requesterId).orElse(null);
+        int requesterCost = calculateTeamCostAfterTrade(game, requesterParticipant, requesterPicks, givingSeqs, receivingSeqs);
         if (requesterCost > game.getSalaryCap()) {
             throw new IllegalStateException("Trade failed: Requester Salary Cap Exceeded (" + requesterCost + " > " + game.getSalaryCap() + ")");
         }
 
         // Calculate Target New Cost
         // For target: Giving = receivingSeqs, Receiving = givingSeqs
-        int targetCost = calculateTeamCostAfterTrade(targetPicks, receivingSeqs, givingSeqs);
+        FantasyParticipant targetParticipant = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(gameSeq, targetId).orElse(null);
+        int targetCost = calculateTeamCostAfterTrade(game, targetParticipant, targetPicks, receivingSeqs, givingSeqs);
         if (targetCost > game.getSalaryCap()) {
             throw new IllegalStateException("Trade failed: Target Salary Cap Exceeded (" + targetCost + " > " + game.getSalaryCap() + ")");
         }
     }
 
-    private int calculateTeamCostAfterTrade(List<DraftPick> currentPicks, List<Long> removingSeqs, List<Long> addingSeqs) {
+    private int calculateTeamCostAfterTrade(FantasyGame game, FantasyParticipant participant, List<DraftPick> currentPicks, List<Long> removingSeqs, List<Long> addingSeqs) {
         Set<Long> teamSeqs = currentPicks.stream().map(DraftPick::getFantasyPlayerSeq).collect(Collectors.toSet());
         teamSeqs.removeAll(removingSeqs);
         teamSeqs.addAll(addingSeqs);
 
         if (teamSeqs.isEmpty()) return 0;
-        return fantasyPlayerRepository.findAllById(teamSeqs).stream()
-                .mapToInt(p -> p.getCost() == null ? 0 : p.getCost())
-                .sum();
+        return com.sayai.record.fantasy.util.SalaryCapCalculator.calculateTeamCost(game, participant, fantasyPlayerRepository.findAllById(teamSeqs)).getTotalCost();
     }
 
     private void logAction(Long gameSeq, Long participantId, Long playerSeq, RosterLog.LogActionType type, String details) {

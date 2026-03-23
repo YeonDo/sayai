@@ -14,12 +14,22 @@ public class FantasyPlayerDto {
     private String position;
     private String team;
     private String stats;
+
+
+    @Setter
+    private boolean discounted;
+    @Setter
     private Integer cost;
+
+
     private String foreignerType;
+
     @Setter
     private String assignedPosition;
+
     @Setter
     private Long ownerId; // Owner (Participant ID)
+
     @Setter
     private String pickStatus; // NORMAL, WAIVER_REQ, TRADE_PENDING
 

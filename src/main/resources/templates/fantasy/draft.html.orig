@@ -481,11 +481,12 @@
             $.get(`/apis/v1/fantasy/games/${gameSeq}/players/${userId}/picks`, function(data) {
                 const list = $('#my-picks-list');
                 list.empty();
-                let totalCost = data.currentCost;
-                data.picks.forEach(player => {
+                let totalCost = 0;
+                data.forEach(player => {
                     const firstPos = player.position ? player.position.split(',')[0].trim().toLowerCase() : '';
                     let cssClass = 'pos-' + firstPos;
                     if(firstPos === 'cl') cssClass = 'pos-cl';
+                    totalCost += (player.cost || 0);
 
                     list.append(`
                         <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
