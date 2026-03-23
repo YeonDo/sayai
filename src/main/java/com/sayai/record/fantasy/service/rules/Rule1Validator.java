@@ -80,6 +80,15 @@ public class Rule1Validator implements DraftRuleValidator {
             throw new IllegalStateException("이 선수를 뽑으면 로스터 포지션을 채울 수 없습니다.");
         }
 
+        // CL Limit Check
+        long clCount = combinedTeam.stream()
+                .filter(p -> p.getPosition() != null && parsePositions(p.getPosition()).contains("CL"))
+                .count();
+
+        if (clCount > 1) {
+            throw new IllegalStateException("CL 포지션은 1명까지만 선발할 수 있습니다.");
+        }
+
         // Foreigner Limits Check
         validateForeignerLimits(combinedTeam);
 

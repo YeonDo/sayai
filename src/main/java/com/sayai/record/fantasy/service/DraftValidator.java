@@ -22,6 +22,29 @@ public class DraftValidator {
     }
 
     public void validate(FantasyGame game, FantasyPlayer newPlayer, List<FantasyPlayer> currentTeam, FantasyParticipant participant) {
+        // Global constraint: Max 1 CL player across any rule type
+        long clCount = currentTeam.stream()
+                .filter(p -> {
+                    String pos = p.getPosition();
+                    if (pos == null || pos.isEmpty()) return false;
+                    return java.util.Arrays.asList(pos.split(",")).stream()
+                            .map(String::trim)
+                            .anyMatch(s -> s.equals("CL"));
+                })
+                .count();
+
+        // Check if the new player also has CL
+        boolean isNewPlayerCl = false;
+        if (newPlayer.getPosition() != null && !newPlayer.getPosition().isEmpty()) {
+            isNewPlayerCl = java.util.Arrays.asList(newPlayer.getPosition().split(",")).stream()
+                    .map(String::trim)
+                    .anyMatch(s -> s.equals("CL"));
+        }
+
+        if (clCount >= 1 && isNewPlayerCl) {
+            throw new IllegalStateException("CL 포지션은 1명까지만 선발할 수 있습니다.");
+        }
+
         DraftRuleValidator validator = validatorMap.get(game.getRuleType());
         if (validator == null) {
             throw new IllegalArgumentException("No validator found for rule type: " + game.getRuleType());
