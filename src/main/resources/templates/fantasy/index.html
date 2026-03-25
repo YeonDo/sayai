@@ -258,7 +258,15 @@
 
                 // Populate Info
                 $('#detailTitle').text(data.title);
-                $('#detailRule').text(data.ruleType);
+
+                let ruleText = data.ruleType;
+                if (data.ruleType === 'RULE_1') {
+                    ruleText = '18인 드래프트';
+                } else if (data.ruleType === 'RULE_2') {
+                    ruleText = '20인 드래프트';
+                }
+                $('#detailRule').text(ruleText);
+
                 $('#detailScoring').text(data.scoringType);
                 $('#detailStatus').text(data.status);
                 $('#detailTimeLimit').text(data.draftTimeLimit ? data.draftTimeLimit + '분' : '제한없음');
