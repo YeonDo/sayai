@@ -422,7 +422,7 @@
                         <div class="player-card-row">
                             <label>
                                 <input type="checkbox" name="myTradePick" value="${p.seq}" ${disabled ? 'disabled' : ''}>
-                                ${p.name} (${p.team}) - ${p.pickStatus || 'NORMAL'}
+                                ${p.name} (${p.team}) - ${p.position} (${p.cost}) ${disabled ? '[' + p.pickStatus + ']' : ''}
                             </label>
                         </div>
                     `;
@@ -448,7 +448,7 @@
                         <div class="player-card-row">
                             <label>
                                 <input type="checkbox" name="targetTradePick" value="${p.seq}" ${disabled ? 'disabled' : ''}>
-                                ${p.name} (${p.team}) - ${p.pickStatus || 'NORMAL'}
+                                ${p.name} (${p.team}) - ${p.position} (${p.cost}) ${disabled ? '[' + p.pickStatus + ']' : ''}
                             </label>
                         </div>
                     `;

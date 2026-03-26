@@ -1,5 +1,6 @@
 package com.sayai.record.fantasy.service;
 
+import com.sayai.record.admin.dto.AdminRosterTransactionDto;
 import com.sayai.record.fantasy.entity.*;
 import com.sayai.record.fantasy.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -328,6 +329,50 @@ public class FantasyRosterService {
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid status: " + status);
         }
+    }
+
+    public List<AdminRosterTransactionDto> getAdminTransactions(Long gameSeq, String status) {
+        List<RosterTransaction> transactions = getTransactions(gameSeq, status);
+
+        // Collect all distinct player seqs
+        Set<Long> allPlayerSeqs = transactions.stream()
+                .flatMap(tx -> {
+                    java.util.stream.Stream<Long> giving = getSeqsStream(tx.getGivingPlayerSeqs());
+                    java.util.stream.Stream<Long> receiving = getSeqsStream(tx.getReceivingPlayerSeqs());
+                    return java.util.stream.Stream.concat(giving, receiving);
+                })
+                .collect(Collectors.toSet());
+
+        // Batch fetch all players
+        java.util.Map<Long, FantasyPlayer> playerMap = fantasyPlayerRepository.findAllById(allPlayerSeqs)
+                .stream()
+                .collect(Collectors.toMap(FantasyPlayer::getSeq, p -> p));
+
+        return transactions.stream().map(tx -> {
+            String givingDetails = getPlayerDetailsMap(tx.getGivingPlayerSeqs(), playerMap);
+            String receivingDetails = getPlayerDetailsMap(tx.getReceivingPlayerSeqs(), playerMap);
+            return AdminRosterTransactionDto.from(tx, givingDetails, receivingDetails);
+        }).collect(Collectors.toList());
+    }
+
+    private java.util.stream.Stream<Long> getSeqsStream(String playerSeqs) {
+        if (playerSeqs == null || playerSeqs.isEmpty()) {
+            return java.util.stream.Stream.empty();
+        }
+        return Arrays.stream(playerSeqs.split(","))
+                .map(String::trim)
+                .map(Long::valueOf);
+    }
+
+    private String getPlayerDetailsMap(String playerSeqs, java.util.Map<Long, FantasyPlayer> playerMap) {
+        if (playerSeqs == null || playerSeqs.isEmpty()) {
+            return null;
+        }
+        return getSeqsStream(playerSeqs)
+                .map(playerMap::get)
+                .filter(java.util.Objects::nonNull)
+                .map(p -> p.getName() + " (" + p.getTeam() + ") - " + p.getPosition())
+                .collect(Collectors.joining(", "));
     }
 
     @Transactional

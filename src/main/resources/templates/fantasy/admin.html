@@ -447,8 +447,8 @@
                             <td>${tx.type}</td>
                             <td>${tx.requesterId}</td>
                             <td>
-                                Give: ${tx.givingPlayerSeqs}<br>
-                                Recv: ${tx.receivingPlayerSeqs || (tx.type === 'TRADE' ? tx.targetId : '-')}
+                                Give: ${tx.givingPlayerDetails || '-'}<br>
+                                Recv: ${tx.receivingPlayerDetails || (tx.type === 'TRADE' ? tx.targetId : '-')}
                             </td>
                             <td>${actionHtml}</td>
                         </tr>
