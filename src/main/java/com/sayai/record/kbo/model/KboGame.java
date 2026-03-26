@@ -1,0 +1,75 @@
+package com.sayai.record.kbo.model;
+
+import com.sayai.record.model.enums.FirstLast;
+import lombok.*;
+
+import jakarta.persistence.*;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
+
+@Entity
+@Table(name = "kbo_game")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
+public class KboGame {
+
+    @Id
+    @Column(name = "GAME_IDX")
+    private Long id;
+
+    private Long season;
+
+    private Long leagueId;
+
+    private Long clubId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "FIRST_LAST")
+    private FirstLast fl;
+
+    private String stadium;
+
+    private LocalDate gameDate;
+
+    private LocalTime gameTime;
+
+    private String opponent;
+
+    private Long homeScore;
+
+    private Long awayScore;
+
+    private String result;
+
+    @Builder.Default
+    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL)
+    private List<KboPitch> pitchList = new ArrayList<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL)
+    private List<KboHit> hitList = new ArrayList<>();
+
+    public void setOpponent(String opponent) {
+        this.opponent = opponent;
+    }
+
+    public void setHomeScore(Long homeScore) {
+        this.homeScore = homeScore;
+    }
+
+    public void setAwayScore(Long awayScore) {
+        this.awayScore = awayScore;
+    }
+
+    public void setResult(String result) {
+        this.result = result;
+    }
+
+    public void updateLeague(Long leagueId){
+        this.leagueId = leagueId;
+    }
+}
