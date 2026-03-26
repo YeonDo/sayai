@@ -14,10 +14,7 @@ import java.util.Optional;
 public interface KboPitchRepository extends JpaRepository<KboPitch, Long> {
 
     @Query(value = "SELECT " +
-            " p.PLAYER_ID as id, p.BACK_NO as backNo, p.NAME as name, " +
-            " SUM(CASE WHEN pi.result = '승' THEN 1 ELSE 0 END) as wins, " +
-            " SUM(CASE WHEN pi.result = '패' THEN 1 ELSE 0 END) as loses, " +
-            " SUM(CASE WHEN pi.result = '세' THEN 1 ELSE 0 END) as saves, " +
+            " p.seq as id, null as backNo, p.name as name, " +
             " IFNULL(SUM(pi.inning), 0) as inning, " +
             " IFNULL(SUM(pi.batter), 0) as batter, " +
             " IFNULL(SUM(pi.bb), 0) as baseOnBall, " +
@@ -25,19 +22,15 @@ public interface KboPitchRepository extends JpaRepository<KboPitch, Long> {
             " IFNULL(SUM(pi.hit), 0) as pHit, " +
             " IFNULL(SUM(pi.er), 0) as selfLossScore " +
             "FROM kbo_pitch pi " +
-            "JOIN player p ON pi.PLAYER_ID = p.PLAYER_ID " +
-            "JOIN kbo_game g ON pi.GAME_IDX = g.GAME_IDX " +
-            "WHERE g.game_date BETWEEN :startDate AND :endDate " +
-            "AND p.sleep_yn = 'N' " +
-            "GROUP BY p.PLAYER_ID " +
+            "JOIN ft_players p ON pi.PLAYER_ID = p.seq " +
+            "JOIN kbo_game g ON pi.game_idx = g.game_idx " +
+            "WHERE g.season BETWEEN YEAR(:startDate) AND YEAR(:endDate) " +
+            "GROUP BY p.seq " +
             "ORDER BY inning DESC", nativeQuery = true)
     List<KboPitchStatInterface> getStatsByPeriod(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
     @Query(value = "SELECT " +
-            " p.PLAYER_ID as id, p.BACK_NO as backNo, p.NAME as name, " +
-            " SUM(CASE WHEN pi.result = '승' THEN 1 ELSE 0 END) as wins, " +
-            " SUM(CASE WHEN pi.result = '패' THEN 1 ELSE 0 END) as loses, " +
-            " SUM(CASE WHEN pi.result = '세' THEN 1 ELSE 0 END) as saves, " +
+            " p.seq as id, null as backNo, p.name as name, " +
             " IFNULL(SUM(pi.inning), 0) as inning, " +
             " IFNULL(SUM(pi.batter), 0) as batter, " +
             " IFNULL(SUM(pi.bb), 0) as baseOnBall, " +
@@ -45,11 +38,10 @@ public interface KboPitchRepository extends JpaRepository<KboPitch, Long> {
             " IFNULL(SUM(pi.hit), 0) as pHit, " +
             " IFNULL(SUM(pi.er), 0) as selfLossScore " +
             "FROM kbo_pitch pi " +
-            "JOIN player p ON pi.PLAYER_ID = p.PLAYER_ID " +
-            "JOIN kbo_game g ON pi.GAME_IDX = g.GAME_IDX " +
-            "WHERE g.game_date BETWEEN :startDate AND :endDate " +
-            "AND p.PLAYER_ID = :id " +
-            "AND p.sleep_yn = 'N' " +
-            "GROUP BY p.PLAYER_ID", nativeQuery = true)
+            "JOIN ft_players p ON pi.PLAYER_ID = p.seq " +
+            "JOIN kbo_game g ON pi.game_idx = g.game_idx " +
+            "WHERE g.season BETWEEN YEAR(:startDate) AND YEAR(:endDate) " +
+            "AND p.seq = :id " +
+            "GROUP BY p.seq", nativeQuery = true)
     Optional<KboPitchStatInterface> getStatsByPeriodAndId(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate, @Param("id") Long id);
 }

@@ -4,9 +4,6 @@ public interface KboPitchStatInterface {
     Long getId();
     Long getBackNo();
     String getName();
-    Long getWins();
-    Long getLoses();
-    Long getSaves();
     Long getInning();
     Long getBatter();
     Long getBaseOnBall(); // bb

@@ -1,13 +1,11 @@
 package com.sayai.record.kbo.model;
 
-import com.sayai.record.model.enums.FirstLast;
 import lombok.*;
 
 import jakarta.persistence.*;
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "kbo_game")
@@ -18,32 +16,30 @@ import java.util.List;
 public class KboGame {
 
     @Id
-    @Column(name = "GAME_IDX")
+    @Column(name = "game_idx")
     private Long id;
 
+    @Column(name = "season")
     private Long season;
 
+    @Column(name = "league_id")
     private Long leagueId;
 
-    private Long clubId;
+    @Column(name = "home")
+    private String home;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "FIRST_LAST")
-    private FirstLast fl;
+    @Column(name = "away")
+    private String away;
 
-    private String stadium;
-
-    private LocalDate gameDate;
-
-    private LocalTime gameTime;
-
-    private String opponent;
-
+    @Column(name = "home_score")
     private Long homeScore;
 
+    @Column(name = "away_score")
     private Long awayScore;
 
+    @Column(name = "result")
     private String result;
+
 
     @Builder.Default
     @OneToMany(mappedBy = "game", cascade = CascadeType.ALL)
@@ -53,8 +49,12 @@ public class KboGame {
     @OneToMany(mappedBy = "game", cascade = CascadeType.ALL)
     private List<KboHit> hitList = new ArrayList<>();
 
-    public void setOpponent(String opponent) {
-        this.opponent = opponent;
+    public void setHome(String home) {
+        this.home = home;
+    }
+
+    public void setAway(String away) {
+        this.away = away;
     }
 
     public void setHomeScore(Long homeScore) {

@@ -1,6 +1,6 @@
 package com.sayai.record.kbo.model;
 
-import com.sayai.record.model.Player;
+import com.sayai.record.fantasy.entity.FantasyPlayer;
 import lombok.*;
 
 import jakarta.persistence.*;
@@ -19,7 +19,7 @@ public class KboPitch {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "GAME_IDX")
+    @JoinColumn(name = "game_idx")
     private KboGame game;
 
     @Column(name = "CLUB_IDX")
@@ -27,7 +27,7 @@ public class KboPitch {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "PLAYER_ID")
-    private Player player;
+    private FantasyPlayer player;
 
     @Column(name = "inning")
     private Long inning; // 이닝
@@ -47,6 +47,4 @@ public class KboPitch {
     @Column(name = "er")
     private Long er; // 자책점
 
-    // Additional fields like result if available
-    private String result;
 }

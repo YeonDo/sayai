@@ -19,24 +19,7 @@ public class KboLigue {
     @Column(name = "league_id")
     private Long id;
 
-    @Column(name = "LIG_IDX")
-    private Long ligIdx;
-
-    private Long clubId;
-
+    @Column(name = "season")
     private Long season;
 
-    @Column(name = "LIG_NAME")
-    private String name;
-
-    @Column(name="LIG_NAME_SEC")
-    private String nameSec;
-
-    private String leagueInfo;
-
-    private Long gameRule;
-
-    private Long bucode;
-
-    private Long jocode;
 }
