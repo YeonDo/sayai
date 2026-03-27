@@ -4,12 +4,12 @@ import com.sayai.record.dto.PitcherDto;
 import com.sayai.kbo.repository.KboPitchRepository;
 import com.sayai.kbo.repository.KboPitchStatInterface;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.NoSuchElementException;
 
 @Service
@@ -19,13 +19,9 @@ public class KboPitchService {
 
     private final KboPitchRepository kboPitchRepository;
 
-    public List<PitcherDto> select(LocalDate startDate, LocalDate endDate) {
-        List<KboPitchStatInterface> stats = kboPitchRepository.getStatsByPeriod(startDate, endDate);
-        List<PitcherDto> result = new ArrayList<>();
-        for (KboPitchStatInterface stat : stats) {
-            result.add(mapToDto(stat));
-        }
-        return result;
+    public Page<PitcherDto> select(LocalDate startDate, LocalDate endDate, Pageable pageable) {
+        Page<KboPitchStatInterface> stats = kboPitchRepository.getStatsByPeriod(startDate, endDate, pageable);
+        return stats.map(this::mapToDto);
     }
 
     public PitcherDto selectOne(LocalDate startDate, LocalDate endDate, Long id) {

@@ -4,6 +4,8 @@ import com.sayai.record.dto.PlayerDto;
 import com.sayai.kbo.repository.KboHitRepository;
 import com.sayai.kbo.repository.KboHitStatInterface;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,13 +30,9 @@ public class KboHitService {
         }
     }
 
-    public List<PlayerDto> findAllByPeriod(LocalDate startDate, LocalDate endDate) {
-        List<KboHitStatInterface> stats = kboHitRepository.getPlayerByPeriod(startDate, endDate);
-        List<PlayerDto> result = new ArrayList<>();
-        for (KboHitStatInterface stat : stats) {
-            result.add(mapToDto(stat));
-        }
-        return result;
+    public Page<PlayerDto> findAllByPeriod(LocalDate startDate, LocalDate endDate, Pageable pageable) {
+        Page<KboHitStatInterface> stats = kboHitRepository.getPlayerByPeriod(startDate, endDate, pageable);
+        return stats.map(this::mapToDto);
     }
 
     private PlayerDto mapToDto(KboHitStatInterface stat) {
