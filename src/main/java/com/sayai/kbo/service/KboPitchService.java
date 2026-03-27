@@ -38,14 +38,15 @@ public class KboPitchService {
                 .id(stat.getId())
                 .backNo(stat.getBackNo())
                 .name(stat.getName())
-                .wins(null)
-                .loses(null)
-                .saves(null)
+                .wins(stat.getWins())
+                .loses(stat.getLoses())
+                .saves(stat.getSaves())
                 .batter(stat.getBatter())
                 .baseOnBall(stat.getBaseOnBall())
                 .hitByBall(stat.getHitByBall())
                 .pHit(stat.getPHit())
                 .selfLossScore(stat.getSelfLossScore())
+                .stOut(stat.getStOut())
                 .build();
 
         Double inn = stat.getInning() / 3 + (stat.getInning() % 3) * 0.1;
@@ -66,12 +67,19 @@ public class KboPitchService {
         }
         dto.setWhip(whip);
 
+        // Map pitchCnt to a field not explicitly named pitchCnt in DTO, or leave as null if unsupported.
+        // We will map it to fallingBall as sometimes it is used that way, but actually DTO doesn't have pitchCnt.
+        // We will leave fallingBall as null and not use pitchCnt in DTO directly, or if required, add it to DTO.
+        // The prompt says "승리, 패배, 세이브, 투구수. 탈삼진 컬럼을 추가해줘" to the table.
+        // It does not explicitly ask to change PitcherDto. PitcherDto doesn't have `pitchCnt`.
+        // We will map `pitchCnt` to `null` on the DTO if it's not supported, but let's check PitcherDto.
+        // PitcherDto has: `stOut` (so), `wins`, `loses`, `saves`, `fallingBall`
+
         // Set missing fields to null
         dto.setHitter(null);
         dto.setPHomerun(null);
         dto.setSacrifice(null);
         dto.setSacFly(null);
-        dto.setStOut(null);
         dto.setFallingBall(null);
         dto.setBalk(null);
         dto.setLossScore(null);

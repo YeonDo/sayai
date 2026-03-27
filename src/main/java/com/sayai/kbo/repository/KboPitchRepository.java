@@ -16,12 +16,17 @@ public interface KboPitchRepository extends JpaRepository<KboPitch, Long> {
 
     @Query(value = "SELECT " +
             " p.seq as id, null as backNo, p.name as name, " +
+            " IFNULL(SUM(pi.win), 0) as wins, " +
+            " IFNULL(SUM(pi.lose), 0) as loses, " +
+            " IFNULL(SUM(pi.save), 0) as saves, " +
             " IFNULL(SUM(pi.inning), 0) as inning, " +
             " IFNULL(SUM(pi.batter), 0) as batter, " +
             " IFNULL(SUM(pi.bb), 0) as baseOnBall, " +
             " IFNULL(SUM(pi.hbp), 0) as hitByBall, " +
             " IFNULL(SUM(pi.hit), 0) as pHit, " +
-            " IFNULL(SUM(pi.er), 0) as selfLossScore " +
+            " IFNULL(SUM(pi.er), 0) as selfLossScore, " +
+            " IFNULL(SUM(pi.pitch_cnt), 0) as pitchCnt, " +
+            " IFNULL(SUM(pi.so), 0) as stOut " +
             "FROM kbo_pitch pi " +
             "JOIN ft_players p ON pi.PLAYER_ID = p.seq " +
             "JOIN kbo_game g ON pi.game_idx = g.game_idx " +
@@ -35,12 +40,17 @@ public interface KboPitchRepository extends JpaRepository<KboPitch, Long> {
 
     @Query(value = "SELECT " +
             " p.seq as id, null as backNo, p.name as name, " +
+            " IFNULL(SUM(pi.win), 0) as wins, " +
+            " IFNULL(SUM(pi.lose), 0) as loses, " +
+            " IFNULL(SUM(pi.save), 0) as saves, " +
             " IFNULL(SUM(pi.inning), 0) as inning, " +
             " IFNULL(SUM(pi.batter), 0) as batter, " +
             " IFNULL(SUM(pi.bb), 0) as baseOnBall, " +
             " IFNULL(SUM(pi.hbp), 0) as hitByBall, " +
             " IFNULL(SUM(pi.hit), 0) as pHit, " +
-            " IFNULL(SUM(pi.er), 0) as selfLossScore " +
+            " IFNULL(SUM(pi.er), 0) as selfLossScore, " +
+            " IFNULL(SUM(pi.pitch_cnt), 0) as pitchCnt, " +
+            " IFNULL(SUM(pi.so), 0) as stOut " +
             "FROM kbo_pitch pi " +
             "JOIN ft_players p ON pi.PLAYER_ID = p.seq " +
             "JOIN kbo_game g ON pi.game_idx = g.game_idx " +

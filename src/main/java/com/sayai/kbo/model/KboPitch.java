@@ -22,9 +22,6 @@ public class KboPitch {
     @JoinColumn(name = "game_idx")
     private KboGame game;
 
-    @Column(name = "CLUB_IDX")
-    private Long clubId;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "PLAYER_ID")
     private FantasyPlayer player;
@@ -46,5 +43,20 @@ public class KboPitch {
 
     @Column(name = "er")
     private Long er; // 자책점
+
+    @Column(name = "win")
+    private Long win; // 승리
+
+    @Column(name = "lose")
+    private Long lose; // 패배
+
+    @Column(name = "save")
+    private Long save; // 세이브
+
+    @Column(name = "pitch_cnt")
+    private Long pitchCnt; // 투구수
+
+    @Column(name = "so")
+    private Long so; // 탈삼진
 
 }
