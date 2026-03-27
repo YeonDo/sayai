@@ -1,6 +1,6 @@
-package com.sayai.record.kbo.repository;
+package com.sayai.kbo.repository;
 
-import com.sayai.record.kbo.model.KboHit;
+import com.sayai.kbo.model.KboHit;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

@@ -1,10 +1,10 @@
-package com.sayai.record.kbo.controller;
+package com.sayai.kbo.controller;
 
 import com.sayai.record.dto.PitcherDto;
 import com.sayai.record.dto.PlayerDto;
 import com.sayai.record.dto.PlayerRecord;
-import com.sayai.record.kbo.service.KboHitService;
-import com.sayai.record.kbo.service.KboPitchService;
+import com.sayai.kbo.service.KboHitService;
+import com.sayai.kbo.service.KboPitchService;
 import com.sayai.record.service.PlayerService;
 import com.sayai.record.util.Utils;
 import lombok.AllArgsConstructor;

@@ -1,4 +1,4 @@
-package com.sayai.record.kbo.repository;
+package com.sayai.kbo.repository;
 
 public interface KboPitchStatInterface {
     Long getId();

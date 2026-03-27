@@ -1,8 +1,8 @@
-package com.sayai.record.kbo.service;
+package com.sayai.kbo.service;
 
 import com.sayai.record.dto.PitcherDto;
-import com.sayai.record.kbo.repository.KboPitchRepository;
-import com.sayai.record.kbo.repository.KboPitchStatInterface;
+import com.sayai.kbo.repository.KboPitchRepository;
+import com.sayai.kbo.repository.KboPitchStatInterface;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

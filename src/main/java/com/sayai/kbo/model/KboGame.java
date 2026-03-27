@@ -1,4 +1,4 @@
-package com.sayai.record.kbo.model;
+package com.sayai.kbo.model;
 
 import lombok.*;
 
