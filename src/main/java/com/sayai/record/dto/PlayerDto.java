@@ -3,9 +3,11 @@ package com.sayai.record.dto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.NoArgsConstructor;
 
 @Getter
+@Setter
 public class PlayerDto {
     private String season;
     private Long id;
