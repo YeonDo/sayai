@@ -22,8 +22,6 @@ public class KboGame {
     @Column(name = "season")
     private Long season;
 
-    @Column(name = "league_id")
-    private Long leagueId;
 
     @Column(name = "home")
     private String home;
@@ -69,7 +67,4 @@ public class KboGame {
         this.result = result;
     }
 
-    public void updateLeague(Long leagueId){
-        this.leagueId = leagueId;
-    }
 }

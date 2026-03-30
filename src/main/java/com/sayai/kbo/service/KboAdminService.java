@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,15 +32,37 @@ public class KboAdminService {
     private final KboPitchRepository kboPitchRepository;
     private final FantasyPlayerRepository fantasyPlayerRepository;
 
+    private String getTeamCode(String teamName) {
+        if (teamName == null) return "99";
+        return switch (teamName.toUpperCase()) {
+            case "두산" -> "00";
+            case "LG" -> "01";
+            case "키움" -> "02";
+            case "KT" -> "03";
+            case "SSG" -> "04";
+            case "한화" -> "05";
+            case "KIA" -> "06";
+            case "삼성" -> "07";
+            case "NC" -> "08";
+            case "롯데" -> "09";
+            default -> "99";
+        };
+    }
+
     @Transactional
     public void uploadGame(KboGameUploadRequest request) throws Exception {
-        Long maxId = kboGameRepository.findMaxId();
-        Long newGameId = (maxId == null ? 0 : maxId) + 1;
+
+        String dateStr = request.getGameDate() != null ? request.getGameDate().format(DateTimeFormatter.ofPattern("yyyyMMdd")) : "00000000";
+        String timeStr = request.getGameTime() != null ? request.getGameTime().format(DateTimeFormatter.ofPattern("HH")) : "00";
+        String awayCode = getTeamCode(request.getAway());
+        String homeCode = getTeamCode(request.getHome());
+
+        String gameIdxStr = dateStr + timeStr + awayCode + homeCode;
+        Long newGameId = Long.parseLong(gameIdxStr);
 
         KboGame game = KboGame.builder()
                 .id(newGameId)
                 .season(request.getSeason())
-                .leagueId(1L) // default
                 .home(request.getHome())
                 .away(request.getAway())
                 .homeScore(request.getHomeScore())
