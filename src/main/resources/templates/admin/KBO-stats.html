@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}">
+<head>
+    <title>KBO Game Upload Admin</title>
+    <link rel="stylesheet" th:href="@{/css/fantasy.css}">
+    <style>
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .result-box {
+            background: #f9f9f9;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            overflow-x: auto;
+            max-height: 400px;
+            margin-top: 20px;
+        }
+        pre {
+            margin: 0;
+            font-family: monospace;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container">
+        <div class="fantasy-header">
+            <h1>KBO 경기 기록 등록</h1>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <a href="/admin/fantasy" class="btn btn-secondary">Back to Admin</a>
+        </div>
+
+        <div class="admin-section" style="padding: 20px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px;">
+            <form id="uploadForm">
+                <div class="form-group">
+                    <label>시즌 (Season)</label>
+                    <input type="number" name="season" required placeholder="ex. 2026">
+                </div>
+                <div class="form-group">
+                    <label>경기 일시 (Game Time)</label>
+                    <input type="datetime-local" name="gameTime" required>
+                </div>
+                <div style="display: flex; gap: 20px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label>원정팀 (Away)</label>
+                        <select name="away" required>
+                            <option value="">선택</option>
+                            <option value="두산">두산</option>
+                            <option value="LG">LG</option>
+                            <option value="키움">키움</option>
+                            <option value="KT">KT</option>
+                            <option value="SSG">SSG</option>
+                            <option value="한화">한화</option>
+                            <option value="KIA">KIA</option>
+                            <option value="삼성">삼성</option>
+                            <option value="NC">NC</option>
+                            <option value="롯데">롯데</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>원정팀 점수 (Away Score)</label>
+                        <input type="number" name="awayScore" required>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 20px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label>홈팀 (Home)</label>
+                        <select name="home" required>
+                            <option value="">선택</option>
+                            <option value="두산">두산</option>
+                            <option value="LG">LG</option>
+                            <option value="키움">키움</option>
+                            <option value="KT">KT</option>
+                            <option value="SSG">SSG</option>
+                            <option value="한화">한화</option>
+                            <option value="KIA">KIA</option>
+                            <option value="삼성">삼성</option>
+                            <option value="NC">NC</option>
+                            <option value="롯데">롯데</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>홈팀 점수 (Home Score)</label>
+                        <input type="number" name="homeScore" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>경기 승자 (Result) - 무승부시 선택 안함</label>
+                    <select name="result">
+                        <option value="">무승부</option>
+                        <option value="home">Home 승</option>
+                        <option value="away">Away 승</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>경기 기록지 (Excel)</label>
+                    <input type="file" name="file" accept=".xlsx, .xls" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="submitBtn">업로드 및 정산</button>
+            </form>
+        </div>
+
+        <div id="resultContainer" style="display: none;">
+            <h3>Result: Game Details</h3>
+            <div class="result-box"><pre id="gameResult"></pre></div>
+
+            <h3>Result: Hitters</h3>
+            <div class="result-box"><pre id="hittersResult"></pre></div>
+
+            <h3>Result: Pitchers</h3>
+            <div class="result-box"><pre id="pitchersResult"></pre></div>
+        </div>
+
+    </div>
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        $(document).ready(function() {
+            $('#uploadForm').submit(function(e) {
+                e.preventDefault();
+
+                const submitBtn = $('#submitBtn');
+                submitBtn.prop('disabled', true).text('Processing...');
+
+                const form = $(this)[0];
+                const formData = new FormData(form);
+
+                // Convert datetime-local to yyyy-MM-dd HH:mm (Spring @DateTimeFormat compatible)
+                let dtVal = formData.get('gameTime');
+                if (dtVal) {
+                    formData.set('gameTime', dtVal.replace('T', ' '));
+                }
+
+                $.ajax({
+                    url: '/apis/v1/admin/kbo/game/upload',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        alert("Game uploaded successfully.");
+                        $('#resultContainer').show();
+                        $('#gameResult').text(JSON.stringify(response.game, null, 2));
+                        $('#hittersResult').text(JSON.stringify(response.hitters, null, 2));
+                        $('#pitchersResult').text(JSON.stringify(response.pitchers, null, 2));
+                    },
+                    error: function(xhr) {
+                        alert("Failed to upload: " + (xhr.responseText || xhr.statusText));
+                    },
+                    complete: function() {
+                        submitBtn.prop('disabled', false).text('업로드 및 정산');
+                    }
+                });
+            });
+        });
+        /*]]>*/
+    </script>
+</div>
+</body>
+</html>

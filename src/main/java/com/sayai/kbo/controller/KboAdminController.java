@@ -1,6 +1,7 @@
 package com.sayai.kbo.controller;
 
 import com.sayai.kbo.dto.KboGameUploadRequest;
+import com.sayai.kbo.dto.KboGameUploadResponse;
 import com.sayai.kbo.service.KboAdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,10 +18,10 @@ public class KboAdminController {
     private final KboAdminService kboAdminService;
 
     @PostMapping("/game/upload")
-    public ResponseEntity<String> uploadGameRecords(@ModelAttribute KboGameUploadRequest request) {
+    public ResponseEntity<?> uploadGameRecords(@ModelAttribute KboGameUploadRequest request) {
         try {
-            kboAdminService.uploadGame(request);
-            return ResponseEntity.ok("Game records uploaded successfully.");
+            KboGameUploadResponse response = kboAdminService.uploadGame(request);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.badRequest().body("Failed to process game records: " + e.getMessage());

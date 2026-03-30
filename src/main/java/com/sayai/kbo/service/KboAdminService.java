@@ -1,6 +1,7 @@
 package com.sayai.kbo.service;
 
 import com.sayai.kbo.dto.KboGameUploadRequest;
+import com.sayai.kbo.dto.KboGameUploadResponse;
 import com.sayai.kbo.model.KboGame;
 import com.sayai.kbo.model.KboHit;
 import com.sayai.kbo.model.KboPitch;
@@ -18,10 +19,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -50,7 +51,7 @@ public class KboAdminService {
     }
 
     @Transactional
-    public void uploadGame(KboGameUploadRequest request) throws Exception {
+    public KboGameUploadResponse uploadGame(KboGameUploadRequest request) throws Exception {
 
         String dateStr = request.getGameTime() != null ? request.getGameTime().format(DateTimeFormatter.ofPattern("yyyyMMdd")) : "00000000";
         String timeStr = request.getGameTime() != null ? request.getGameTime().format(DateTimeFormatter.ofPattern("HH")) : "00";
@@ -77,22 +78,31 @@ public class KboAdminService {
             throw new IllegalArgumentException("File is required");
         }
 
+        List<KboHit> allHitters = new ArrayList<>();
+        List<KboPitch> allPitchers = new ArrayList<>();
+
         try (InputStream is = file.getInputStream();
              Workbook workbook = new XSSFWorkbook(is)) {
 
             // Sheet 0: Away team
             Sheet awaySheet = workbook.getSheetAt(0);
-            processSheet(awaySheet, game, request.getAway());
+            processSheet(awaySheet, game, request.getAway(), allHitters, allPitchers);
 
             // Sheet 1: Home team
             if (workbook.getNumberOfSheets() > 1) {
                 Sheet homeSheet = workbook.getSheetAt(1);
-                processSheet(homeSheet, game, request.getHome());
+                processSheet(homeSheet, game, request.getHome(), allHitters, allPitchers);
             }
         }
+
+        return KboGameUploadResponse.builder()
+                .game(game)
+                .hitters(allHitters)
+                .pitchers(allPitchers)
+                .build();
     }
 
-    private void processSheet(Sheet sheet, KboGame game, String teamName) {
+    private void processSheet(Sheet sheet, KboGame game, String teamName, List<KboHit> hittersOut, List<KboPitch> pitchersOut) {
         boolean readingHitters = true;
 
         List<FantasyPlayer> teamPlayers = fantasyPlayerRepository.findPlayers(teamName, null, null, null);
@@ -141,7 +151,6 @@ public class KboAdminService {
                 long run = getLongValueSafe(row, headerMap, "득점");
                 long sb = getLongValueSafe(row, headerMap, "도루");
 
-                // SO and HR are requested but not explicitly visible in image, if present read them
                 long so = getLongValueSafe(row, headerMap, "삼진");
                 long hr = getLongValueSafe(row, headerMap, "홈런");
 
@@ -152,7 +161,8 @@ public class KboAdminService {
                             .player(fp)
                             .pa(pa).ab(ab).hit(hit).rbi(rbi).run(run).sb(sb).so(so).hr(hr)
                             .build();
-                    kboHitRepository.save(kboHit);
+                    kboHit = kboHitRepository.save(kboHit);
+                    hittersOut.add(kboHit);
                 }
             } else {
                 // Parse Pitcher row
@@ -173,7 +183,7 @@ public class KboAdminService {
                 long bb = getLongValueSafe(row, headerMap, "4사구");
                 long so = getLongValueSafe(row, headerMap, "삼진");
                 long er = getLongValueSafe(row, headerMap, "자책");
-                long hbp = getLongValueSafe(row, headerMap, "사구"); // if present
+                long hbp = getLongValueSafe(row, headerMap, "사구");
 
                 FantasyPlayer fp = findMatchingPlayer(teamPlayers, playerName);
                 if (fp != null) {
@@ -183,7 +193,8 @@ public class KboAdminService {
                             .win(win).lose(lose).save(save).inning(inning).batter(batter)
                             .pitchCnt(pitchCnt).hit(hit).bb(bb).so(so).er(er).hbp(hbp)
                             .build();
-                    kboPitchRepository.save(kboPitch);
+                    kboPitch = kboPitchRepository.save(kboPitch);
+                    pitchersOut.add(kboPitch);
                 }
             }
         }
@@ -230,7 +241,6 @@ public class KboAdminService {
         String val = getCellValueAsString(cell).trim();
         if (val.isEmpty() || val.equals("-") || val.equals(" ")) return 0L;
 
-        // Extract numbers only, e.g., if it has text around it
         val = val.replaceAll("[^0-9-]", "");
         if (val.isEmpty() || val.equals("-")) return 0L;
 
@@ -254,7 +264,6 @@ public class KboAdminService {
                 } catch (Exception ignore) {}
             } else {
                 try {
-                    // Extract numeric part (e.g. "5" -> 15 outs)
                     String num = part.replaceAll("[^0-9]", "");
                     if (!num.isEmpty()) {
                         totalOuts += Long.parseLong(num) * 3;
