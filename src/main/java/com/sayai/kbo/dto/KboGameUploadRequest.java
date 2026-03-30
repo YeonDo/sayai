@@ -4,8 +4,7 @@ import lombok.Data;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 
 @Data
 public class KboGameUploadRequest {
@@ -16,11 +15,8 @@ public class KboGameUploadRequest {
     private Long awayScore;
     private String result;
 
-    @DateTimeFormat(pattern = "yyyy-MM-dd")
-    private LocalDate gameDate;
-
-    @DateTimeFormat(pattern = "HH:mm")
-    private LocalTime gameTime;
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
+    private LocalDateTime gameTime;
 
     private MultipartFile file;
 }

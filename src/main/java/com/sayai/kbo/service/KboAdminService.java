@@ -52,7 +52,7 @@ public class KboAdminService {
     @Transactional
     public void uploadGame(KboGameUploadRequest request) throws Exception {
 
-        String dateStr = request.getGameDate() != null ? request.getGameDate().format(DateTimeFormatter.ofPattern("yyyyMMdd")) : "00000000";
+        String dateStr = request.getGameTime() != null ? request.getGameTime().format(DateTimeFormatter.ofPattern("yyyyMMdd")) : "00000000";
         String timeStr = request.getGameTime() != null ? request.getGameTime().format(DateTimeFormatter.ofPattern("HH")) : "00";
         String awayCode = getTeamCode(request.getAway());
         String homeCode = getTeamCode(request.getHome());
