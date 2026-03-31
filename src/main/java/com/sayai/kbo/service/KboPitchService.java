@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.NoSuchElementException;
 
 @Service
@@ -19,14 +20,30 @@ public class KboPitchService {
 
     private final KboPitchRepository kboPitchRepository;
 
+    private Long toStartIdx(LocalDate date) {
+        if (date == null) return 0L;
+        String formatted = date.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        return Long.parseLong(formatted + "000000"); // Start of the day
+    }
+
+    private Long toEndIdx(LocalDate date) {
+        if (date == null) return 99999999999999L;
+        String formatted = date.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        return Long.parseLong(formatted + "239999"); // End of the day
+    }
+
     public Page<PitcherDto> select(LocalDate startDate, LocalDate endDate, Pageable pageable) {
-        Page<KboPitchStatInterface> stats = kboPitchRepository.getStatsByPeriod(startDate, endDate, pageable);
+        Long startIdx = toStartIdx(startDate);
+        Long endIdx = toEndIdx(endDate);
+        Page<KboPitchStatInterface> stats = kboPitchRepository.getStatsByPeriod(startIdx, endIdx, pageable);
         return stats.map(this::mapToDto);
     }
 
     public PitcherDto selectOne(LocalDate startDate, LocalDate endDate, Long id) {
         try {
-            KboPitchStatInterface stat = kboPitchRepository.getStatsByPeriodAndId(startDate, endDate, id).get();
+            Long startIdx = toStartIdx(startDate);
+            Long endIdx = toEndIdx(endDate);
+            KboPitchStatInterface stat = kboPitchRepository.getStatsByPeriodAndId(startIdx, endIdx, id).get();
             return mapToDto(stat);
         } catch (NoSuchElementException e) {
             return new PitcherDto();
@@ -66,14 +83,6 @@ public class KboPitchService {
             whip = Math.round(whip * 100.0) / 100.0;
         }
         dto.setWhip(whip);
-
-        // Map pitchCnt to a field not explicitly named pitchCnt in DTO, or leave as null if unsupported.
-        // We will map it to fallingBall as sometimes it is used that way, but actually DTO doesn't have pitchCnt.
-        // We will leave fallingBall as null and not use pitchCnt in DTO directly, or if required, add it to DTO.
-        // The prompt says "승리, 패배, 세이브, 투구수. 탈삼진 컬럼을 추가해줘" to the table.
-        // It does not explicitly ask to change PitcherDto. PitcherDto doesn't have `pitchCnt`.
-        // We will map `pitchCnt` to `null` on the DTO if it's not supported, but let's check PitcherDto.
-        // PitcherDto has: `stOut` (so), `wins`, `loses`, `saves`, `fallingBall`
 
         // Set missing fields to null
         dto.setHitter(null);

@@ -10,6 +10,11 @@ public class KboAdminViewController {
 
     @GetMapping("/kbo-stats")
     public String getKboStatsAdminPage() {
-        return "admin/KBO-stats";
+        return "fantasy/KBO-stats";
+    }
+
+    @GetMapping("/kbo-game-details")
+    public String getKboGameDetailsPage() {
+        return "fantasy/KBO-game-details";
     }
 }

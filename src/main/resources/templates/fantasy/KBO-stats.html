@@ -120,6 +120,9 @@
         </div>
 
         <div id="resultContainer" style="display: none;">
+            <div style="margin-bottom: 10px;">
+                <a id="viewDetailsLink" href="#" class="btn btn-primary" style="background-color: #28a745;">생성된 기록 상세 조회 (View Details)</a>
+            </div>
             <h3>Result: Game Details</h3>
             <div class="result-box"><pre id="gameResult"></pre></div>
 
@@ -159,6 +162,10 @@
                     success: function(response) {
                         alert("Game uploaded successfully.");
                         $('#resultContainer').show();
+
+                        // Set dynamic link to details page
+                        $('#viewDetailsLink').attr('href', '/admin/kbo-game-details?gameIdx=' + response.game.id);
+
                         $('#gameResult').text(JSON.stringify(response.game, null, 2));
                         $('#hittersResult').text(JSON.stringify(response.hitters, null, 2));
                         $('#pitchersResult').text(JSON.stringify(response.pitchers, null, 2));

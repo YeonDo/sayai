@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -30,13 +31,13 @@ public interface KboPitchRepository extends JpaRepository<KboPitch, Long> {
             "FROM kbo_pitch pi " +
             "JOIN ft_players p ON pi.PLAYER_ID = p.seq " +
             "JOIN kbo_game g ON pi.game_idx = g.game_idx " +
-            "WHERE g.season BETWEEN YEAR(:startDate) AND YEAR(:endDate) " +
+            "WHERE g.game_idx BETWEEN :startIdx AND :endIdx " +
             "AND p.position IN ('SP', 'RP', 'CL') " +
             "GROUP BY p.seq " +
             "ORDER BY inning DESC",
-            countQuery = "SELECT COUNT(DISTINCT p.seq) FROM kbo_pitch pi JOIN ft_players p ON pi.PLAYER_ID = p.seq JOIN kbo_game g ON pi.game_idx = g.game_idx WHERE g.season BETWEEN YEAR(:startDate) AND YEAR(:endDate) AND p.position IN ('SP', 'RP', 'CL')",
+            countQuery = "SELECT COUNT(DISTINCT p.seq) FROM kbo_pitch pi JOIN ft_players p ON pi.PLAYER_ID = p.seq JOIN kbo_game g ON pi.game_idx = g.game_idx WHERE g.game_idx BETWEEN :startIdx AND :endIdx AND p.position IN ('SP', 'RP', 'CL')",
             nativeQuery = true)
-    Page<KboPitchStatInterface> getStatsByPeriod(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate, Pageable pageable);
+    Page<KboPitchStatInterface> getStatsByPeriod(@Param("startIdx") Long startIdx, @Param("endIdx") Long endIdx, Pageable pageable);
 
     @Query(value = "SELECT " +
             " p.seq as id, null as backNo, p.name as name, " +
@@ -54,9 +55,11 @@ public interface KboPitchRepository extends JpaRepository<KboPitch, Long> {
             "FROM kbo_pitch pi " +
             "JOIN ft_players p ON pi.PLAYER_ID = p.seq " +
             "JOIN kbo_game g ON pi.game_idx = g.game_idx " +
-            "WHERE g.season BETWEEN YEAR(:startDate) AND YEAR(:endDate) " +
+            "WHERE g.game_idx BETWEEN :startIdx AND :endIdx " +
             "AND p.seq = :id " +
             "AND p.position IN ('SP', 'RP', 'CL') " +
             "GROUP BY p.seq", nativeQuery = true)
-    Optional<KboPitchStatInterface> getStatsByPeriodAndId(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate, @Param("id") Long id);
+    Optional<KboPitchStatInterface> getStatsByPeriodAndId(@Param("startIdx") Long startIdx, @Param("endIdx") Long endIdx, @Param("id") Long id);
+
+    List<KboPitch> findByGameId(Long gameIdx);
 }

@@ -18,7 +18,6 @@ public class KboHit {
     @Column(name = "HIT_ID")
     private Long id;
 
-    private Long gameSeq;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "game_idx")

@@ -50,6 +50,18 @@ public class KboAdminService {
         };
     }
 
+    @Transactional(readOnly = true)
+    public KboGameUploadResponse getGameDetails(Long gameIdx) {
+        KboGame game = kboGameRepository.findById(gameIdx).orElseThrow(() -> new IllegalArgumentException("Game not found"));
+        List<KboHit> hitters = kboHitRepository.findByGameId(gameIdx);
+        List<KboPitch> pitchers = kboPitchRepository.findByGameId(gameIdx);
+        return KboGameUploadResponse.builder()
+                .game(game)
+                .hitters(hitters)
+                .pitchers(pitchers)
+                .build();
+    }
+
     @Transactional
     public KboGameUploadResponse uploadGame(KboGameUploadRequest request) throws Exception {
 
@@ -61,6 +73,19 @@ public class KboAdminService {
         String gameIdxStr = dateStr + timeStr + awayCode + homeCode;
         Long newGameId = Long.parseLong(gameIdxStr);
 
+        // Delete existing game if it exists to support overwriting
+        if (kboGameRepository.existsById(newGameId)) {
+            kboGameRepository.deleteById(newGameId);
+            kboGameRepository.flush(); // Ensure deletion is cascaded and committed before creating a new one
+        }
+
+        String resultTeam = null;
+        if ("home".equalsIgnoreCase(request.getResult())) {
+            resultTeam = request.getHome();
+        } else if ("away".equalsIgnoreCase(request.getResult())) {
+            resultTeam = request.getAway();
+        }
+
         KboGame game = KboGame.builder()
                 .id(newGameId)
                 .season(request.getSeason())
@@ -68,10 +93,10 @@ public class KboAdminService {
                 .away(request.getAway())
                 .homeScore(request.getHomeScore())
                 .awayScore(request.getAwayScore())
-                .result(request.getResult())
+                .result(resultTeam)
                 .build();
 
-        kboGameRepository.save(game);
+        game = kboGameRepository.save(game);
 
         MultipartFile file = request.getFile();
         if (file == null || file.isEmpty()) {
@@ -255,6 +280,17 @@ public class KboAdminService {
         if (inningStr == null || inningStr.isEmpty()) return 0;
         inningStr = inningStr.trim();
         long totalOuts = 0;
+
+        // Handle decimal formats like "3.1" (3 1/3) or "3.2" (3 2/3)
+        if (inningStr.contains(".")) {
+            String[] splitDecimal = inningStr.split("\\.");
+            try {
+                totalOuts += Long.parseLong(splitDecimal[0]) * 3;
+                totalOuts += Long.parseLong(splitDecimal[1]);
+                return totalOuts;
+            } catch (Exception ignore) {}
+        }
+
         String[] parts = inningStr.split(" ");
         for (String part : parts) {
             if (part.contains("/")) {
