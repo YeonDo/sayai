@@ -19,11 +19,11 @@ public class KboPitch {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "game_idx")
+    @JoinColumn(name = "game_idx", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private KboGame game;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "PLAYER_ID")
+    @JoinColumn(name = "PLAYER_ID", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private FantasyPlayer player;
 
     @Column(name = "inning")
