@@ -58,4 +58,21 @@ public interface KboHitRepository extends JpaRepository<KboHit, Long> {
     Optional<KboHitStatInterface> getPlayerByPeriodAndId(@Param("startIdx") Long startIdx, @Param("endIdx") Long endIdx, @Param("id") Long id);
 
     List<KboHit> findByGameId(Long gameIdx);
+
+    @Query(value = "SELECT " +
+            " h.PLAYER_ID as playerId, " +
+            " IFNULL(SUM(h.pa), 0) as pa, " +
+            " IFNULL(SUM(h.ab), 0) as ab, " +
+            " IFNULL(SUM(h.hit), 0) as hit, " +
+            " IFNULL(SUM(h.rbi), 0) as rbi, " +
+            " IFNULL(SUM(h.run), 0) as run, " +
+            " IFNULL(SUM(h.sb), 0) as sb, " +
+            " IFNULL(SUM(h.so), 0) as so, " +
+            " IFNULL(SUM(h.hr), 0) as hr " +
+            "FROM kbo_hit h " +
+            "JOIN kbo_game g ON h.game_idx = g.game_idx " +
+            "WHERE g.game_idx BETWEEN :startIdx AND :endIdx " +
+            "AND h.PLAYER_ID IN (:playerIds) " +
+            "GROUP BY h.PLAYER_ID", nativeQuery = true)
+    List<KboParticipantStatsInterface> getAggregatedHitStats(@Param("startIdx") Long startIdx, @Param("endIdx") Long endIdx, @Param("playerIds") List<Long> playerIds);
 }

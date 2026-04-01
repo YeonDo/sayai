@@ -62,4 +62,24 @@ public interface KboPitchRepository extends JpaRepository<KboPitch, Long> {
     Optional<KboPitchStatInterface> getStatsByPeriodAndId(@Param("startIdx") Long startIdx, @Param("endIdx") Long endIdx, @Param("id") Long id);
 
     List<KboPitch> findByGameId(Long gameIdx);
+
+    @Query(value = "SELECT " +
+            " pi.PLAYER_ID as playerId, " +
+            " IFNULL(SUM(pi.win), 0) as win, " +
+            " IFNULL(SUM(pi.lose), 0) as lose, " +
+            " IFNULL(SUM(pi.save), 0) as save, " +
+            " IFNULL(SUM(pi.inning), 0) as inning, " +
+            " IFNULL(SUM(pi.batter), 0) as batter, " +
+            " IFNULL(SUM(pi.pitch_cnt), 0) as pitchCnt, " +
+            " IFNULL(SUM(pi.hit), 0) as pHit, " +
+            " IFNULL(SUM(pi.bb), 0) as bb, " +
+            " IFNULL(SUM(pi.so), 0) as pSo, " +
+            " IFNULL(SUM(pi.er), 0) as er, " +
+            " IFNULL(SUM(pi.hbp), 0) as hbp " +
+            "FROM kbo_pitch pi " +
+            "JOIN kbo_game g ON pi.game_idx = g.game_idx " +
+            "WHERE g.game_idx BETWEEN :startIdx AND :endIdx " +
+            "AND pi.PLAYER_ID IN (:playerIds) " +
+            "GROUP BY pi.PLAYER_ID", nativeQuery = true)
+    List<KboParticipantStatsInterface> getAggregatedPitchStats(@Param("startIdx") Long startIdx, @Param("endIdx") Long endIdx, @Param("playerIds") List<Long> playerIds);
 }
