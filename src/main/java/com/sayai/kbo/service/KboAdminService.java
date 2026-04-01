@@ -176,8 +176,21 @@ public class KboAdminService {
                 long run = getLongValueSafe(row, headerMap, "득점");
                 long sb = getLongValueSafe(row, headerMap, "도루");
 
-                long so = getLongValueSafe(row, headerMap, "삼진");
-                long hr = getLongValueSafe(row, headerMap, "홈런");
+                // Calculate so and hr from inning columns dynamically (e.g., '1', '2', '3'...)
+                long so = 0;
+                long hr = 0;
+                for (Map.Entry<String, Integer> entry : headerMap.entrySet()) {
+                    String headerName = entry.getKey();
+                    if (headerName.matches("\\d+")) { // If header is a number (inning 1, 2, 3...)
+                        String cellVal = getCellValueAsString(row.getCell(entry.getValue()));
+                        if (cellVal.contains("삼진") || cellVal.contains("스낫")) {
+                            so++;
+                        }
+                        if (cellVal.contains("홈")) {
+                            hr++;
+                        }
+                    }
+                }
 
                 FantasyPlayer fp = findMatchingPlayer(teamPlayers, playerName);
                 if (fp != null) {
@@ -188,6 +201,8 @@ public class KboAdminService {
                             .build();
                     kboHit = kboHitRepository.save(kboHit);
                     hittersOut.add(kboHit);
+                } else {
+                    throw new IllegalArgumentException(teamName + " 팀의 " + playerName + " 선수가 등록되어 있지 않습니다. 선수 등록이 필요합니다.");
                 }
             } else {
                 // Parse Pitcher row
@@ -195,12 +210,7 @@ public class KboAdminService {
                 long lose = getLongValueSafe(row, headerMap, "패");
                 long save = getLongValueSafe(row, headerMap, "세");
 
-                String inningStr = "";
-                Integer innIdx = headerMap.get("이닝");
-                if (innIdx != null) {
-                    inningStr = getCellValueAsString(row.getCell(innIdx));
-                }
-                long inning = parseInning(inningStr);
+                long inning = getLongValueSafe(row, headerMap, "이닝");
 
                 long batter = getLongValueSafe(row, headerMap, "타자");
                 long pitchCnt = getLongValueSafe(row, headerMap, "투구수");
@@ -220,6 +230,8 @@ public class KboAdminService {
                             .build();
                     kboPitch = kboPitchRepository.save(kboPitch);
                     pitchersOut.add(kboPitch);
+                } else {
+                    throw new IllegalArgumentException(teamName + " 팀의 " + playerName + " 선수가 등록되어 있지 않습니다. 선수 등록이 필요합니다.");
                 }
             }
         }
@@ -276,37 +288,4 @@ public class KboAdminService {
         }
     }
 
-    private long parseInning(String inningStr) {
-        if (inningStr == null || inningStr.isEmpty()) return 0;
-        inningStr = inningStr.trim();
-        long totalOuts = 0;
-
-        // Handle decimal formats like "3.1" (3 1/3) or "3.2" (3 2/3)
-        if (inningStr.contains(".")) {
-            String[] splitDecimal = inningStr.split("\\.");
-            try {
-                totalOuts += Long.parseLong(splitDecimal[0]) * 3;
-                totalOuts += Long.parseLong(splitDecimal[1]);
-                return totalOuts;
-            } catch (Exception ignore) {}
-        }
-
-        String[] parts = inningStr.split(" ");
-        for (String part : parts) {
-            if (part.contains("/")) {
-                String[] frac = part.split("/");
-                try {
-                    totalOuts += Long.parseLong(frac[0]);
-                } catch (Exception ignore) {}
-            } else {
-                try {
-                    String num = part.replaceAll("[^0-9]", "");
-                    if (!num.isEmpty()) {
-                        totalOuts += Long.parseLong(num) * 3;
-                    }
-                } catch (Exception ignore) {}
-            }
-        }
-        return totalOuts;
-    }
 }
