@@ -167,22 +167,32 @@ public class KboAdminService {
 
             if (readingHitters) {
                 // Parse Hitter row
-                long pa = getLongValueSafe(row, headerMap, "타석");
-                if (pa == 0) continue; // "타석이 0 인 선수의 데이터는 넣을 필요 없어."
-
                 long ab = getLongValueSafe(row, headerMap, "타수");
                 long hit = getLongValueSafe(row, headerMap, "안타");
                 long rbi = getLongValueSafe(row, headerMap, "타점");
                 long run = getLongValueSafe(row, headerMap, "득점");
                 long sb = getLongValueSafe(row, headerMap, "도루");
 
-                // Calculate so and hr from inning columns dynamically (e.g., '1', '2', '3'...)
+                // Calculate pa, so and hr from inning columns dynamically (e.g., '1', '2', '3'...)
+                long pa = 0;
                 long so = 0;
                 long hr = 0;
                 for (Map.Entry<String, Integer> entry : headerMap.entrySet()) {
                     String headerName = entry.getKey();
                     if (headerName.matches("\\d+")) { // If header is a number (inning 1, 2, 3...)
                         String cellVal = getCellValueAsString(row.getCell(entry.getValue()));
+
+                        // Count Plate Appearances (PA) in this inning
+                        // Split by "/" or simply check non-empty
+                        if (cellVal != null && !cellVal.trim().isEmpty() && !cellVal.trim().equals("-")) {
+                            String[] atBats = cellVal.split("/");
+                            for (String atBat : atBats) {
+                                if (!atBat.trim().isEmpty() && !atBat.trim().equals("-")) {
+                                    pa++;
+                                }
+                            }
+                        }
+
                         if (cellVal.contains("삼진") || cellVal.contains("스낫")) {
                             so++;
                         }
@@ -191,6 +201,8 @@ public class KboAdminService {
                         }
                     }
                 }
+
+                if (pa == 0) continue; // "타석이 0 인 선수의 데이터는 넣을 필요 없어."
 
                 FantasyPlayer fp = findMatchingPlayer(teamPlayers, playerName);
                 if (fp != null) {
