@@ -31,8 +31,11 @@ public class FantasyPlayer {
     @Enumerated(EnumType.STRING)
     private ForeignerType foreignerType;
 
+    @Column(name = "is_active", columnDefinition = "int default 0")
+    private Integer isActive = 0;
+
     @Builder
-    public FantasyPlayer(Long seq, String name, String position, String team, String stats, Integer cost, ForeignerType foreignerType) {
+    public FantasyPlayer(Long seq, String name, String position, String team, String stats, Integer cost, ForeignerType foreignerType, Integer isActive) {
         this.seq = seq;
         this.name = name;
         this.position = position;
@@ -40,6 +43,7 @@ public class FantasyPlayer {
         this.stats = stats;
         setCost(cost);
         this.foreignerType = foreignerType;
+        this.isActive = isActive != null ? isActive : 0;
     }
 
     public void setCost(Integer cost) {
