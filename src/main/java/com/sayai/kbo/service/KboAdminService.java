@@ -202,7 +202,7 @@ public class KboAdminService {
                     }
                 }
 
-                if (pa == 0) continue; // "타석이 0 인 선수의 데이터는 넣을 필요 없어."
+                if (pa == 0 && sb == 0) continue; // "타수가 0 인데 도루가 0이 아닌경우 해당 선수의 데이터는 추가하는 로직을 넣어줘 (대주자 로직)"
 
                 FantasyPlayer fp = findMatchingPlayer(teamPlayers, playerName);
                 if (fp != null) {
