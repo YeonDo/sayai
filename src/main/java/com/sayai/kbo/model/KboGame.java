@@ -39,13 +39,6 @@ public class KboGame {
     private String result;
 
 
-    @Builder.Default
-    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL)
-    private List<KboPitch> pitchList = new ArrayList<>();
-
-    @Builder.Default
-    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL)
-    private List<KboHit> hitList = new ArrayList<>();
 
     public void setHome(String home) {
         this.home = home;

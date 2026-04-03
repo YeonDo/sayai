@@ -61,7 +61,7 @@ public interface KboPitchRepository extends JpaRepository<KboPitch, Long> {
             "GROUP BY p.seq", nativeQuery = true)
     Optional<KboPitchStatInterface> getStatsByPeriodAndId(@Param("startIdx") Long startIdx, @Param("endIdx") Long endIdx, @Param("id") Long id);
 
-    List<KboPitch> findByGameId(Long gameIdx);
+    List<KboPitch> findByGameIdx(Long gameIdx);
 
     @Query(value = "SELECT " +
             " pi.PLAYER_ID as playerId, " +

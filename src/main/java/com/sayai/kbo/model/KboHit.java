@@ -19,13 +19,11 @@ public class KboHit {
     private Long id;
 
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "game_idx", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
-    private KboGame game;
+    @Column(name = "game_idx")
+    private Long gameIdx;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "PLAYER_ID", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
-    private FantasyPlayer player;
+    @Column(name = "PLAYER_ID")
+    private Long playerId;
 
     @Column(name = "pa")
     private Long pa; // 타석

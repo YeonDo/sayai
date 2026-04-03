@@ -53,8 +53,8 @@ public class KboAdminService {
     @Transactional(readOnly = true)
     public KboGameUploadResponse getGameDetails(Long gameIdx) {
         KboGame game = kboGameRepository.findById(gameIdx).orElseThrow(() -> new IllegalArgumentException("Game not found"));
-        List<KboHit> hitters = kboHitRepository.findByGameId(gameIdx);
-        List<KboPitch> pitchers = kboPitchRepository.findByGameId(gameIdx);
+        List<KboHit> hitters = kboHitRepository.findByGameIdx(gameIdx);
+        List<KboPitch> pitchers = kboPitchRepository.findByGameIdx(gameIdx);
         return KboGameUploadResponse.builder()
                 .game(game)
                 .hitters(hitters)
@@ -207,8 +207,8 @@ public class KboAdminService {
                 FantasyPlayer fp = findMatchingPlayer(teamPlayers, playerName);
                 if (fp != null) {
                     KboHit kboHit = KboHit.builder()
-                            .game(game)
-                            .player(fp)
+                            .gameIdx(game.getId())
+                            .playerId(fp.getSeq())
                             .pa(pa).ab(ab).hit(hit).rbi(rbi).run(run).sb(sb).so(so).hr(hr)
                             .build();
                     kboHit = kboHitRepository.save(kboHit);
@@ -235,8 +235,8 @@ public class KboAdminService {
                 FantasyPlayer fp = findMatchingPlayer(teamPlayers, playerName);
                 if (fp != null) {
                     KboPitch kboPitch = KboPitch.builder()
-                            .game(game)
-                            .player(fp)
+                            .gameIdx(game.getId())
+                            .playerId(fp.getSeq())
                             .win(win).lose(lose).save(save).inning(inning).batter(batter)
                             .pitchCnt(pitchCnt).hit(hit).bb(bb).so(so).er(er).hbp(hbp)
                             .build();
