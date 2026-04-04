@@ -4,9 +4,9 @@ import com.sayai.kbo.dto.ParticipantKboStatsDto;
 import com.sayai.kbo.repository.KboHitRepository;
 import com.sayai.kbo.repository.KboParticipantStatsInterface;
 import com.sayai.kbo.repository.KboPitchRepository;
-import com.sayai.record.fantasy.entity.DraftPick;
 import com.sayai.record.fantasy.entity.FantasyParticipant;
-import com.sayai.record.fantasy.repository.DraftPickRepository;
+import com.sayai.record.fantasy.entity.DraftPickSnapshot;
+import com.sayai.record.fantasy.repository.DraftPickSnapshotRepository;
 import com.sayai.record.fantasy.repository.FantasyParticipantRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 public class FantasyKboService {
 
     private final FantasyParticipantRepository participantRepository;
-    private final DraftPickRepository draftPickRepository;
+    private final DraftPickSnapshotRepository draftPickSnapshotRepository;
     private final KboHitRepository kboHitRepository;
     private final KboPitchRepository kboPitchRepository;
 
@@ -45,16 +45,13 @@ public class FantasyKboService {
             return Collections.emptyList();
         }
 
-        List<DraftPick> draftPicks = draftPickRepository.findByFantasyGameSeq(gameSeq);
-        // Filter only active/normal picks (or whatever criteria means they "own" the player during this period)
-        // If they need to hold them, pickStatus.NORMAL might be the way, but since we just aggregate, we map all valid ones.
-        // The prompt says "participants 들의 draft_pick 조회" so we map participant -> list of playerIds.
+        List<DraftPickSnapshot> draftPicks = draftPickSnapshotRepository.findByFantasyGameSeq(gameSeq);
 
         Map<Long, List<Long>> participantToPlayerIds = new HashMap<>();
         Map<Long, Long> playerToParticipantId = new HashMap<>();
 
-        for (DraftPick pick : draftPicks) {
-            if (pick.getPickStatus() != DraftPick.PickStatus.NORMAL && pick.getPickStatus() != DraftPick.PickStatus.TRADE_PENDING) {
+        for (DraftPickSnapshot pick : draftPicks) {
+            if (pick.getPickStatus() != DraftPickSnapshot.PickStatus.NORMAL && pick.getPickStatus() != DraftPickSnapshot.PickStatus.TRADE_PENDING) {
                 // If waiver req or other non-roster status, decide whether to include.
                 // Usually NORMAL implies they are on the roster.
                 // Assuming we just include them if they have a draft pick record. Let's include NORMAL.

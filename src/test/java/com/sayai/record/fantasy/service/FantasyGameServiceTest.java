@@ -29,6 +29,7 @@ class FantasyGameServiceTest {
     @Mock private FantasyGameRepository fantasyGameRepository;
     @Mock private FantasyParticipantRepository fantasyParticipantRepository;
     @Mock private DraftPickRepository draftPickRepository;
+    @Mock private com.sayai.record.fantasy.repository.DraftPickSnapshotRepository draftPickSnapshotRepository;
     @Mock private FantasyPlayerRepository fantasyPlayerRepository;
     @Mock private SimpMessagingTemplate messagingTemplate;
     @Mock private FantasyDraftService fantasyDraftService;
