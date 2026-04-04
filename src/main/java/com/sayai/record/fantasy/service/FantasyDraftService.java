@@ -508,7 +508,7 @@ public class FantasyDraftService {
 
         List<FantasyPlayer> available;
         if (pickedPlayerSeqs.isEmpty()) {
-            available = fantasyPlayerRepository.findAll();
+            available = fantasyPlayerRepository.findAllActivePlayers();
         } else {
             available = fantasyPlayerRepository.findBySeqNotIn(pickedPlayerSeqs);
         }

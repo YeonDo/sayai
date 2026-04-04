@@ -10,7 +10,7 @@ import java.util.List;
 
 public interface FantasyPlayerRepository extends JpaRepository<FantasyPlayer, Long> {
 
-    @Query("SELECT p FROM FantasyPlayer p WHERE " +
+    @Query("SELECT p FROM FantasyPlayer p WHERE p.isActive = 0 AND " +
             "(:team IS NULL OR p.team = :team) AND " +
             "(:position IS NULL OR (:position = 'C' AND p.position = 'C') OR (:position <> 'C' AND p.position LIKE CONCAT('%', :position, '%'))) AND " +
             "(:search IS NULL OR p.name LIKE CONCAT('%', :search, '%')) AND " +
@@ -20,5 +20,9 @@ public interface FantasyPlayerRepository extends JpaRepository<FantasyPlayer, Lo
                                     @Param("search") String search,
                                     @Param("foreignerType") FantasyPlayer.ForeignerType foreignerType);
 
-    List<FantasyPlayer> findBySeqNotIn(Collection<Long> seqs);
+    @Query("SELECT p FROM FantasyPlayer p WHERE p.isActive = 0 AND p.seq NOT IN :seqs")
+    List<FantasyPlayer> findBySeqNotIn(@Param("seqs") Collection<Long> seqs);
+
+    @Query("SELECT p FROM FantasyPlayer p WHERE p.isActive = 0")
+    List<FantasyPlayer> findAllActivePlayers();
 }

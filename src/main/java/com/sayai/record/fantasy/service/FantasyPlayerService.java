@@ -47,7 +47,7 @@ public class FantasyPlayerService {
             List<FantasyPlayer> players = new ArrayList<>();
 
             // Skip header row (index 0)
-            // Columns: Seq(0), Team(1), Name(2), Position(3), Stats(4), Cost(5), Foreign(6)
+            // Columns: Seq(0), Team(1), Name(2), Position(3), Stats(4), Cost(5), Foreign(6), Active(7)
             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
                 if (row == null) continue;
@@ -60,6 +60,7 @@ public class FantasyPlayerService {
                     String stats = getCellValueAsString(row.getCell(4));
                     int cost = parseIntSafe(getCellValueAsString(row.getCell(5)), "Cost", i);
                     String isForeign = getCellValueAsString(row.getCell(6));
+                    String isActiveStr = getCellValueAsString(row.getCell(7));
 
                     // If name is empty, skip (or handle as end of data)
                     if (name == null || name.trim().isEmpty()) {
@@ -76,6 +77,15 @@ public class FantasyPlayerService {
                         }
                     }
 
+                    int isActive = 0;
+                    if (isActiveStr != null && !isActiveStr.trim().isEmpty()) {
+                        try {
+                            isActive = Integer.parseInt(isActiveStr.trim());
+                        } catch (NumberFormatException e) {
+                            log.warn("Row {}: Invalid Active '{}', defaulting to 0", i, isActiveStr);
+                        }
+                    }
+
                     FantasyPlayer player = FantasyPlayer.builder()
                             .seq(seq)
                             .name(name)
@@ -84,6 +94,7 @@ public class FantasyPlayerService {
                             .stats(stats)
                             .cost(cost)
                             .foreignerType(foreignerType)
+                            .isActive(isActive)
                             .build();
 
                     players.add(player);

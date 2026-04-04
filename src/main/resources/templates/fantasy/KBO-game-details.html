@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default}">
+<head>
+    <title>KBO Game Details Admin</title>
+    <link rel="stylesheet" th:href="@{/css/fantasy.css}">
+    <style>
+        .result-box {
+            background: #f9f9f9;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            overflow-x: auto;
+            max-height: 400px;
+            margin-top: 20px;
+            margin-bottom: 40px;
+        }
+        pre {
+            margin: 0;
+            font-family: monospace;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container">
+        <div class="fantasy-header">
+            <h1>KBO 경기 상세 기록 (Game Details)</h1>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <a href="/admin/kbo-stats" class="btn btn-secondary">Back to Upload</a>
+        </div>
+
+        <div class="admin-section" style="padding: 20px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px;">
+            <h3>조회할 Game Index를 입력하세요</h3>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <input type="text" id="gameIdxInput" placeholder="ex. 20260329140301" style="padding: 8px; width: 300px;">
+                <button onclick="fetchGameDetails()" class="btn btn-primary">Search</button>
+            </div>
+        </div>
+
+        <div id="resultContainer" style="display: none;">
+            <h3>Game Information</h3>
+            <div class="result-box"><pre id="gameResult"></pre></div>
+
+            <h3>Hitters (타자 기록)</h3>
+            <div class="result-box"><pre id="hittersResult"></pre></div>
+
+            <h3>Pitchers (투수 기록)</h3>
+            <div class="result-box"><pre id="pitchersResult"></pre></div>
+        </div>
+    </div>
+
+    <script>
+        // Fetch game idx from URL query params if provided
+        $(document).ready(function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const gameIdx = urlParams.get('gameIdx');
+            if (gameIdx) {
+                $('#gameIdxInput').val(gameIdx);
+                fetchGameDetails();
+            }
+        });
+
+        function fetchGameDetails() {
+            const gameIdx = $('#gameIdxInput').val().trim();
+            if (!gameIdx) {
+                alert("Please enter a Game Index.");
+                return;
+            }
+
+            $.get(`/apis/v1/admin/kbo/game/${gameIdx}`)
+                .done(function(response) {
+                    $('#resultContainer').show();
+                    $('#gameResult').text(JSON.stringify(response.game, null, 2));
+                    $('#hittersResult').text(JSON.stringify(response.hitters, null, 2));
+                    $('#pitchersResult').text(JSON.stringify(response.pitchers, null, 2));
+                })
+                .fail(function(xhr) {
+                    alert("Failed to fetch game details: " + (xhr.responseText || xhr.statusText));
+                    $('#resultContainer').hide();
+                });
+        }
+    </script>
+</div>
+</body>
+</html>

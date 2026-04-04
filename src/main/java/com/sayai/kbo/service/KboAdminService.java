@@ -1,0 +1,303 @@
+package com.sayai.kbo.service;
+
+import com.sayai.kbo.dto.KboGameUploadRequest;
+import com.sayai.kbo.dto.KboGameUploadResponse;
+import com.sayai.kbo.model.KboGame;
+import com.sayai.kbo.model.KboHit;
+import com.sayai.kbo.model.KboPitch;
+import com.sayai.kbo.repository.KboGameRepository;
+import com.sayai.kbo.repository.KboHitRepository;
+import com.sayai.kbo.repository.KboPitchRepository;
+import com.sayai.record.fantasy.entity.FantasyPlayer;
+import com.sayai.record.fantasy.repository.FantasyPlayerRepository;
+import lombok.RequiredArgsConstructor;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.InputStream;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@Service
+@RequiredArgsConstructor
+public class KboAdminService {
+
+    private final KboGameRepository kboGameRepository;
+    private final KboHitRepository kboHitRepository;
+    private final KboPitchRepository kboPitchRepository;
+    private final FantasyPlayerRepository fantasyPlayerRepository;
+
+    private String getTeamCode(String teamName) {
+        if (teamName == null) return "99";
+        return switch (teamName.toUpperCase()) {
+            case "두산" -> "00";
+            case "LG" -> "01";
+            case "키움" -> "02";
+            case "KT" -> "03";
+            case "SSG" -> "04";
+            case "한화" -> "05";
+            case "KIA" -> "06";
+            case "삼성" -> "07";
+            case "NC" -> "08";
+            case "롯데" -> "09";
+            default -> "99";
+        };
+    }
+
+    @Transactional(readOnly = true)
+    public KboGameUploadResponse getGameDetails(Long gameIdx) {
+        KboGame game = kboGameRepository.findById(gameIdx).orElseThrow(() -> new IllegalArgumentException("Game not found"));
+        List<KboHit> hitters = kboHitRepository.findByGameIdx(gameIdx);
+        List<KboPitch> pitchers = kboPitchRepository.findByGameIdx(gameIdx);
+        return KboGameUploadResponse.builder()
+                .game(game)
+                .hitters(hitters)
+                .pitchers(pitchers)
+                .build();
+    }
+
+    @Transactional
+    public KboGameUploadResponse uploadGame(KboGameUploadRequest request) throws Exception {
+
+        String dateStr = request.getGameTime() != null ? request.getGameTime().format(DateTimeFormatter.ofPattern("yyyyMMdd")) : "00000000";
+        String timeStr = request.getGameTime() != null ? request.getGameTime().format(DateTimeFormatter.ofPattern("HH")) : "00";
+        String awayCode = getTeamCode(request.getAway());
+        String homeCode = getTeamCode(request.getHome());
+
+        String gameIdxStr = dateStr + timeStr + awayCode + homeCode;
+        Long newGameId = Long.parseLong(gameIdxStr);
+
+        // Delete existing game if it exists to support overwriting
+        if (kboGameRepository.existsById(newGameId)) {
+            kboGameRepository.deleteById(newGameId);
+            kboGameRepository.flush(); // Ensure deletion is cascaded and committed before creating a new one
+        }
+
+        String resultTeam = null;
+        if (request.getHomeScore() > request.getAwayScore()) {
+            resultTeam = request.getHome();
+        } else if (request.getHomeScore() < request.getAwayScore()) {
+            resultTeam = request.getAway();
+        }
+
+        KboGame game = KboGame.builder()
+                .id(newGameId)
+                .season(request.getSeason())
+                .home(request.getHome())
+                .away(request.getAway())
+                .homeScore(request.getHomeScore())
+                .awayScore(request.getAwayScore())
+                .result(resultTeam)
+                .build();
+
+        game = kboGameRepository.save(game);
+
+        MultipartFile file = request.getFile();
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("File is required");
+        }
+
+        List<KboHit> allHitters = new ArrayList<>();
+        List<KboPitch> allPitchers = new ArrayList<>();
+
+        try (InputStream is = file.getInputStream();
+             Workbook workbook = new XSSFWorkbook(is)) {
+
+            // Sheet 0: Away team
+            Sheet awaySheet = workbook.getSheetAt(0);
+            processSheet(awaySheet, game, request.getAway(), allHitters, allPitchers);
+
+            // Sheet 1: Home team
+            if (workbook.getNumberOfSheets() > 1) {
+                Sheet homeSheet = workbook.getSheetAt(1);
+                processSheet(homeSheet, game, request.getHome(), allHitters, allPitchers);
+            }
+        }
+
+        return KboGameUploadResponse.builder()
+                .game(game)
+                .hitters(allHitters)
+                .pitchers(allPitchers)
+                .build();
+    }
+
+    private void processSheet(Sheet sheet, KboGame game, String teamName, List<KboHit> hittersOut, List<KboPitch> pitchersOut) {
+        boolean readingHitters = true;
+
+        List<FantasyPlayer> teamPlayers = fantasyPlayerRepository.findPlayers(teamName, null, null, null);
+
+        Map<String, Integer> headerMap = new HashMap<>();
+
+        for (int r = 0; r <= sheet.getLastRowNum(); r++) {
+            Row row = sheet.getRow(r);
+            if (row == null) continue;
+
+            // Find headers
+            String cVal = getCellValueAsString(row.getCell(2)); // C col usually has "선수명"
+            if ("선수명".equals(cVal) || "선수명".equals(getCellValueAsString(row.getCell(0)))) {
+                headerMap.clear();
+                for (int c = 0; c < row.getLastCellNum(); c++) {
+                    String headerName = getCellValueAsString(row.getCell(c));
+                    if (!headerName.isEmpty()) {
+                        headerMap.put(headerName, c);
+                    }
+                }
+
+                if (headerMap.containsKey("등판")) {
+                    readingHitters = false;
+                } else {
+                    readingHitters = true;
+                }
+                continue;
+            }
+
+            if (headerMap.isEmpty()) continue;
+
+            Integer nameIdx = headerMap.get("선수명");
+            if (nameIdx == null) continue;
+
+            String playerName = getCellValueAsString(row.getCell(nameIdx));
+            if (playerName.isEmpty() || playerName.equals("선수명")) continue;
+
+            if (readingHitters) {
+                // Parse Hitter row
+                long ab = getLongValueSafe(row, headerMap, "타수");
+                long hit = getLongValueSafe(row, headerMap, "안타");
+                long rbi = getLongValueSafe(row, headerMap, "타점");
+                long run = getLongValueSafe(row, headerMap, "득점");
+                long sb = getLongValueSafe(row, headerMap, "도루");
+
+                // Calculate pa, so and hr from inning columns dynamically (e.g., '1', '2', '3'...)
+                long pa = 0;
+                long so = 0;
+                long hr = 0;
+                for (Map.Entry<String, Integer> entry : headerMap.entrySet()) {
+                    String headerName = entry.getKey();
+                    if (headerName.matches("\\d+")) { // If header is a number (inning 1, 2, 3...)
+                        String cellVal = getCellValueAsString(row.getCell(entry.getValue()));
+
+                        // Count Plate Appearances (PA) in this inning
+                        // Split by "/" or simply check non-empty
+                        if (cellVal != null && !cellVal.trim().isEmpty() && !cellVal.trim().equals("-")) {
+                            String[] atBats = cellVal.split("/");
+                            for (String atBat : atBats) {
+                                if (!atBat.trim().isEmpty() && !atBat.trim().equals("-")) {
+                                    pa++;
+                                }
+                            }
+                        }
+
+                        if (cellVal.contains("삼진") || cellVal.contains("스낫")) {
+                            so++;
+                        }
+                        if (cellVal.contains("홈")) {
+                            hr++;
+                        }
+                    }
+                }
+
+                if (pa == 0 && sb == 0) continue; // "타수가 0 인데 도루가 0이 아닌경우 해당 선수의 데이터는 추가하는 로직을 넣어줘 (대주자 로직)"
+
+                FantasyPlayer fp = findMatchingPlayer(teamPlayers, playerName);
+                if (fp != null) {
+                    KboHit kboHit = KboHit.builder()
+                            .gameIdx(game.getId())
+                            .playerId(fp.getSeq())
+                            .pa(pa).ab(ab).hit(hit).rbi(rbi).run(run).sb(sb).so(so).hr(hr)
+                            .build();
+                    kboHit = kboHitRepository.save(kboHit);
+                    hittersOut.add(kboHit);
+                } else {
+                    throw new IllegalArgumentException(teamName + " 팀의 " + playerName + " 선수가 등록되어 있지 않습니다. 선수 등록이 필요합니다.");
+                }
+            } else {
+                // Parse Pitcher row
+                long win = getLongValueSafe(row, headerMap, "승");
+                long lose = getLongValueSafe(row, headerMap, "패");
+                long save = getLongValueSafe(row, headerMap, "세");
+
+                long inning = getLongValueSafe(row, headerMap, "이닝");
+
+                long batter = getLongValueSafe(row, headerMap, "타자");
+                long pitchCnt = getLongValueSafe(row, headerMap, "투구수");
+                long hit = getLongValueSafe(row, headerMap, "피안타");
+                long bb = getLongValueSafe(row, headerMap, "4사구");
+                long so = getLongValueSafe(row, headerMap, "삼진");
+                long er = getLongValueSafe(row, headerMap, "자책");
+                long hbp = getLongValueSafe(row, headerMap, "사구");
+
+                FantasyPlayer fp = findMatchingPlayer(teamPlayers, playerName);
+                if (fp != null) {
+                    KboPitch kboPitch = KboPitch.builder()
+                            .gameIdx(game.getId())
+                            .playerId(fp.getSeq())
+                            .win(win).lose(lose).save(save).inning(inning).batter(batter)
+                            .pitchCnt(pitchCnt).hit(hit).bb(bb).so(so).er(er).hbp(hbp)
+                            .build();
+                    kboPitch = kboPitchRepository.save(kboPitch);
+                    pitchersOut.add(kboPitch);
+                } else {
+                    throw new IllegalArgumentException(teamName + " 팀의 " + playerName + " 선수가 등록되어 있지 않습니다. 선수 등록이 필요합니다.");
+                }
+            }
+        }
+    }
+
+    private FantasyPlayer findMatchingPlayer(List<FantasyPlayer> players, String name) {
+        return players.stream().filter(p -> p.getName().equals(name)).findFirst().orElse(null);
+    }
+
+    private String getCellValueAsString(Cell cell) {
+        if (cell == null) return "";
+        try {
+            return switch (cell.getCellType()) {
+                case STRING -> cell.getStringCellValue().trim();
+                case NUMERIC -> {
+                    double val = cell.getNumericCellValue();
+                    if (val == (long) val) {
+                        yield String.valueOf((long) val);
+                    } else {
+                        yield String.valueOf(val);
+                    }
+                }
+                case FORMULA -> {
+                    try {
+                        yield cell.getStringCellValue().trim();
+                    } catch (Exception e) {
+                        yield String.valueOf((long) cell.getNumericCellValue());
+                    }
+                }
+                default -> "";
+            };
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    private long getLongValueSafe(Row row, Map<String, Integer> headerMap, String headerName) {
+        Integer colIdx = headerMap.get(headerName);
+        if (colIdx == null) return 0L;
+
+        Cell cell = row.getCell(colIdx);
+        if (cell == null) return 0L;
+
+        String val = getCellValueAsString(cell).trim();
+        if (val.isEmpty() || val.equals("-") || val.equals(" ")) return 0L;
+
+        val = val.replaceAll("[^0-9-]", "");
+        if (val.isEmpty() || val.equals("-")) return 0L;
+
+        try {
+            return Long.parseLong(val);
+        } catch (NumberFormatException e) {
+            return 0L;
+        }
+    }
+
+}

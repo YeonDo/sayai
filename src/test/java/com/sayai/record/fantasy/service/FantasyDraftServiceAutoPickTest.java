@@ -90,7 +90,7 @@ class FantasyDraftServiceAutoPickTest {
         // We only add p1 to test if it CAN be picked.
         // If logic was restrictive, candidates would be empty (filtered out p1).
 
-        when(fantasyPlayerRepository.findAll()).thenReturn(available);
+        when(fantasyPlayerRepository.findAllActivePlayers()).thenReturn(available);
         when(fantasyPlayerRepository.findById(1L)).thenReturn(Optional.of(p1));
 
         // Validator should pass for any player since we mock it
