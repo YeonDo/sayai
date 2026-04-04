@@ -4,8 +4,10 @@ import com.sayai.record.fantasy.dto.*;
 import com.sayai.record.fantasy.entity.DraftPick;
 import com.sayai.record.fantasy.entity.FantasyGame;
 import com.sayai.record.fantasy.entity.FantasyParticipant;
+import com.sayai.record.fantasy.entity.DraftPickSnapshot;
 import com.sayai.record.fantasy.entity.FantasyPlayer;
 import com.sayai.record.fantasy.repository.DraftPickRepository;
+import com.sayai.record.fantasy.repository.DraftPickSnapshotRepository;
 import com.sayai.record.fantasy.repository.FantasyGameRepository;
 import com.sayai.record.fantasy.repository.FantasyParticipantRepository;
 import com.sayai.record.fantasy.repository.FantasyPlayerRepository;
@@ -29,6 +31,7 @@ public class FantasyGameService {
     private final FantasyGameRepository fantasyGameRepository;
     private final FantasyParticipantRepository fantasyParticipantRepository;
     private final DraftPickRepository draftPickRepository;
+    private final DraftPickSnapshotRepository draftPickSnapshotRepository;
     private final FantasyPlayerRepository fantasyPlayerRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final FantasyDraftService fantasyDraftService;
@@ -234,7 +237,7 @@ public class FantasyGameService {
         }
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public String exportRoster(Long gameSeq) {
         FantasyGame game = fantasyGameRepository.findById(gameSeq)
                 .orElseThrow(() -> new IllegalArgumentException("Game not found"));
@@ -245,6 +248,8 @@ public class FantasyGameService {
             // Or just return empty or proceed. Requirement says "ONGOING".
         }
 
+        draftPickSnapshotRepository.deleteByFantasyGameSeq(gameSeq);
+
         List<FantasyParticipant> participants = fantasyParticipantRepository.findByFantasyGameSeq(gameSeq);
         List<DraftPick> allPicks = draftPickRepository.findByFantasyGameSeq(gameSeq);
 
@@ -253,6 +258,8 @@ public class FantasyGameService {
                 .collect(Collectors.toMap(FantasyPlayer::getSeq, Function.identity()));
 
         Map<Long, List<DraftPick>> picksByPart = allPicks.stream().collect(Collectors.groupingBy(DraftPick::getPlayerId));
+
+        List<DraftPickSnapshot> snapshotsToSave = new ArrayList<>();
 
         // Prepare data grid: Participant -> { Batters, Pitchers }
         List<List<String>> allBatters = new ArrayList<>();
@@ -263,8 +270,24 @@ public class FantasyGameService {
             teamNames.add(p.getTeamName());
 
             List<DraftPick> picks = picksByPart.getOrDefault(p.getPlayerId(), Collections.emptyList());
-            List<FantasyPlayer> roster = picks.stream()
+            List<DraftPick> validPicks = picks.stream()
                     .filter(pick -> pick.getAssignedPosition() != null && !"BENCH".equalsIgnoreCase(pick.getAssignedPosition()))
+                    .collect(Collectors.toList());
+
+            for (DraftPick pick : validPicks) {
+                DraftPickSnapshot snapshot = DraftPickSnapshot.builder()
+                        .playerId(pick.getPlayerId())
+                        .fantasyPlayerSeq(pick.getFantasyPlayerSeq())
+                        .fantasyGameSeq(pick.getFantasyGameSeq())
+                        .pickNumber(pick.getPickNumber())
+                        .assignedPosition(pick.getAssignedPosition())
+                        .pickedAt(pick.getPickedAt())
+                        .pickStatus(DraftPickSnapshot.PickStatus.valueOf(pick.getPickStatus().name()))
+                        .build();
+                snapshotsToSave.add(snapshot);
+            }
+
+            List<FantasyPlayer> roster = validPicks.stream()
                     .map(pick -> players.get(pick.getFantasyPlayerSeq()))
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
@@ -320,6 +343,8 @@ public class FantasyGameService {
             }
             sb.append('\n');
         }
+
+        draftPickSnapshotRepository.saveAll(snapshotsToSave);
 
         return sb.toString();
     }
