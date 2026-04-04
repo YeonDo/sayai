@@ -80,9 +80,9 @@ public class KboAdminService {
         }
 
         String resultTeam = null;
-        if ("home".equalsIgnoreCase(request.getResult())) {
+        if (request.getHomeScore() > request.getAwayScore()) {
             resultTeam = request.getHome();
-        } else if ("away".equalsIgnoreCase(request.getResult())) {
+        } else if (request.getHomeScore() < request.getAwayScore()) {
             resultTeam = request.getAway();
         }
 

@@ -1,5 +1,6 @@
 package com.sayai.record.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 
 import java.util.zip.DeflaterOutputStream;
@@ -9,6 +10,7 @@ import java.util.zip.DeflaterOutputStream;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class PitcherDto {
     private Long id;
     private Long backNo;
