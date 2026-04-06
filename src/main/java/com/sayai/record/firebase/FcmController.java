@@ -19,8 +19,8 @@ public class FcmController {
 
     @PostMapping("/subscribe")
     public ResponseEntity<String> subscribeToken(@RequestBody SubscribeRequest request) {
-        if (request.getToken() != null && !request.getToken().isEmpty()) {
-            fcmService.subscribeToTopic(Collections.singletonList(request.getToken()), "transactions");
+        if (request.getToken() != null && !request.getToken().isEmpty() && request.getTopic() != null) {
+            fcmService.subscribeToTopic(Collections.singletonList(request.getToken()), request.getTopic());
         }
         return ResponseEntity.ok("Subscribed");
     }
@@ -28,5 +28,6 @@ public class FcmController {
     @Data
     public static class SubscribeRequest {
         private String token;
+        private String topic;
     }
 }

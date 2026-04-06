@@ -54,18 +54,34 @@ function requestFcmPermission() {
 }
 
 function sendTokenToServer(token) {
-    $.ajax({
-        url: '/apis/v1/fcm/subscribe',
-        type: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({ token: token }),
-        success: function() {
-            console.log('Subscribed to topic');
-        },
-        error: function(err) {
-            console.log('Error subscribing to topic', err);
-        }
-    });
+    // 1. Check if user is logged in
+    $.get('/apis/v1/auth/me')
+        .done(function() {
+            // 2. Fetch user's active games
+            $.get('/apis/v1/fantasy/my-games?status=ONGOING&type=RULE_2')
+                .done(function(games) {
+                    games.forEach(game => {
+                        $.ajax({
+                            url: '/apis/v1/fcm/subscribe',
+                            type: 'POST',
+                            contentType: 'application/json',
+                            data: JSON.stringify({ token: token, topic: 'game_' + game.seq }),
+                            success: function() {
+                                console.log('Subscribed to topic: game_' + game.seq);
+                            },
+                            error: function(err) {
+                                console.log('Error subscribing to topic', err);
+                            }
+                        });
+                    });
+                })
+                .fail(function() {
+                    console.log('Could not fetch games for FCM subscription');
+                });
+        })
+        .fail(function() {
+            console.log('User not logged in, skipping game topic subscriptions.');
+        });
 }
 
 // Request permission on load if we are authenticated (or we can just ask everyone)

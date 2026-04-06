@@ -135,7 +135,7 @@ public class FantasyRosterService {
         String teamName = requester != null && requester.getTeamName() != null ? requester.getTeamName() : "Unknown Team";
         String body = String.format("%s팀에서 웨이버를 신청했습니다: %s (%s, %s)",
                 teamName, player.getName(), player.getTeam(), player.getPosition());
-        fcmService.sendTopicMessage("transactions", "웨이버 신청", body);
+        fcmService.sendTopicMessage("game_" + gameSeq, "웨이버 신청", body);
     }
 
     @Transactional
@@ -254,7 +254,7 @@ public class FantasyRosterService {
         String body = String.format("%s팀에서 트레이드를 신청했습니다.\n주는 선수: %s\n받는 선수: %s",
                 teamName, givingDetails, receivingDetails);
 
-        fcmService.sendTopicMessage("transactions", "트레이드 신청", body);
+        fcmService.sendTopicMessage("game_" + gameSeq, "트레이드 신청", body);
     }
 
     private List<DraftPick> validateTradePlayers(Long gameSeq, Long ownerId, List<Long> playerSeqs) {
