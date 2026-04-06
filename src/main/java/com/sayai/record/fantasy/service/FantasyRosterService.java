@@ -1,6 +1,7 @@
 package com.sayai.record.fantasy.service;
 
 import com.sayai.record.admin.dto.AdminRosterTransactionDto;
+import com.sayai.record.fantasy.dto.WaiverBoardDto;
 import com.sayai.record.fantasy.entity.*;
 import com.sayai.record.fantasy.repository.*;
 import com.sayai.record.firebase.FcmService;
@@ -9,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -26,9 +28,76 @@ public class FantasyRosterService {
     private final RosterLogRepository rosterLogRepository;
     private final FantasyPlayerRepository fantasyPlayerRepository;
     private final FantasyParticipantRepository fantasyParticipantRepository;
+    private final FantasyWaiverClaimRepository waiverClaimRepository;
+    private final FantasyWaiverOrderRepository waiverOrderRepository;
     private final FcmService fcmService;
 
     // --- Waiver Logic ---
+
+    @Transactional(readOnly = true)
+    public List<WaiverBoardDto> getWaiverBoard(Long gameSeq) {
+        List<RosterTransaction> waivers = rosterTransactionRepository.findByFantasyGameSeqAndStatusAndType(
+                gameSeq, RosterTransaction.TransactionStatus.REQUESTED, RosterTransaction.TransactionType.WAIVER);
+
+        List<WaiverBoardDto> dtos = new ArrayList<>();
+        for (RosterTransaction tx : waivers) {
+            String requesterTeam = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(gameSeq, tx.getRequesterId())
+                    .map(FantasyParticipant::getTeamName)
+                    .orElse("Unknown");
+
+            FantasyPlayer player = fantasyPlayerRepository.findById(Long.parseLong(tx.getGivingPlayerSeqs())).orElse(null);
+            if (player == null) continue;
+
+            FantasyWaiverClaim claim = waiverClaimRepository.findById(tx.getSeq()).orElse(null);
+
+            dtos.add(WaiverBoardDto.builder()
+                    .transactionSeq(tx.getSeq())
+                    .requesterTeamName(requesterTeam)
+                    .playerName(player.getName())
+                    .playerTeam(player.getTeam())
+                    .playerPosition(player.getPosition())
+                    .playerCost(player.getCost())
+                    .waiverDate(tx.getCreatedAt())
+                    .claimPlayerId(claim != null ? claim.getClaimPlayerId() : null)
+                    .claimOrder(claim != null ? claim.getClaimOrder() : null)
+                    .build());
+        }
+        return dtos;
+    }
+
+    @Transactional
+    public void claimWaiver(Long gameSeq, Long transactionSeq, Long claimerId) {
+        RosterTransaction tx = rosterTransactionRepository.findById(transactionSeq)
+                .orElseThrow(() -> new IllegalArgumentException("Transaction not found"));
+
+        if (tx.getType() != RosterTransaction.TransactionType.WAIVER || tx.getStatus() != RosterTransaction.TransactionStatus.REQUESTED) {
+            throw new IllegalArgumentException("Invalid waiver transaction");
+        }
+
+        if (tx.getRequesterId().equals(claimerId)) {
+            throw new IllegalArgumentException("Cannot claim your own waived player");
+        }
+
+        FantasyWaiverOrder order = waiverOrderRepository.findByGameSeqAndPlayerId(gameSeq, claimerId)
+                .orElseThrow(() -> new IllegalArgumentException("User not participating in this game"));
+
+        Optional<FantasyWaiverClaim> existingClaimOpt = waiverClaimRepository.findById(transactionSeq);
+        if (existingClaimOpt.isPresent()) {
+            FantasyWaiverClaim existingClaim = existingClaimOpt.get();
+            // Lower order number means higher priority
+            if (order.getOrderNum() < existingClaim.getClaimOrder()) {
+                existingClaim.setClaimPlayerId(claimerId);
+                existingClaim.setClaimOrder(order.getOrderNum());
+                waiverClaimRepository.save(existingClaim);
+            }
+        } else {
+            waiverClaimRepository.save(FantasyWaiverClaim.builder()
+                    .waiverSeq(transactionSeq)
+                    .claimPlayerId(claimerId)
+                    .claimOrder(order.getOrderNum())
+                    .build());
+        }
+    }
 
     @Transactional
     public void requestWaiver(Long gameSeq, Long requesterId, Long fantasyPlayerSeq) {

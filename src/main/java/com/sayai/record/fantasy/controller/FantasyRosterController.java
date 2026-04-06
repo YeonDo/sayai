@@ -2,6 +2,7 @@ package com.sayai.record.fantasy.controller;
 
 import com.sayai.record.auth.jwt.CustomUserDetails;
 import com.sayai.record.auth.repository.MemberRepository;
+import com.sayai.record.fantasy.dto.WaiverBoardDto;
 import com.sayai.record.fantasy.service.FantasyRosterService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +44,22 @@ public class FantasyRosterController {
                 request.getReceivingPlayerSeqs()
         );
         return ResponseEntity.ok("Trade requested");
+    }
+
+    @GetMapping("/games/{gameSeq}/waivers")
+    public ResponseEntity<List<WaiverBoardDto>> getWaiverBoard(@PathVariable(name = "gameSeq") Long gameSeq) {
+        return ResponseEntity.ok(fantasyRosterService.getWaiverBoard(gameSeq));
+    }
+
+    @PostMapping("/games/{gameSeq}/waivers/{transactionSeq}/claim")
+    public ResponseEntity<String> claimWaiver(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                              @PathVariable(name = "gameSeq") Long gameSeq,
+                                              @PathVariable(name = "transactionSeq") Long transactionSeq) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
+        fantasyRosterService.claimWaiver(gameSeq, transactionSeq, userDetails.getPlayerId());
+        return ResponseEntity.ok("Waiver claim successful");
     }
 
     @Data

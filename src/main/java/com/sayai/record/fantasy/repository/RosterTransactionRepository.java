@@ -9,4 +9,6 @@ import java.util.List;
 @Repository
 public interface RosterTransactionRepository extends JpaRepository<RosterTransaction, Long> {
     List<RosterTransaction> findByFantasyGameSeqAndStatus(Long fantasyGameSeq, RosterTransaction.TransactionStatus status);
+    List<RosterTransaction> findByFantasyGameSeqAndStatusAndType(Long fantasyGameSeq, RosterTransaction.TransactionStatus status, RosterTransaction.TransactionType type);
+    List<RosterTransaction> findByStatusAndType(RosterTransaction.TransactionStatus status, RosterTransaction.TransactionType type);
 }
