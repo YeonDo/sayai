@@ -266,7 +266,9 @@
                 <div id="scoringMsg" style="text-align:center; padding:20px;">Select a round to input scores.</div>
             </div>
 
-            <div class="modal-footer" style="border-top: 1px solid #eee; padding-top: 15px; display: flex; justify-content: flex-end;">
+            <div class="modal-footer" style="border-top: 1px solid #eee; padding-top: 15px; display: flex; justify-content: flex-end; gap: 10px;">
+                <input type="file" id="scoreExcelUpload" accept=".xlsx, .xls" style="display:none;" onchange="handleExcelUpload(event)">
+                <button onclick="document.getElementById('scoreExcelUpload').click()" class="btn btn-primary" id="uploadScoreBtn" style="display:none; background-color: #17a2b8;">Upload Excel</button>
                 <button onclick="saveScores()" class="btn btn-primary" id="saveScoreBtn" style="display:none;">Save & Calculate</button>
             </div>
         </div>
@@ -507,6 +509,7 @@
             btnContainer.empty();
             $('#scoringTable').hide();
             $('#saveScoreBtn').hide();
+            $('#uploadScoreBtn').hide();
             $('#scoringMsg').show().text("Select a round to input scores.");
 
             $.get(`/apis/v1/fantasy/games/${gameSeq}/details`, function(data) {
@@ -555,6 +558,7 @@
             $('#scoringMsg').text("Loading...");
             $('#scoringTable').hide();
             $('#saveScoreBtn').hide();
+            $('#uploadScoreBtn').hide();
             $('#roundButtons button').css('background-color', '#6c757d');
 
             $.get(`/apis/v1/admin/fantasy/games/${currentScoringGameSeq}/participants`, function(participants) {
@@ -597,7 +601,53 @@
 
             $('#scoringTable').show();
             $('#saveScoreBtn').show();
+            $('#uploadScoreBtn').show();
             $('#scoringMsg').hide();
+        }
+
+        function handleExcelUpload(event) {
+            if (!currentScoringGameSeq || !currentScoringRound) return;
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            // Temporarily show loading message
+            $('#scoringMsg').show().text("Uploading and processing Excel...");
+            $('#scoringTable').hide();
+            $('#saveScoreBtn').hide();
+            $('#uploadScoreBtn').hide();
+
+            $.ajax({
+                url: `/apis/v1/admin/fantasy/games/${currentScoringGameSeq}/scores/${currentScoringRound}/upload`,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(parsedScores) {
+                    // We need the participant list to correctly render the table
+                    $.get(`/apis/v1/admin/fantasy/games/${currentScoringGameSeq}/participants`, function(participants) {
+                        renderScoringTable(participants, parsedScores);
+                        alert("Excel parsed successfully. Review the scores and click 'Save & Calculate'.");
+                    });
+                },
+                error: function(xhr) {
+                    alert("Error uploading Excel: " + (xhr.responseText || "Failed to parse."));
+                    // Restore UI on error
+                    $.get(`/apis/v1/admin/fantasy/games/${currentScoringGameSeq}/participants`, function(participants) {
+                        $.get(`/apis/v1/admin/fantasy/games/${currentScoringGameSeq}/scores/${currentScoringRound}`, function(existingScores) {
+                            renderScoringTable(participants, existingScores);
+                        }).fail(function() {
+                            renderScoringTable(participants, []);
+                        });
+                    });
+                },
+                complete: function() {
+                    // clear file input
+                    event.target.value = '';
+                }
+            });
         }
 
         function saveScores() {

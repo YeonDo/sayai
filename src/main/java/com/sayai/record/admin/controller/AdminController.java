@@ -19,10 +19,17 @@ import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.InputStream;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -128,6 +135,77 @@ public class AdminController {
                                              @RequestBody List<FantasyScoreDto> scores) {
         fantasyScoringService.saveAndCalculateScores(gameSeq, round, scores);
         return ResponseEntity.ok("Scores saved and calculated");
+    }
+
+    @PostMapping("/fantasy/games/{gameSeq}/scores/{round}/upload")
+    public ResponseEntity<List<FantasyScoreDto>> uploadScores(@PathVariable(name = "gameSeq") Long gameSeq,
+                                                              @PathVariable(name = "round") Integer round,
+                                                              @RequestParam("file") MultipartFile file) {
+        try (InputStream is = file.getInputStream(); Workbook workbook = new XSSFWorkbook(is)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            List<FantasyScoreDto> parsedScores = new ArrayList<>();
+
+            List<FantasyParticipant> participants = fantasyParticipantRepository.findByFantasyGameSeq(gameSeq);
+
+            // Map teamName -> playerId. If teamName is null/empty, fallback to member's name.
+            Map<String, Long> teamToPlayerId = participants.stream()
+                    .collect(Collectors.toMap(
+                            p -> p.getTeamName() != null && !p.getTeamName().trim().isEmpty() ? p.getTeamName().trim() :
+                                 memberRepository.findById(p.getPlayerId()).map(Member::getName).orElse("Unknown"),
+                            FantasyParticipant::getPlayerId,
+                            (existing, replacement) -> existing
+                    ));
+
+            boolean skipHeader = true;
+            for (Row row : sheet) {
+                if (skipHeader) {
+                    skipHeader = false;
+                    continue;
+                }
+
+                if (row.getCell(0) == null) continue;
+                String teamName = row.getCell(0).getStringCellValue();
+                if (teamName == null || teamName.trim().isEmpty()) continue;
+                teamName = teamName.trim();
+
+                Long playerId = teamToPlayerId.get(teamName);
+                if (playerId == null) {
+                    // Try to match just the prefix in case it's 'TeamName (UserName)'
+                    for (Map.Entry<String, Long> entry : teamToPlayerId.entrySet()) {
+                        if (teamName.startsWith(entry.getKey())) {
+                            playerId = entry.getValue();
+                            break;
+                        }
+                    }
+                }
+
+                if (playerId != null) {
+                    FantasyScoreDto dto = FantasyScoreDto.builder()
+                            .fantasyGameSeq(gameSeq)
+                            .playerId(playerId)
+                            .round(round)
+                            .build();
+
+                    // AVG, HR, RBI, SO (Bat), SB, W, ERA, K (Pitch), SV, WHIP
+                    if (row.getCell(1) != null) dto.setAvg(row.getCell(1).getNumericCellValue());
+                    if (row.getCell(2) != null) dto.setHr((int) row.getCell(2).getNumericCellValue());
+                    if (row.getCell(3) != null) dto.setRbi((int) row.getCell(3).getNumericCellValue());
+                    if (row.getCell(4) != null) dto.setSoBatter((int) row.getCell(4).getNumericCellValue());
+                    if (row.getCell(5) != null) dto.setSb((int) row.getCell(5).getNumericCellValue());
+                    if (row.getCell(6) != null) dto.setWins((int) row.getCell(6).getNumericCellValue());
+                    if (row.getCell(7) != null) dto.setEra(row.getCell(7).getNumericCellValue());
+                    if (row.getCell(8) != null) dto.setSoPitcher((int) row.getCell(8).getNumericCellValue());
+                    if (row.getCell(9) != null) dto.setSaves((int) row.getCell(9).getNumericCellValue());
+                    if (row.getCell(10) != null) dto.setWhip(row.getCell(10).getNumericCellValue());
+
+                    parsedScores.add(dto);
+                }
+            }
+            return ResponseEntity.ok(parsedScores);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     // --- User Management ---
