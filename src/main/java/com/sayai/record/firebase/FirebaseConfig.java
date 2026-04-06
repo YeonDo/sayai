@@ -8,27 +8,29 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
 import jakarta.annotation.PostConstruct;
-import java.io.FileInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 @Slf4j
 @Configuration
 public class FirebaseConfig {
 
-    @Value("${firebase.service-account-path:}")
-    private String serviceAccountPath;
+    @Value("${firebase.certification:}")
+    private String fcmCertification;
 
     @PostConstruct
     public void init() {
         try {
             FirebaseOptions options;
-            if (serviceAccountPath != null && !serviceAccountPath.isEmpty()) {
-                FileInputStream serviceAccount = new FileInputStream(serviceAccountPath);
+            if (fcmCertification != null && !fcmCertification.trim().isEmpty()) {
+                InputStream serviceAccount = new ByteArrayInputStream(fcmCertification.getBytes(StandardCharsets.UTF_8));
                 options = FirebaseOptions.builder()
                         .setCredentials(GoogleCredentials.fromStream(serviceAccount))
                         .build();
             } else {
-                log.warn("Firebase service account path is empty. Using application default credentials. If this fails, FCM won't work.");
+                log.warn("Firebase certification string is empty. Using application default credentials. If this fails, FCM won't work.");
                 try {
                     options = FirebaseOptions.builder()
                             .setCredentials(GoogleCredentials.getApplicationDefault())
