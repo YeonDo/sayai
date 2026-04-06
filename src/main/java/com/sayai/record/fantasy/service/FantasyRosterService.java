@@ -3,6 +3,7 @@ package com.sayai.record.fantasy.service;
 import com.sayai.record.admin.dto.AdminRosterTransactionDto;
 import com.sayai.record.fantasy.entity.*;
 import com.sayai.record.fantasy.repository.*;
+import com.sayai.record.firebase.FcmService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ public class FantasyRosterService {
     private final RosterLogRepository rosterLogRepository;
     private final FantasyPlayerRepository fantasyPlayerRepository;
     private final FantasyParticipantRepository fantasyParticipantRepository;
+    private final FcmService fcmService;
 
     // --- Waiver Logic ---
 
@@ -58,6 +60,13 @@ public class FantasyRosterService {
         // Log
         FantasyPlayer player = fantasyPlayerRepository.findById(fantasyPlayerSeq).orElseThrow();
         logAction(gameSeq, requesterId, fantasyPlayerSeq, RosterLog.LogActionType.WAIVER_RELEASE, player.getName() + " - Waiver Requested");
+
+        // Send FCM message
+        FantasyParticipant requester = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(gameSeq, requesterId).orElse(null);
+        String teamName = requester != null && requester.getTeamName() != null ? requester.getTeamName() : "Unknown Team";
+        String body = String.format("%s팀에서 웨이버를 신청했습니다: %s (%s, %s)",
+                teamName, player.getName(), player.getTeam(), player.getPosition());
+        fcmService.sendTopicMessage("transactions", "웨이버 신청", body);
     }
 
     @Transactional
@@ -154,6 +163,29 @@ public class FantasyRosterService {
         FantasyParticipant targetName = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(gameSeq, targetId).orElseGet(null);
 
         logAction(gameSeq, requesterId, null, RosterLog.LogActionType.TRADE_REQ, "Trade Requested with " + targetName.getTeamName() + " (Give: " + givingNames + " / Get: " + receivingNames + ")");
+
+        // Send FCM message
+        FantasyParticipant requester = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(gameSeq, requesterId).orElse(null);
+        String teamName = requester != null && requester.getTeamName() != null ? requester.getTeamName() : "Unknown Team";
+
+        String givingDetails = draftPickRepository.findAllById(givingPlayerSeqs).stream()
+                .map(p -> {
+                    FantasyPlayer fp = fantasyPlayerRepository.findById(p.getFantasyPlayerSeq()).orElse(null);
+                    return fp != null ? String.format("%s (%s, %s)", fp.getName(), fp.getTeam(), fp.getPosition()) : "";
+                })
+                .collect(Collectors.joining(", "));
+
+        String receivingDetails = draftPickRepository.findAllById(receivingPlayerSeqs).stream()
+                .map(p -> {
+                    FantasyPlayer fp = fantasyPlayerRepository.findById(p.getFantasyPlayerSeq()).orElse(null);
+                    return fp != null ? String.format("%s (%s, %s)", fp.getName(), fp.getTeam(), fp.getPosition()) : "";
+                })
+                .collect(Collectors.joining(", "));
+
+        String body = String.format("%s팀에서 트레이드를 신청했습니다.\n주는 선수: %s\n받는 선수: %s",
+                teamName, givingDetails, receivingDetails);
+
+        fcmService.sendTopicMessage("transactions", "트레이드 신청", body);
     }
 
     private List<DraftPick> validateTradePlayers(Long gameSeq, Long ownerId, List<Long> playerSeqs) {
