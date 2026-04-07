@@ -55,6 +55,7 @@ class FantasyGameServicePerformanceTest {
                 draftPickRepository,
                 draftPickSnapshotRepository,
                 fantasyPlayerRepository,
+            org.mockito.Mockito.mock(com.sayai.record.fantasy.repository.FantasyWaiverOrderRepository.class),
                 messagingTemplate,
                 fantasyDraftService,
                 draftScheduler

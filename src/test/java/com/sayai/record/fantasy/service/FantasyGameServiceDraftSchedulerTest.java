@@ -21,6 +21,7 @@ class FantasyGameServiceDraftSchedulerTest {
 
     @Mock private FantasyGameRepository fantasyGameRepository;
     @Mock private FantasyParticipantRepository fantasyParticipantRepository;
+    @Mock private com.sayai.record.fantasy.repository.FantasyWaiverOrderRepository waiverOrderRepository;
     @Mock private DraftScheduler draftScheduler;
     @Mock private SimpMessagingTemplate messagingTemplate;
 
