@@ -112,10 +112,18 @@ public class FantasyScoringService {
             boolean lowerIsBetter,
             int totalParticipants) {
 
-        // Filter out nulls
-        List<FantasyRotisserieScore> validScores = scores.stream()
-                .filter(s -> valueExtractor.apply(s) != null)
-                .collect(Collectors.toList());
+        int size = scores.size();
+        List<FantasyRotisserieScore> validScores = new ArrayList<>(size);
+
+        for (int i = 0; i < size; i++) {
+            FantasyRotisserieScore s = scores.get(i);
+            if (valueExtractor.apply(s) != null) {
+                validScores.add(s);
+            } else {
+                rankSetter.accept(s, totalParticipants);
+                pointSetter.accept(s, 0.0);
+            }
+        }
 
         // Sort
         validScores.sort((s1, s2) -> {
@@ -129,48 +137,28 @@ public class FantasyScoringService {
         });
 
         // Assign Ranks and Points with Tie Handling
-        // Rank 1 gets N * 10 points. Rank N gets 1 * 10 points.
-        // Wait, request says: 1st = N*10, Last = 10.
-        // If N=10: 1st=100, 2nd=90 ... 10th=10.
-        // Formula: Points = (N - Rank + 1) * 10.
-
-        // Tie handling: sum points for tied positions and divide.
-        // e.g. 3rd and 4th tied.
-        // 3rd points: (10-3+1)*10 = 80.
-        // 4th points: (10-4+1)*10 = 70.
-        // Average: (80+70)/2 = 75.
-
+        int validSize = validScores.size();
         int i = 0;
-        while (i < validScores.size()) {
+        while (i < validSize) {
             int j = i;
             T currentVal = valueExtractor.apply(validScores.get(i));
 
             // Find end of tie group
-            while (j < validScores.size() && valueExtractor.apply(validScores.get(j)).equals(currentVal)) {
+            while (j < validSize && valueExtractor.apply(validScores.get(j)).equals(currentVal)) {
                 j++;
             }
             // Group is from i to j-1
             int count = j - i;
             int startRank = i + 1; // 1-based rank
 
-            // Calculate total points for this block
-            double sumPoints = 0;
-            for (int r = 0; r < count; r++) {
-                int currentRank = startRank + r;
-                // Points for this rank position
-                // Note: 'totalParticipants' should be N.
-                // Assuming all participants are in the list.
-                // If some have null stats, they don't get points (or 0).
-                // Let's assume we grade based on N = totalParticipants even if some are invalid?
-                // Or N = validScores.size()?
-                // Usually N is fixed game size. But let's use validScores.size() to be fair among those who played?
-                // Or better, passed 'totalParticipants' (n).
-
-                double pts = (totalParticipants - currentRank + 1) * 10.0;
-                sumPoints += pts;
+            double avgPoints;
+            if (count == 1) {
+                avgPoints = (totalParticipants - startRank + 1) * 10.0;
+            } else {
+                double firstPts = (totalParticipants - startRank + 1) * 10.0;
+                double lastPts = (totalParticipants - (startRank + count - 1) + 1) * 10.0;
+                avgPoints = (firstPts + lastPts) / 2.0;
             }
-
-            double avgPoints = sumPoints / count;
 
             // Assign
             for (int k = i; k < j; k++) {
@@ -180,14 +168,6 @@ public class FantasyScoringService {
             }
 
             i = j;
-        }
-
-        // Handle nulls
-        for (FantasyRotisserieScore s : scores) {
-            if (valueExtractor.apply(s) == null) {
-                rankSetter.accept(s, totalParticipants);
-                pointSetter.accept(s, 0.0);
-            }
         }
     }
 
