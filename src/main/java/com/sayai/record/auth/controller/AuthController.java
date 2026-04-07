@@ -32,7 +32,7 @@ public class AuthController {
                 .httpOnly(true)
                 .secure(false) // Set true in production (HTTPS)
                 .path("/")
-                .maxAge(3600) // 1 hour
+                .maxAge(21600) // 6 hours
                 .sameSite("Strict")
                 .build();
 

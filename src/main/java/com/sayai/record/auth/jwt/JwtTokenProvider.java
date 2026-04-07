@@ -21,7 +21,7 @@ import java.util.Date;
 public class JwtTokenProvider {
 
     private Key secretKey;
-    private final long tokenValidityInMilliseconds = 3600000; // 1h
+    private final long tokenValidityInMilliseconds = 21600000; // 6h
 
     @PostConstruct
     protected void init() {
