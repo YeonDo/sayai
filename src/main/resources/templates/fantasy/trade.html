@@ -86,6 +86,7 @@
 
         <div class="tab-container">
             <button class="tab-button active" onclick="openTab('waiver')">Waiver (Release)</button>
+            <button class="tab-button" onclick="openTab('waiverBoard')">Waiver Board</button>
             <button class="tab-button" onclick="openTab('fa')">Free Agents (Sign)</button>
             <button class="tab-button" onclick="openTab('trade')">Trade (Exchange)</button>
         </div>
@@ -98,6 +99,29 @@
                     <div id="salaryCapInfo" style="font-weight:bold; color:#666;">Salary Cap: Loading...</div>
                 </div>
                 <div id="waiverList">Loading...</div>
+            </div>
+        </div>
+
+        <!-- WAIVER BOARD TAB -->
+        <div id="waiverBoard" class="tab-content">
+            <div class="fantasy-card">
+                <h3>Waiver Board (진행 중인 웨이버)</h3>
+                <table class="fa-table" style="margin-top: 15px;">
+                    <thead>
+                        <tr>
+                            <th>방출 팀명</th>
+                            <th>선수 이름</th>
+                            <th>소속팀</th>
+                            <th>포지션</th>
+                            <th>코스트</th>
+                            <th>웨이버 일시</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="waiverBoardListBody">
+                        <tr><td colspan="7">Loading...</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
@@ -261,8 +285,61 @@
             const activeTab = $('.tab-content.active').attr('id');
 
             if (activeTab === 'waiver') loadWaiverList();
+            if (activeTab === 'waiverBoard') loadWaiverBoard();
             if (activeTab === 'fa') loadFAList();
             if (activeTab === 'trade') loadMyBench();
+        }
+
+        // --- WAIVER BOARD ---
+        function loadWaiverBoard() {
+            if(!currentGameSeq) return;
+            const tbody = $('#waiverBoardListBody');
+            tbody.empty().append('<tr><td colspan="7">Loading...</td></tr>');
+
+            $.get(`/apis/v1/fantasy/roster/games/${currentGameSeq}/waivers`, function(waivers) {
+                tbody.empty();
+                if(waivers.length === 0) {
+                    tbody.append('<tr><td colspan="7" style="text-align:center; padding: 20px;">진행 중인 웨이버가 없습니다.</td></tr>');
+                    return;
+                }
+
+                waivers.forEach(w => {
+                    const dateStr = new Date(w.waiverDate).toLocaleString();
+                    const isClaimedByMe = (String(w.claimPlayerId) === String(currentUserId));
+                    const claimBtn = `<button class="btn-action btn-fa" onclick="claimWaiver(${w.transactionSeq})">Claim</button>`;
+                    const claimedStatus = w.claimPlayerId
+                        ? `<br><small style="color:${isClaimedByMe ? '#007bff' : '#28a745'};">(현재 클레임 존재${isClaimedByMe ? ' - My Claim' : ''})</small>`
+                        : '';
+
+                    const row = `
+                        <tr>
+                            <td>${w.requesterTeamName}</td>
+                            <td><strong>${w.playerName}</strong></td>
+                            <td>${w.playerTeam}</td>
+                            <td>${w.playerPosition}</td>
+                            <td>${w.playerCost || 0}</td>
+                            <td>${dateStr}</td>
+                            <td>${claimBtn} ${claimedStatus}</td>
+                        </tr>
+                    `;
+                    tbody.append(row);
+                });
+            });
+        }
+
+        function claimWaiver(txSeq) {
+            if(!confirm("이 선수에게 클레임을 거시겠습니까?")) return;
+            $.ajax({
+                url: `/apis/v1/fantasy/roster/games/${currentGameSeq}/waivers/${txSeq}/claim`,
+                type: 'POST',
+                success: function() {
+                    alert('클레임이 접수되었습니다.');
+                    loadWaiverBoard();
+                },
+                error: function(xhr) {
+                    alert('오류: ' + xhr.responseText);
+                }
+            });
         }
 
         // --- WAIVER ---

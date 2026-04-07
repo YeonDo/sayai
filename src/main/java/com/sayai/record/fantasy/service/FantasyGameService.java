@@ -6,11 +6,13 @@ import com.sayai.record.fantasy.entity.FantasyGame;
 import com.sayai.record.fantasy.entity.FantasyParticipant;
 import com.sayai.record.fantasy.entity.DraftPickSnapshot;
 import com.sayai.record.fantasy.entity.FantasyPlayer;
+import com.sayai.record.fantasy.entity.FantasyWaiverOrder;
 import com.sayai.record.fantasy.repository.DraftPickRepository;
 import com.sayai.record.fantasy.repository.DraftPickSnapshotRepository;
 import com.sayai.record.fantasy.repository.FantasyGameRepository;
 import com.sayai.record.fantasy.repository.FantasyParticipantRepository;
 import com.sayai.record.fantasy.repository.FantasyPlayerRepository;
+import com.sayai.record.fantasy.repository.FantasyWaiverOrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -33,6 +35,7 @@ public class FantasyGameService {
     private final DraftPickRepository draftPickRepository;
     private final DraftPickSnapshotRepository draftPickSnapshotRepository;
     private final FantasyPlayerRepository fantasyPlayerRepository;
+    private final FantasyWaiverOrderRepository waiverOrderRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final FantasyDraftService fantasyDraftService;
     private final DraftScheduler draftScheduler;
@@ -158,10 +161,22 @@ public class FantasyGameService {
         Collections.shuffle(participants);
 
         int order = 1;
+        int n = participants.size();
+        List<FantasyWaiverOrder> waiverOrders = new ArrayList<>();
+
         for (FantasyParticipant p : participants) {
-            p.setDraftOrder(order++);
+            p.setDraftOrder(order);
+            // Waiver order is reverse of draft order: 1st draft pick gets Nth waiver priority
+            int waiverOrderNum = n - order + 1;
+            waiverOrders.add(FantasyWaiverOrder.builder()
+                    .gameSeq(gameSeq)
+                    .playerId(p.getPlayerId())
+                    .orderNum(waiverOrderNum)
+                    .build());
+            order++;
         }
         fantasyParticipantRepository.saveAll(participants);
+        waiverOrderRepository.saveAll(waiverOrders);
 
         // Update Game Status
         game.setStatus(FantasyGame.GameStatus.DRAFTING);
