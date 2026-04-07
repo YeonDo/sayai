@@ -4,6 +4,7 @@ ARG JAR_FILE=build/libs/record-0.0.1-SNAPSHOT.jar
 
 # Add the application's jar to the container
 ADD ${JAR_FILE} app.jar
+COPY record-private/private/fcm-key.json /etc/conf/fcm-key.json
 # Make port 8080 available to the world outside this container]
 ENV SPRING_PROFILES_ACTIVE=prod
 EXPOSE 8080
