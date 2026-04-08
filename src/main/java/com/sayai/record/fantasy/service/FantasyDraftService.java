@@ -436,6 +436,19 @@ public class FantasyDraftService {
         Map<Long, DraftPick> pickMap = myPicks.stream()
                 .collect(Collectors.toMap(DraftPick::getFantasyPlayerSeq, Function.identity()));
 
+        if (game.getSalaryCap() != null && game.getSalaryCap() > 0) {
+            Set<Long> pickedSeqs = myPicks.stream()
+                    .map(DraftPick::getFantasyPlayerSeq)
+                    .collect(Collectors.toSet());
+            List<FantasyPlayer> currentTeam = fantasyPlayerRepository.findAllById(pickedSeqs);
+            FantasyParticipant participant = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(gameSeq, playerId).orElse(null);
+
+            int currentCost = com.sayai.record.fantasy.util.SalaryCapCalculator.calculateTeamCost(game, participant, currentTeam).getTotalCost();
+            if (currentCost > game.getSalaryCap()) {
+                throw new IllegalStateException("샐러리캡을 초과하여 저장할 수 없습니다. (현재: " + currentCost + " / 제한: " + game.getSalaryCap() + ")");
+            }
+        }
+
         // Check validation first
         if (updateDto.getEntries() != null) {
             Map<String, Integer> positionCounts = new java.util.HashMap<>();
