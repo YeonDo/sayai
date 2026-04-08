@@ -39,18 +39,39 @@ public class FantasyRosterService {
         List<RosterTransaction> waivers = rosterTransactionRepository.findByFantasyGameSeqAndStatusAndType(
                 gameSeq, RosterTransaction.TransactionStatus.REQUESTED, RosterTransaction.TransactionType.WAIVER);
 
-        List<WaiverBoardDto> dtos = new ArrayList<>();
-        for (RosterTransaction tx : waivers) {
-            String requesterTeam = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(gameSeq, tx.getRequesterId())
-                    .map(FantasyParticipant::getTeamName)
-                    .orElse("Unknown");
+        if (waivers.isEmpty()) {
+            return new ArrayList<>();
+        }
 
-            FantasyPlayer player = fantasyPlayerRepository.findById(Long.parseLong(tx.getGivingPlayerSeqs())).orElse(null);
-            if (player == null) continue;
+        Set<Long> requesterIds = waivers.stream().map(RosterTransaction::getRequesterId).collect(Collectors.toSet());
+        Set<Long> playerSeqs = waivers.stream()
+                .map(RosterTransaction::getGivingPlayerSeqs)
+                .filter(s -> s != null && !s.isEmpty())
+                .map(Long::parseLong)
+                .collect(Collectors.toSet());
+        List<Long> transactionSeqs = waivers.stream().map(RosterTransaction::getSeq).collect(Collectors.toList());
 
-            FantasyWaiverClaim claim = waiverClaimRepository.findById(tx.getSeq()).orElse(null);
+        java.util.Map<Long, String> requesterTeamMap = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerIdIn(gameSeq, requesterIds)
+                .stream().collect(Collectors.toMap(FantasyParticipant::getPlayerId, FantasyParticipant::getTeamName, (a, b) -> a));
 
-            dtos.add(WaiverBoardDto.builder()
+        java.util.Map<Long, FantasyPlayer> playerMap = fantasyPlayerRepository.findAllById(playerSeqs)
+                .stream().collect(Collectors.toMap(FantasyPlayer::getSeq, p -> p));
+
+        java.util.Map<Long, FantasyWaiverClaim> claimMap = waiverClaimRepository.findAllById(transactionSeqs)
+                .stream().collect(Collectors.toMap(FantasyWaiverClaim::getWaiverSeq, c -> c));
+
+        return waivers.stream().map(tx -> {
+            String requesterTeam = requesterTeamMap.getOrDefault(tx.getRequesterId(), "Unknown");
+
+            String playerSeqStr = tx.getGivingPlayerSeqs();
+            if (playerSeqStr == null || playerSeqStr.isEmpty()) return null;
+
+            FantasyPlayer player = playerMap.get(Long.parseLong(playerSeqStr));
+            if (player == null) return null;
+
+            FantasyWaiverClaim claim = claimMap.get(tx.getSeq());
+
+            return WaiverBoardDto.builder()
                     .transactionSeq(tx.getSeq())
                     .requesterTeamName(requesterTeam)
                     .playerName(player.getName())
@@ -60,9 +81,8 @@ public class FantasyRosterService {
                     .waiverDate(tx.getCreatedAt())
                     .claimPlayerId(claim != null ? claim.getClaimPlayerId() : null)
                     .claimOrder(claim != null ? claim.getClaimOrder() : null)
-                    .build());
-        }
-        return dtos;
+                    .build();
+        }).filter(java.util.Objects::nonNull).collect(Collectors.toList());
     }
 
     @Transactional
