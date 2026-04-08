@@ -15,7 +15,7 @@ import java.io.IOException;
 @Configuration
 public class FirebaseConfig {
 
-    @Value("${firebase.key-path}")
+    @Value("${firebase.key-path:}")
     private String serviceAccountPath;
 
     @PostConstruct

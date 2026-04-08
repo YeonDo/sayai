@@ -32,5 +32,14 @@
 
     <!-- Login Modal -->
     <th:block th:replace="fragments/login-modal :: #login-modal"></th:block>
+
+    <!-- Custom FCM Alert -->
+    <div id="custom-fcm-alert" class="custom-alert" style="display: none;">
+        <div class="custom-alert-content">
+            <span class="custom-alert-close">&times;</span>
+            <h4 id="custom-alert-title"></h4>
+            <p id="custom-alert-body"></p>
+        </div>
+    </div>
 </body>
 </html>
