@@ -45,9 +45,7 @@ public class FantasyRosterService {
 
         Set<Long> requesterIds = waivers.stream().map(RosterTransaction::getRequesterId).collect(Collectors.toSet());
         Set<Long> playerSeqs = waivers.stream()
-                .map(RosterTransaction::getGivingPlayerSeqs)
-                .filter(s -> s != null && !s.isEmpty())
-                .map(Long::parseLong)
+                .flatMap(tx -> getSeqsStream(tx.getGivingPlayerSeqs(), "WaiverBoard preload tx:" + tx.getSeq()))
                 .collect(Collectors.toSet());
         List<Long> transactionSeqs = waivers.stream().map(RosterTransaction::getSeq).collect(Collectors.toList());
 
@@ -63,10 +61,10 @@ public class FantasyRosterService {
         return waivers.stream().map(tx -> {
             String requesterTeam = requesterTeamMap.getOrDefault(tx.getRequesterId(), "Unknown");
 
-            String playerSeqStr = tx.getGivingPlayerSeqs();
-            if (playerSeqStr == null || playerSeqStr.isEmpty()) return null;
+            Long playerSeq = getSeqsStream(tx.getGivingPlayerSeqs(), "WaiverBoard tx:" + tx.getSeq()).findFirst().orElse(null);
+            if (playerSeq == null) return null;
 
-            FantasyPlayer player = playerMap.get(Long.parseLong(playerSeqStr));
+            FantasyPlayer player = playerMap.get(playerSeq);
             if (player == null) return null;
 
             FantasyWaiverClaim claim = claimMap.get(tx.getSeq());
@@ -170,7 +168,8 @@ public class FantasyRosterService {
             throw new IllegalStateException("Transaction is already processed");
         }
 
-        Long playerSeq = Long.parseLong(tx.getGivingPlayerSeqs());
+        Long playerSeq = getSeqsStream(tx.getGivingPlayerSeqs(), "processWaiver tx:" + tx.getSeq()).findFirst()
+                .orElseThrow(() -> new IllegalStateException("Invalid player sequence: " + tx.getGivingPlayerSeqs()));
         FantasyPlayer player = fantasyPlayerRepository.findById(playerSeq).orElseThrow();
         DraftPick pick = draftPickRepository.findByFantasyGameSeqAndFantasyPlayerSeq(tx.getFantasyGameSeq(), playerSeq)
                 .orElseThrow(() -> new IllegalStateException("Draft pick not found for player " + playerSeq));
@@ -310,10 +309,10 @@ public class FantasyRosterService {
             throw new IllegalStateException("Transaction is already processed");
         }
 
-        List<Long> givingSeqs = Arrays.stream(tx.getGivingPlayerSeqs().split(","))
-                .map(Long::valueOf).collect(Collectors.toList());
-        List<Long> receivingSeqs = Arrays.stream(tx.getReceivingPlayerSeqs().split(","))
-                .map(Long::valueOf).collect(Collectors.toList());
+        List<Long> givingSeqs = getSeqsStream(tx.getGivingPlayerSeqs(), "processTrade giving tx:" + tx.getSeq())
+                .collect(Collectors.toList());
+        List<Long> receivingSeqs = getSeqsStream(tx.getReceivingPlayerSeqs(), "processTrade receiving tx:" + tx.getSeq())
+                .collect(Collectors.toList());
 
         List<DraftPick> givingPicks = draftPickRepository.findByFantasyGameSeq(tx.getFantasyGameSeq()).stream()
                 .filter(p -> givingSeqs.contains(p.getFantasyPlayerSeq()))
@@ -458,8 +457,8 @@ public class FantasyRosterService {
         // Collect all distinct player seqs
         Set<Long> allPlayerSeqs = transactions.stream()
                 .flatMap(tx -> {
-                    java.util.stream.Stream<Long> giving = getSeqsStream(tx.getGivingPlayerSeqs());
-                    java.util.stream.Stream<Long> receiving = getSeqsStream(tx.getReceivingPlayerSeqs());
+                    java.util.stream.Stream<Long> giving = getSeqsStream(tx.getGivingPlayerSeqs(), "admin preload giving tx:" + tx.getSeq());
+                    java.util.stream.Stream<Long> receiving = getSeqsStream(tx.getReceivingPlayerSeqs(), "admin preload receiving tx:" + tx.getSeq());
                     return java.util.stream.Stream.concat(giving, receiving);
                 })
                 .collect(Collectors.toSet());
@@ -470,26 +469,33 @@ public class FantasyRosterService {
                 .collect(Collectors.toMap(FantasyPlayer::getSeq, p -> p));
 
         return transactions.stream().map(tx -> {
-            String givingDetails = getPlayerDetailsMap(tx.getGivingPlayerSeqs(), playerMap);
-            String receivingDetails = getPlayerDetailsMap(tx.getReceivingPlayerSeqs(), playerMap);
+            String givingDetails = getPlayerDetailsMap(tx.getGivingPlayerSeqs(), playerMap, "admin tx:" + tx.getSeq());
+            String receivingDetails = getPlayerDetailsMap(tx.getReceivingPlayerSeqs(), playerMap, "admin tx:" + tx.getSeq());
             return AdminRosterTransactionDto.from(tx, givingDetails, receivingDetails);
         }).collect(Collectors.toList());
     }
 
-    private java.util.stream.Stream<Long> getSeqsStream(String playerSeqs) {
+    private java.util.stream.Stream<Long> getSeqsStream(String playerSeqs, String context) {
         if (playerSeqs == null || playerSeqs.isEmpty()) {
             return java.util.stream.Stream.empty();
         }
         return Arrays.stream(playerSeqs.split(","))
                 .map(String::trim)
-                .map(Long::valueOf);
+                .flatMap(s -> {
+                    try {
+                        return java.util.stream.Stream.of(Long.valueOf(s));
+                    } catch (NumberFormatException e) {
+                        log.error("Failed to parse player sequence: '{}' (Context: {})", s, context);
+                        return java.util.stream.Stream.empty();
+                    }
+                });
     }
 
-    private String getPlayerDetailsMap(String playerSeqs, java.util.Map<Long, FantasyPlayer> playerMap) {
+    private String getPlayerDetailsMap(String playerSeqs, java.util.Map<Long, FantasyPlayer> playerMap, String context) {
         if (playerSeqs == null || playerSeqs.isEmpty()) {
             return null;
         }
-        return getSeqsStream(playerSeqs)
+        return getSeqsStream(playerSeqs, context)
                 .map(playerMap::get)
                 .filter(java.util.Objects::nonNull)
                 .map(p -> p.getName() + " (" + p.getTeam() + ") - " + p.getPosition())
