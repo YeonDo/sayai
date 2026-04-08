@@ -306,7 +306,13 @@
                 waivers.forEach(w => {
                     const dateStr = new Date(w.waiverDate).toLocaleString();
                     const isClaimedByMe = (String(w.claimPlayerId) === String(currentUserId));
-                    const claimBtn = `<button class="btn-action btn-fa" onclick="claimWaiver(${w.transactionSeq})">Claim</button>`;
+                    const isWaivedByMe = (String(w.requesterId) === String(currentUserId));
+
+                    let claimBtn = `<button class="btn-action btn-fa" onclick="claimWaiver(${w.transactionSeq})">Claim</button>`;
+                    if (isWaivedByMe || isClaimedByMe) {
+                        claimBtn = `<button class="btn-action btn-disabled" disabled>Claim</button>`;
+                    }
+
                     const claimedStatus = w.claimPlayerId
                         ? `<br><small style="color:${isClaimedByMe ? '#007bff' : '#28a745'};">(현재 클레임 존재${isClaimedByMe ? ' - My Claim' : ''})</small>`
                         : '';
