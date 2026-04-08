@@ -9,7 +9,9 @@ import com.sayai.record.fantasy.repository.DraftPickRepository;
 import com.sayai.record.fantasy.repository.FantasyGameRepository;
 import com.sayai.record.fantasy.repository.FantasyParticipantRepository;
 import com.sayai.record.fantasy.repository.FantasyPlayerRepository;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +32,8 @@ public class FantasyGameService {
     private final FantasyParticipantRepository fantasyParticipantRepository;
     private final DraftPickRepository draftPickRepository;
     private final FantasyPlayerRepository fantasyPlayerRepository;
+    private final JdbcTemplate jdbcTemplate;
+    private final EntityManager entityManager;
     private final SimpMessagingTemplate messagingTemplate;
     private final FantasyDraftService fantasyDraftService;
     private final DraftScheduler draftScheduler;
@@ -150,11 +154,17 @@ public class FantasyGameService {
         // Shuffle and assign order
         Collections.shuffle(participants);
 
+        // Batch Update Draft Order using JdbcTemplate to avoid N+1 saveAll pattern
+        String sql = "UPDATE ft_participants SET draft_order = ? WHERE seq = ?";
+        List<Object[]> batchArgs = new ArrayList<>();
         int order = 1;
         for (FantasyParticipant p : participants) {
-            p.setDraftOrder(order++);
+            p.setDraftOrder(order);
+            batchArgs.add(new Object[]{order++, p.getSeq()});
+            // Detach to prevent JPA from triggering individual redundant updates (dirty checking)
+            entityManager.detach(p);
         }
-        fantasyParticipantRepository.saveAll(participants);
+        jdbcTemplate.batchUpdate(sql, batchArgs);
 
         // Update Game Status
         game.setStatus(FantasyGame.GameStatus.DRAFTING);

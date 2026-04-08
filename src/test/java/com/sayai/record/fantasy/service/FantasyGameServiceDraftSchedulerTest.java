@@ -21,6 +21,8 @@ class FantasyGameServiceDraftSchedulerTest {
 
     @Mock private FantasyGameRepository fantasyGameRepository;
     @Mock private FantasyParticipantRepository fantasyParticipantRepository;
+    @Mock private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+    @Mock private jakarta.persistence.EntityManager entityManager;
     @Mock private DraftScheduler draftScheduler;
     @Mock private SimpMessagingTemplate messagingTemplate;
 
