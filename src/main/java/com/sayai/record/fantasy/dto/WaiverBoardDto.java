@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 @Builder
 public class WaiverBoardDto {
     private Long transactionSeq;
+    private Long requesterId;
     private String requesterTeamName;
     private String playerName;
     private String playerTeam;

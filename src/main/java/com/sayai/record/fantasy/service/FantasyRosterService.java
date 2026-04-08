@@ -71,6 +71,7 @@ public class FantasyRosterService {
 
             return WaiverBoardDto.builder()
                     .transactionSeq(tx.getSeq())
+                    .requesterId(tx.getRequesterId())
                     .requesterTeamName(requesterTeam)
                     .playerName(player.getName())
                     .playerTeam(player.getTeam())
@@ -107,6 +108,8 @@ public class FantasyRosterService {
                 existingClaim.setClaimPlayerId(claimerId);
                 existingClaim.setClaimOrder(order.getOrderNum());
                 waiverClaimRepository.save(existingClaim);
+            } else {
+                throw new IllegalStateException("나보다 앞선 우선순위의 클레임이 존재합니다.");
             }
         } else {
             waiverClaimRepository.save(FantasyWaiverClaim.builder()
