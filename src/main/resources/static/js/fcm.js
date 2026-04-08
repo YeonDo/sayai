@@ -1,11 +1,11 @@
-const firebaseConfig = {
-    apiKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+const firebaseConfig =  {
+    apiKey: "AIzaSyBh8CQSJwdpYW0j8ouGeljQYEV3s1JgSeQ",
     authDomain: "pandasy.firebaseapp.com",
     projectId: "pandasy",
     storageBucket: "pandasy.firebasestorage.app",
-    messagingSenderId: "12341234",
-    appId: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-    measurementId: "aaaaaaaaaaaaaaaaaaa"
+    messagingSenderId: "869401599651",
+    appId: "1:869401599651:web:10fcba84aab6af9ac96916",
+    measurementId: "G-D3P4F8JN86"
 };
 
 // Initialize Firebase
@@ -17,17 +17,15 @@ const messaging = firebase.messaging();
 messaging.onMessage((payload) => {
     console.log('Message received. ', payload);
     const notificationTitle = payload.notification.title;
-    const notificationOptions = {
-        body: payload.notification.body,
-        icon: '/favicon.png'
-    };
+    const notificationBody = payload.notification.body;
 
-    // Show a browser notification or a custom alert if permission is granted
-    if (Notification.permission === 'granted') {
-        new Notification(notificationTitle, notificationOptions);
-    } else {
-        alert(notificationTitle + "\n" + payload.notification.body);
-    }
+    $('#custom-alert-title').text(notificationTitle);
+    $('#custom-alert-body').text(notificationBody);
+    $('#custom-fcm-alert').fadeIn();
+});
+
+$(document).on('click', '.custom-alert-close', function() {
+    $('#custom-fcm-alert').fadeOut();
 });
 
 function requestFcmPermission() {
@@ -35,18 +33,37 @@ function requestFcmPermission() {
     Notification.requestPermission().then((permission) => {
         if (permission === 'granted') {
             console.log('Notification permission granted.');
-            // Get Instance ID token. Initially this makes a network call, once retrieved
-            // subsequent calls to getToken will return from cache.
-            messaging.getToken()
-                .then((currentToken) => {
-                    if (currentToken) {
-                        sendTokenToServer(currentToken);
-                    } else {
-                        console.log('No registration token available. Request permission to generate one.');
-                    }
-                }).catch((err) => {
-                    console.log('An error occurred while retrieving token. ', err);
-                });
+
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/firebase-messaging-sw.js')
+                    .then(function(registration) {
+                        console.log('Service Worker registered with scope:', registration.scope);
+                        return messaging.getToken({ serviceWorkerRegistration: registration });
+                    })
+                    .then((currentToken) => {
+                        if (currentToken) {
+                            sendTokenToServer(currentToken);
+                        } else {
+                            console.log('No registration token available. Request permission to generate one.');
+                        }
+                    })
+                    .catch((err) => {
+                        console.log('An error occurred while retrieving token or registering SW. ', err);
+                    });
+            } else {
+                console.log('Service workers are not supported.');
+                // Fallback
+                messaging.getToken()
+                    .then((currentToken) => {
+                        if (currentToken) {
+                            sendTokenToServer(currentToken);
+                        } else {
+                            console.log('No registration token available. Request permission to generate one.');
+                        }
+                    }).catch((err) => {
+                        console.log('An error occurred while retrieving token. ', err);
+                    });
+            }
         } else {
             console.log('Unable to get permission to notify.');
         }
