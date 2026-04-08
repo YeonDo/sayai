@@ -1,11 +1,11 @@
-const firebaseConfig = {
-    apiKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+const firebaseConfig =  {
+    apiKey: "AIzaSyBh8CQSJwdpYW0j8ouGeljQYEV3s1JgSeQ",
     authDomain: "pandasy.firebaseapp.com",
     projectId: "pandasy",
     storageBucket: "pandasy.firebasestorage.app",
-    messagingSenderId: "12341234",
-    appId: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-    measurementId: "aaaaaaaaaaaaaaaaaaa"
+    messagingSenderId: "869401599651",
+    appId: "1:869401599651:web:10fcba84aab6af9ac96916",
+    measurementId: "G-D3P4F8JN86"
 };
 
 // Initialize Firebase
