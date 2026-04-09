@@ -35,6 +35,22 @@ public class FantasyRosterService {
     // --- Waiver Logic ---
 
     @Transactional(readOnly = true)
+    public List<com.sayai.record.fantasy.dto.WaiverOrderDto> getWaiverOrderList(Long gameSeq) {
+        List<FantasyWaiverOrder> orders = waiverOrderRepository.findByGameSeqOrderByOrderNumAsc(gameSeq);
+        if (orders.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        Set<Long> playerIds = orders.stream().map(FantasyWaiverOrder::getPlayerId).collect(Collectors.toSet());
+        java.util.Map<Long, String> teamMap = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerIdIn(gameSeq, playerIds)
+                .stream().collect(Collectors.toMap(FantasyParticipant::getPlayerId, FantasyParticipant::getTeamName, (a, b) -> a));
+
+        return orders.stream().map(o -> com.sayai.record.fantasy.dto.WaiverOrderDto.builder()
+                .teamName(teamMap.getOrDefault(o.getPlayerId(), "Unknown Team"))
+                .orderNum(o.getOrderNum())
+                .build()).collect(Collectors.toList());
+    }
+
     public List<WaiverBoardDto> getWaiverBoard(Long gameSeq) {
         List<RosterTransaction> waivers = rosterTransactionRepository.findByFantasyGameSeqAndStatusAndType(
                 gameSeq, RosterTransaction.TransactionStatus.REQUESTED, RosterTransaction.TransactionType.WAIVER);

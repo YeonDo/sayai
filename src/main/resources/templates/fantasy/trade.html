@@ -104,6 +104,13 @@
 
         <!-- WAIVER BOARD TAB -->
         <div id="waiverBoard" class="tab-content">
+            <div class="fantasy-card" style="margin-bottom: 20px;">
+                <h3>현재 웨이버 순위</h3>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px;" id="waiverOrderContainer">
+                    <span>Loading...</span>
+                </div>
+            </div>
+
             <div class="fantasy-card">
                 <h3>Waiver Board (진행 중인 웨이버)</h3>
                 <table class="fa-table" style="margin-top: 15px;">
@@ -293,6 +300,29 @@
         // --- WAIVER BOARD ---
         function loadWaiverBoard() {
             if(!currentGameSeq) return;
+
+            // Load Waiver Orders
+            $.get(`/apis/v1/fantasy/roster/games/${currentGameSeq}/waiver-orders`, function(orders) {
+                const container = $('#waiverOrderContainer');
+                container.empty();
+                if(orders.length === 0) {
+                    container.append('<span>정보가 없습니다.</span>');
+                } else {
+                    orders.forEach(o => {
+                        const span = $('<span>')
+                            .css({
+                                'background-color': '#f8f9fa',
+                                'padding': '5px 10px',
+                                'border-radius': '5px',
+                                'border': '1px solid #ddd'
+                            })
+                            .html(`<strong>${o.orderNum}.</strong> `);
+                        span.append(document.createTextNode(o.teamName));
+                        container.append(span);
+                    });
+                }
+            });
+
             const tbody = $('#waiverBoardListBody');
             tbody.empty().append('<tr><td colspan="7">Loading...</td></tr>');
 

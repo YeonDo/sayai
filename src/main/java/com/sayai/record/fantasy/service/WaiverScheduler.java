@@ -39,6 +39,8 @@ public class WaiverScheduler {
                 RosterTransaction.TransactionType.WAIVER);
 
         int processed = 0;
+        java.util.Map<Long, Integer> maxOrdersByGameSeq = new java.util.HashMap<>();
+
         for (RosterTransaction tx : pendingWaivers) {
             // Only process if the waiver was requested at least 30 minutes ago
             if (tx.getCreatedAt() != null && tx.getCreatedAt().isBefore(cutoffTime)) {
@@ -56,8 +58,14 @@ public class WaiverScheduler {
                         FantasyWaiverOrder claimerOrder = waiverOrderRepository.findByGameSeqAndPlayerId(tx.getFantasyGameSeq(), claimerId)
                                 .orElseThrow(() -> new IllegalStateException("Claimer waiver order not found"));
 
-                        Integer maxOrder = waiverOrderRepository.findMaxOrderNumByGameSeq(tx.getFantasyGameSeq());
-                        int nextOrder = (maxOrder != null ? maxOrder : 0) + 1;
+                        Long gameSeq = tx.getFantasyGameSeq();
+                        Integer maxOrder = maxOrdersByGameSeq.computeIfAbsent(gameSeq, key -> {
+                            Integer dbMax = waiverOrderRepository.findMaxOrderNumByGameSeq(key);
+                            return dbMax != null ? dbMax : 0;
+                        });
+
+                        int nextOrder = maxOrder + 1;
+                        maxOrdersByGameSeq.put(gameSeq, nextOrder); // Update cache for next transactions in same game
 
                         claimerOrder.setOrderNum(nextOrder);
                         waiverOrderRepository.save(claimerOrder);

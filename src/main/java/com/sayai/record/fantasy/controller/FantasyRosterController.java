@@ -51,6 +51,11 @@ public class FantasyRosterController {
         return ResponseEntity.ok(fantasyRosterService.getWaiverBoard(gameSeq));
     }
 
+    @GetMapping("/games/{gameSeq}/waiver-orders")
+    public ResponseEntity<List<com.sayai.record.fantasy.dto.WaiverOrderDto>> getWaiverOrders(@PathVariable(name = "gameSeq") Long gameSeq) {
+        return ResponseEntity.ok(fantasyRosterService.getWaiverOrderList(gameSeq));
+    }
+
     @PostMapping("/games/{gameSeq}/waivers/{transactionSeq}/claim")
     public ResponseEntity<String> claimWaiver(@AuthenticationPrincipal CustomUserDetails userDetails,
                                               @PathVariable(name = "gameSeq") Long gameSeq,
