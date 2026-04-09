@@ -304,7 +304,11 @@
                 }
 
                 waivers.forEach(w => {
-                    const dateStr = new Date(w.waiverDate).toLocaleString();
+                    let wDate = w.waiverDate;
+                    if (wDate && !wDate.endsWith('Z')) {
+                        wDate += 'Z';
+                    }
+                    const dateStr = new Date(wDate).toLocaleString();
                     const isClaimedByMe = (String(w.claimPlayerId) === String(currentUserId));
                     const isWaivedByMe = (String(w.requesterId) === String(currentUserId));
 
