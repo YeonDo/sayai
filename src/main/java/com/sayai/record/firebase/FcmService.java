@@ -1,9 +1,14 @@
 package com.sayai.record.firebase;
 
+import com.google.firebase.messaging.AndroidConfig;
+import com.google.firebase.messaging.ApnsConfig;
+import com.google.firebase.messaging.Aps;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.Notification;
+import com.google.firebase.messaging.WebpushConfig;
+import com.google.firebase.messaging.WebpushFcmOptions;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +32,20 @@ public class FcmService {
                     .setNotification(Notification.builder()
                             .setTitle(title)
                             .setBody(body)
+                            .build())
+                    .setWebpushConfig(WebpushConfig.builder()
+                            .setFcmOptions(WebpushFcmOptions.builder()
+                                    .setLink("/fantasy/trade")
+                                    .build())
+                            .build())
+                    .setAndroidConfig(AndroidConfig.builder()
+                            .setPriority(AndroidConfig.Priority.HIGH)
+                            .build())
+                    .setApnsConfig(ApnsConfig.builder()
+                            .setAps(Aps.builder()
+                                    .setSound("default")
+                                    .setContentAvailable(true)
+                                    .build())
                             .build())
                     .build();
 
