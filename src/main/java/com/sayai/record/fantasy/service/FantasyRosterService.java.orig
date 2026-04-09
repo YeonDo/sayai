@@ -71,9 +71,8 @@ public class FantasyRosterService {
         java.util.Map<Long, FantasyPlayer> playerMap = fantasyPlayerRepository.findAllById(playerSeqs)
                 .stream().collect(Collectors.toMap(FantasyPlayer::getSeq, p -> p));
 
-        List<FantasyWaiverClaim> claims = waiverClaimRepository.findByWaiverSeqIn(transactionSeqs);
-        java.util.Map<Long, List<FantasyWaiverClaim>> claimMap = claims.stream()
-                .collect(Collectors.groupingBy(FantasyWaiverClaim::getWaiverSeq));
+        java.util.Map<Long, FantasyWaiverClaim> claimMap = waiverClaimRepository.findAllById(transactionSeqs)
+                .stream().collect(Collectors.toMap(FantasyWaiverClaim::getWaiverSeq, c -> c));
 
         return waivers.stream().map(tx -> {
             String requesterTeam = requesterTeamMap.getOrDefault(tx.getRequesterId(), "Unknown");
@@ -84,8 +83,7 @@ public class FantasyRosterService {
             FantasyPlayer player = playerMap.get(playerSeq);
             if (player == null) return null;
 
-            List<FantasyWaiverClaim> txClaims = claimMap.getOrDefault(tx.getSeq(), new ArrayList<>());
-            List<Long> claimPlayerIds = txClaims.stream().map(FantasyWaiverClaim::getClaimPlayerId).collect(Collectors.toList());
+            FantasyWaiverClaim claim = claimMap.get(tx.getSeq());
 
             return WaiverBoardDto.builder()
                     .transactionSeq(tx.getSeq())
@@ -96,7 +94,8 @@ public class FantasyRosterService {
                     .playerPosition(player.getPosition())
                     .playerCost(player.getCost())
                     .waiverDate(tx.getCreatedAt())
-                    .claimPlayerIds(claimPlayerIds)
+                    .claimPlayerId(claim != null ? claim.getClaimPlayerId() : null)
+                    .claimOrder(claim != null ? claim.getClaimOrder() : null)
                     .build();
         }).filter(java.util.Objects::nonNull).collect(Collectors.toList());
     }
@@ -117,13 +116,22 @@ public class FantasyRosterService {
         FantasyWaiverOrder order = waiverOrderRepository.findByGameSeqAndPlayerId(gameSeq, claimerId)
                 .orElseThrow(() -> new IllegalArgumentException("User not participating in this game"));
 
-        com.sayai.record.fantasy.entity.FantasyWaiverClaimId claimId = new com.sayai.record.fantasy.entity.FantasyWaiverClaimId(transactionSeq, claimerId);
-        Optional<FantasyWaiverClaim> existingClaimOpt = waiverClaimRepository.findById(claimId);
-
-        if (existingClaimOpt.isEmpty()) {
+        Optional<FantasyWaiverClaim> existingClaimOpt = waiverClaimRepository.findById(transactionSeq);
+        if (existingClaimOpt.isPresent()) {
+            FantasyWaiverClaim existingClaim = existingClaimOpt.get();
+            // Lower order number means higher priority
+            if (order.getOrderNum() < existingClaim.getClaimOrder()) {
+                existingClaim.setClaimPlayerId(claimerId);
+                existingClaim.setClaimOrder(order.getOrderNum());
+                waiverClaimRepository.save(existingClaim);
+            } else {
+                throw new IllegalStateException("나보다 앞선 우선순위의 클레임이 존재합니다.");
+            }
+        } else {
             waiverClaimRepository.save(FantasyWaiverClaim.builder()
                     .waiverSeq(transactionSeq)
                     .claimPlayerId(claimerId)
+                    .claimOrder(order.getOrderNum())
                     .build());
         }
     }

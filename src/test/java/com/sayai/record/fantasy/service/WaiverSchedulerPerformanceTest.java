@@ -61,9 +61,10 @@ public class WaiverSchedulerPerformanceTest {
 
             FantasyWaiverClaim claim = instantiate(FantasyWaiverClaim.class);
             ReflectionTestUtils.setField(claim, "claimPlayerId", i);
-            when(waiverClaimRepository.findById(i)).thenReturn(Optional.of(claim));
+            when(waiverClaimRepository.findByWaiverSeq(i)).thenReturn(List.of(claim));
 
             FantasyWaiverOrder order = instantiate(FantasyWaiverOrder.class);
+            ReflectionTestUtils.setField(order, "orderNum", (int) i);
             when(waiverOrderRepository.findByGameSeqAndPlayerId(1L, i)).thenReturn(Optional.of(order));
         }
 

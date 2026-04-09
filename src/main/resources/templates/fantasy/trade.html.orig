@@ -339,17 +339,16 @@
                         wDate += 'Z';
                     }
                     const dateStr = new Date(wDate).toLocaleString();
-                    const isClaimedByMe = w.claimPlayerIds && w.claimPlayerIds.some(id => String(id) === String(currentUserId));
+                    const isClaimedByMe = (String(w.claimPlayerId) === String(currentUserId));
                     const isWaivedByMe = (String(w.requesterId) === String(currentUserId));
-                    const claimCount = w.claimPlayerIds ? w.claimPlayerIds.length : 0;
 
                     let claimBtn = `<button class="btn-action btn-fa" onclick="claimWaiver(${w.transactionSeq})">Claim</button>`;
                     if (isWaivedByMe || isClaimedByMe) {
                         claimBtn = `<button class="btn-action btn-disabled" disabled>Claim</button>`;
                     }
 
-                    const claimedStatus = claimCount > 0
-                        ? `<br><small style="color:${isClaimedByMe ? '#007bff' : '#28a745'};">(현재 클레임 ${claimCount}건${isClaimedByMe ? ' - My Claim 포함' : ''})</small>`
+                    const claimedStatus = w.claimPlayerId
+                        ? `<br><small style="color:${isClaimedByMe ? '#007bff' : '#28a745'};">(현재 클레임 존재${isClaimedByMe ? ' - My Claim' : ''})</small>`
                         : '';
 
                     const row = `

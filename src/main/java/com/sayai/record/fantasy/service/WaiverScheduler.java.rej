@@ -1,0 +1,21 @@
+--- WaiverScheduler.java
++++ WaiverScheduler.java
+@@ -32,15 +32,18 @@
+         LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(30);
+
+         List<RosterTransaction> pendingWaivers = transactionRepository.findByStatusAndType(
+                 RosterTransaction.TransactionStatus.REQUESTED,
+                 RosterTransaction.TransactionType.WAIVER);
++
++        // Sort by seq to process older waivers first
++        pendingWaivers.sort(java.util.Comparator.comparing(RosterTransaction::getSeq));
+
+         int processed = 0;
+         java.util.Map<Long, Integer> maxOrdersByGameSeq = new java.util.HashMap<>();
+
+         for (RosterTransaction tx : pendingWaivers) {
+             // Only process if the waiver was requested at least 30 minutes ago
+             if (tx.getCreatedAt() != null && tx.getCreatedAt().isBefore(cutoffTime)) {
+
+-                Optional<FantasyWaiverClaim> claimOpt = waiverClaimRepository.findById(tx.getSeq());
++                List<FantasyWaiverClaim> claims = waiverClaimRepository.findByWaiverSeq(tx.getSeq());

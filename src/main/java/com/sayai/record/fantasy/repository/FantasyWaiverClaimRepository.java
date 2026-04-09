@@ -1,7 +1,12 @@
 package com.sayai.record.fantasy.repository;
 
 import com.sayai.record.fantasy.entity.FantasyWaiverClaim;
+import com.sayai.record.fantasy.entity.FantasyWaiverClaimId;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface FantasyWaiverClaimRepository extends JpaRepository<FantasyWaiverClaim, Long> {
+import java.util.List;
+
+public interface FantasyWaiverClaimRepository extends JpaRepository<FantasyWaiverClaim, FantasyWaiverClaimId> {
+    List<FantasyWaiverClaim> findByWaiverSeqIn(List<Long> waiverSeqs);
+    List<FantasyWaiverClaim> findByWaiverSeq(Long waiverSeq);
 }

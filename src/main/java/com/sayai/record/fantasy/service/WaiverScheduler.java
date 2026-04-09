@@ -38,6 +38,9 @@ public class WaiverScheduler {
                 RosterTransaction.TransactionStatus.REQUESTED,
                 RosterTransaction.TransactionType.WAIVER);
 
+        // Sort by seq to process older waivers first
+        pendingWaivers.sort(java.util.Comparator.comparing(RosterTransaction::getSeq));
+
         int processed = 0;
         java.util.Map<Long, Integer> maxOrdersByGameSeq = new java.util.HashMap<>();
 
@@ -45,32 +48,55 @@ public class WaiverScheduler {
             // Only process if the waiver was requested at least 30 minutes ago
             if (tx.getCreatedAt() != null && tx.getCreatedAt().isBefore(cutoffTime)) {
 
-                Optional<FantasyWaiverClaim> claimOpt = waiverClaimRepository.findById(tx.getSeq());
+                List<FantasyWaiverClaim> claims = waiverClaimRepository.findByWaiverSeq(tx.getSeq());
 
-                if (claimOpt.isPresent()) {
-                    Long claimerId = claimOpt.get().getClaimPlayerId();
-                    log.info("Processing waiver tx {} - Claimed by {}", tx.getSeq(), claimerId);
+                if (!claims.isEmpty()) {
+                    Long winnerId = null;
+                    int minOrder = Integer.MAX_VALUE;
 
-                    try {
-                        rosterService.processWaiver(tx.getSeq(), "CLAIM", claimerId);
+                    for (FantasyWaiverClaim claim : claims) {
+                        Long claimerId = claim.getClaimPlayerId();
+                        Optional<FantasyWaiverOrder> orderOpt = waiverOrderRepository.findByGameSeqAndPlayerId(tx.getFantasyGameSeq(), claimerId);
+                        if (orderOpt.isPresent()) {
+                            int currentOrder = orderOpt.get().getOrderNum();
+                            if (currentOrder < minOrder) {
+                                minOrder = currentOrder;
+                                winnerId = claimerId;
+                            }
+                        }
+                    }
 
-                        // Update order for the successful claimer
-                        FantasyWaiverOrder claimerOrder = waiverOrderRepository.findByGameSeqAndPlayerId(tx.getFantasyGameSeq(), claimerId)
-                                .orElseThrow(() -> new IllegalStateException("Claimer waiver order not found"));
+                    if (winnerId != null) {
+                        log.info("Processing waiver tx {} - Claimed by {}", tx.getSeq(), winnerId);
 
-                        Long gameSeq = tx.getFantasyGameSeq();
-                        Integer maxOrder = maxOrdersByGameSeq.computeIfAbsent(gameSeq, key -> {
-                            Integer dbMax = waiverOrderRepository.findMaxOrderNumByGameSeq(key);
-                            return dbMax != null ? dbMax : 0;
-                        });
+                        try {
+                            rosterService.processWaiver(tx.getSeq(), "CLAIM", winnerId);
 
-                        int nextOrder = maxOrder + 1;
-                        maxOrdersByGameSeq.put(gameSeq, nextOrder); // Update cache for next transactions in same game
+                            // Update order for the successful claimer
+                            FantasyWaiverOrder claimerOrder = waiverOrderRepository.findByGameSeqAndPlayerId(tx.getFantasyGameSeq(), winnerId)
+                                    .orElseThrow(() -> new IllegalStateException("Claimer waiver order not found"));
 
-                        claimerOrder.setOrderNum(nextOrder);
-                        waiverOrderRepository.save(claimerOrder);
-                    } catch (Exception e) {
-                        log.error("Failed to process waiver claim for tx {}: {}", tx.getSeq(), e.getMessage());
+                            Long gameSeq = tx.getFantasyGameSeq();
+                            Integer maxOrder = maxOrdersByGameSeq.computeIfAbsent(gameSeq, key -> {
+                                Integer dbMax = waiverOrderRepository.findMaxOrderNumByGameSeq(key);
+                                return dbMax != null ? dbMax : 0;
+                            });
+
+                            int nextOrder = maxOrder + 1;
+                            maxOrdersByGameSeq.put(gameSeq, nextOrder); // Update cache for next transactions in same game
+
+                            claimerOrder.setOrderNum(nextOrder);
+                            waiverOrderRepository.save(claimerOrder);
+                        } catch (Exception e) {
+                            log.error("Failed to process waiver claim for tx {}: {}", tx.getSeq(), e.getMessage());
+                        }
+                    } else {
+                        log.info("Processing waiver tx {} - No valid claims found, moving to FA", tx.getSeq());
+                        try {
+                            rosterService.processWaiver(tx.getSeq(), "FA", null);
+                        } catch (Exception e) {
+                            log.error("Failed to move waiver to FA for tx {}: {}", tx.getSeq(), e.getMessage());
+                        }
                     }
                 } else {
                     log.info("Processing waiver tx {} - No claims, moving to FA", tx.getSeq());
