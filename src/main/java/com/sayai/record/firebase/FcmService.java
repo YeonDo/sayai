@@ -35,7 +35,7 @@ public class FcmService {
                             .build())
                     .setWebpushConfig(WebpushConfig.builder()
                             .setFcmOptions(WebpushFcmOptions.builder()
-                                    .setLink("/")
+                                    .setLink("/fantasy/trade")
                                     .build())
                             .build())
                     .setAndroidConfig(AndroidConfig.builder()
