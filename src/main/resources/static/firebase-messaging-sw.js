@@ -15,13 +15,37 @@ firebase.initializeApp(firebaseConfig);
 
 const messaging = firebase.messaging();
 
-messaging.onBackgroundMessage(function(payload) {
-  console.log('[firebase-messaging-sw.js] Received background message ', payload);
-  const notificationTitle = payload.notification.title;
-  const notificationOptions = {
-    body: payload.notification.body,
-    icon: '/favicon.png'
-  };
+// 백그라운드 메시지 처리
+messaging.onBackgroundMessage(function (payload) {
+    console.log('[firebase-messaging-sw.js] Background message received:', payload);
 
-  self.registration.showNotification(notificationTitle, notificationOptions);
+    const notificationTitle = payload.notification?.title || '새 알림';
+    const notificationOptions = {
+        body: payload.notification?.body || '',
+        icon: '/favicon.png',
+        badge: '/favicon.png',
+        data: payload.data || {}
+    };
+
+    self.registration.showNotification(notificationTitle, notificationOptions);
+});
+
+// 알림 클릭 시 앱 화면 열기 또는 포커스
+self.addEventListener('notificationclick', function (event) {
+    event.notification.close();
+
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true })
+            .then(function (windowClients) {
+                for (var i = 0; i < windowClients.length; i++) {
+                    var client = windowClients[i];
+                    if (client.url.startsWith(self.location.origin) && 'focus' in client) {
+                        return client.focus();
+                    }
+                }
+                if (clients.openWindow) {
+                    return clients.openWindow('/');
+                }
+            })
+    );
 });

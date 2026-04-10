@@ -24,6 +24,7 @@ function performLogin() {
             if (response && response.name) {
                 localStorage.setItem('userName', response.name);
             }
+            localStorage.removeItem('fcm-permission-dismissed');
             closeLoginModal();
 
             // Check for redirect

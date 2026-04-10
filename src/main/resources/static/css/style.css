@@ -409,3 +409,118 @@ tr:nth-child(even) {
         opacity: 1;
     }
 }
+
+/* =========================================
+   iOS 홈화면 추가 유도 배너
+   ========================================= */
+#ios-install-prompt {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 10002;
+    background-color: #1c1c1e;
+    color: #fff;
+    padding: 16px;
+    animation: slideInUp 0.3s ease-out;
+}
+
+.ios-install-content {
+    position: relative;
+    max-width: 480px;
+    margin: 0 auto;
+    padding-right: 32px;
+}
+
+.ios-install-close {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: none;
+    border: none;
+    color: #aaa;
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+}
+
+.ios-install-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0 0 6px;
+}
+
+.ios-install-desc {
+    font-size: 13px;
+    color: #ccc;
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* =========================================
+   FCM 알림 권한 요청 배너
+   ========================================= */
+#fcm-permission-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 10002;
+    background-color: #007bff;
+    color: #fff;
+    padding: 12px 16px;
+    animation: slideInUp 0.3s ease-out;
+}
+
+.fcm-permission-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 480px;
+    margin: 0 auto;
+    gap: 12px;
+}
+
+.fcm-permission-text {
+    margin: 0;
+    font-size: 14px;
+    flex: 1;
+}
+
+.fcm-permission-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.fcm-permission-actions button {
+    padding: 6px 14px;
+    border: none;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+#fcm-allow-btn {
+    background-color: #fff;
+    color: #007bff;
+    font-weight: 600;
+}
+
+#fcm-deny-btn {
+    background-color: transparent;
+    color: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.5) !important;
+}
+
+@keyframes slideInUp {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
