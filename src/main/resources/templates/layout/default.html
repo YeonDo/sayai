@@ -9,6 +9,16 @@
     <!-- Favicon -->
     <link rel="icon" type="image/png" th:href="@{/favicon.png}">
 
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+
+    <!-- iOS PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Sayai Record">
+    <meta name="theme-color" content="#007bff">
+    <link rel="apple-touch-icon" th:href="@{/favicon.png}">
+
     <!-- Common CSS -->
     <link rel="stylesheet" th:href="@{/css/style.css}">
 
@@ -39,6 +49,28 @@
             <span class="custom-alert-close">&times;</span>
             <h4 id="custom-alert-title"></h4>
             <p id="custom-alert-body"></p>
+        </div>
+    </div>
+
+    <!-- iOS 홈화면 추가 유도 배너 -->
+    <div id="ios-install-prompt" style="display: none;">
+        <div class="ios-install-content">
+            <button class="ios-install-close" aria-label="닫기">&times;</button>
+            <div class="ios-install-body">
+                <p class="ios-install-title">알림을 받으려면 홈화면에 추가하세요</p>
+                <p class="ios-install-desc">Safari 하단 <strong>공유 버튼(&#x2b06;)</strong>을 탭한 후 <strong>"홈 화면에 추가"</strong>를 선택하세요.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- FCM 알림 권한 요청 배너 -->
+    <div id="fcm-permission-banner" style="display: none;">
+        <div class="fcm-permission-content">
+            <p class="fcm-permission-text">경기 알림을 받으시겠습니까?</p>
+            <div class="fcm-permission-actions">
+                <button id="fcm-allow-btn">허용</button>
+                <button id="fcm-deny-btn">나중에</button>
+            </div>
         </div>
     </div>
 </body>
