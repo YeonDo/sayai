@@ -27,8 +27,8 @@ const messaging = firebase.messaging();
 
 // 전경 메시지 처리
 messaging.onMessage((payload) => {
-    const notificationTitle = payload.notification.title;
-    const notificationBody = payload.notification.body;
+    const notificationTitle = payload.data?.title || payload.notification?.title;
+    const notificationBody = payload.data?.body || payload.notification?.body;
     $('#custom-alert-title').text(notificationTitle);
     $('#custom-alert-body').text(notificationBody);
     $('#custom-fcm-alert').fadeIn();
