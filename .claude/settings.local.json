@@ -1,7 +1,16 @@
 {
   "permissions": {
     "allow": [
-      "Bash(xargs ls:*)"
+      "Bash(xargs ls:*)",
+      "Bash(gh repo:*)",
+      "Bash(npm --version)",
+      "Bash(mkdir -p /Users/yeondo/IdeaProjects/sayai-frontend/src/components)",
+      "Bash(mkdir -p \"/Users/yeondo/IdeaProjects/sayai-frontend/src/app/fantasy/draft/[seq]\")",
+      "Bash(mkdir -p \"/Users/yeondo/IdeaProjects/sayai-frontend/src/app/episodes/[id]\")",
+      "Bash(mkdir -p /Users/yeondo/IdeaProjects/sayai-frontend/public)",
+      "Bash(cp /Users/yeondo/IdeaProjects/sayai/src/main/resources/static/firebase-messaging-sw.js /Users/yeondo/IdeaProjects/sayai-frontend/public/firebase-messaging-sw.js)",
+      "Bash(cp /Users/yeondo/IdeaProjects/sayai/src/main/resources/static/manifest.json /Users/yeondo/IdeaProjects/sayai-frontend/public/manifest.json)",
+      "Bash(cp /Users/yeondo/IdeaProjects/sayai/src/main/resources/static/favicon.png /Users/yeondo/IdeaProjects/sayai-frontend/public/favicon.png)"
     ]
   }
 }

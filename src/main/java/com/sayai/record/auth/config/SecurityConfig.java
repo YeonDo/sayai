@@ -82,7 +82,8 @@ public class SecurityConfig {
                 "http://teamsayai.com",
                 "https://teamsayai.com",
                 "http://*.teamsayai.com",
-                "https://*.teamsayai.com"
+                "https://*.teamsayai.com",
+                "https://*.vercel.app"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
