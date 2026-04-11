@@ -83,7 +83,9 @@ public class AuthController {
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
-        return ResponseEntity.ok(new UserInfo(userDetails.getPlayerId(), userDetails.getUsername(), userDetails.getName()));
+        boolean isAdmin = userDetails.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        return ResponseEntity.ok(new UserInfo(userDetails.getPlayerId(), userDetails.getUsername(), userDetails.getName(), isAdmin));
     }
 
     @Data
@@ -118,5 +120,6 @@ public class AuthController {
         private Long playerId;
         private String userId;
         private String name;
+        private boolean admin;
     }
 }
