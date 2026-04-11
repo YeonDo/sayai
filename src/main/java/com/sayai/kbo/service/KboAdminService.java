@@ -218,9 +218,21 @@ public class KboAdminService {
                 }
             } else {
                 // Parse Pitcher row
-                long win = getLongValueSafe(row, headerMap, "승");
-                long lose = getLongValueSafe(row, headerMap, "패");
-                long save = getLongValueSafe(row, headerMap, "세");
+                long win = 0;
+                long lose = 0;
+                long save = 0;
+
+                Integer resultColIdx = headerMap.get("결과");
+                if (resultColIdx != null) {
+                    String resultVal = getCellValueAsString(row.getCell(resultColIdx)).trim();
+                    if (resultVal.contains("승")) {
+                        win = 1;
+                    } else if (resultVal.contains("패")) {
+                        lose = 1;
+                    } else if (resultVal.contains("세")) {
+                        save = 1;
+                    }
+                }
 
                 long inning = getLongValueSafe(row, headerMap, "이닝");
 
