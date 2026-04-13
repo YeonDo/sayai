@@ -8,7 +8,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -75,4 +74,19 @@ public interface KboHitRepository extends JpaRepository<KboHit, Long> {
             "AND h.PLAYER_ID IN (:playerIds) " +
             "GROUP BY h.PLAYER_ID", nativeQuery = true)
     List<KboParticipantStatsInterface> getAggregatedHitStats(@Param("startIdx") Long startIdx, @Param("endIdx") Long endIdx, @Param("playerIds") List<Long> playerIds);
+
+    @Query(value = "SELECT " +
+            " h.PLAYER_ID as playerId, " +
+            " IFNULL(SUM(h.pa), 0) as pa, " +
+            " IFNULL(SUM(h.ab), 0) as ab, " +
+            " IFNULL(SUM(h.hit), 0) as hit, " +
+            " IFNULL(SUM(h.rbi), 0) as rbi, " +
+            " IFNULL(SUM(h.sb), 0) as sb, " +
+            " IFNULL(SUM(h.so), 0) as so, " +
+            " IFNULL(SUM(h.hr), 0) as hr " +
+            "FROM kbo_hit h " +
+            "JOIN kbo_game g ON h.game_idx = g.game_idx " +
+            "WHERE h.PLAYER_ID = :playerId " +
+            "AND g.game_idx BETWEEN :startIdx AND :endIdx", nativeQuery = true)
+    KboHitterSeasonStatInterface getSeasonStatsByPlayerId(@Param("playerId") Long playerId, @Param("startIdx") Long startIdx, @Param("endIdx") Long endIdx);
 }
