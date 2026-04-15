@@ -3,6 +3,8 @@ package com.sayai.kbo.service;
 import com.sayai.record.dto.PlayerDto;
 import com.sayai.kbo.repository.KboHitRepository;
 import com.sayai.kbo.repository.KboHitStatInterface;
+import com.sayai.kbo.repository.KboHitterSeasonStatsProjection;
+import com.sayai.kbo.repository.KboHitterStatsRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,6 +20,7 @@ import java.time.format.DateTimeFormatter;
 public class KboHitService {
 
     private final KboHitRepository kboHitRepository;
+    private final KboHitterStatsRepository kboHitterStatsRepository;
 
     private Long toStartIdx(LocalDate date) {
         if (date == null) return 0L;
@@ -41,6 +44,34 @@ public class KboHitService {
         } catch (java.util.NoSuchElementException e) {
             return PlayerDto.builder().build();
         }
+    }
+
+    public Page<PlayerDto> findAllBySeason(int season, Integer minPa, Pageable pageable) {
+        Page<KboHitterSeasonStatsProjection> stats = kboHitterStatsRepository.findBySeasonWithPlayerInfo(season, minPa, pageable);
+        return stats.map(this::mapSeasonToDto);
+    }
+
+    private PlayerDto mapSeasonToDto(KboHitterSeasonStatsProjection stat) {
+        PlayerDto dto = PlayerDto.builder()
+                .id(stat.getId())
+                .name(stat.getName())
+                .playerAppearance(stat.getPa() != null ? stat.getPa().longValue() : null)
+                .atBat(stat.getAb() != null ? stat.getAb().longValue() : null)
+                .totalHits(stat.getHit() != null ? stat.getHit().longValue() : null)
+                .homeruns(stat.getHr() != null ? stat.getHr().longValue() : null)
+                .rbi(stat.getRbi())
+                .strikeOut(stat.getSo() != null ? stat.getSo().longValue() : null)
+                .sb(stat.getSb())
+                .build();
+
+        if (stat.getAvg() != null) {
+            try {
+                dto.setBattingAvg(Double.parseDouble(stat.getAvg()));
+            } catch (NumberFormatException ignored) {
+                dto.setBattingAvg(0.0);
+            }
+        }
+        return dto;
     }
 
     public Page<PlayerDto> findAllByPeriod(LocalDate startDate, LocalDate endDate, Pageable pageable) {
