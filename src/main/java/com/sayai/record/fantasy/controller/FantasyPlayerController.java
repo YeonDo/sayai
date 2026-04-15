@@ -7,12 +7,25 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/apis/v1/fantasy/players")
 @RequiredArgsConstructor
 public class FantasyPlayerController {
 
     private final FantasyPlayerService fantasyPlayerService;
+
+    @GetMapping("/pick-owner")
+    public ResponseEntity<?> getPickOwner(
+            @RequestParam("gameSeq") Long gameSeq,
+            @RequestParam("name") String name) {
+        String teamName = fantasyPlayerService.findPickOwner(gameSeq, name);
+        if (teamName == null) {
+            return ResponseEntity.ok(Map.of("teamName", ""));
+        }
+        return ResponseEntity.ok(Map.of("teamName", teamName));
+    }
 
     @PutMapping("/{seq}")
     public ResponseEntity<String> updatePlayer(@PathVariable("seq") Long seq, @RequestBody FantasyPlayerDto dto) {

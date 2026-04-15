@@ -1,7 +1,11 @@
 package com.sayai.record.fantasy.service;
 
 import com.sayai.record.fantasy.dto.FantasyPlayerDto;
+import com.sayai.record.fantasy.entity.DraftPick;
+import com.sayai.record.fantasy.entity.FantasyParticipant;
 import com.sayai.record.fantasy.entity.FantasyPlayer;
+import com.sayai.record.fantasy.repository.DraftPickRepository;
+import com.sayai.record.fantasy.repository.FantasyParticipantRepository;
 import com.sayai.record.fantasy.repository.FantasyPlayerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +25,31 @@ import java.util.List;
 public class FantasyPlayerService {
 
     private final FantasyPlayerRepository fantasyPlayerRepository;
+    private final DraftPickRepository draftPickRepository;
+    private final FantasyParticipantRepository fantasyParticipantRepository;
+
+    @Transactional(readOnly = true)
+    public String findPickOwner(Long gameSeq, String name) {
+        List<FantasyPlayer> players = fantasyPlayerRepository.findByName(name);
+        if (players.isEmpty()) {
+            return null;
+        }
+
+        for (FantasyPlayer player : players) {
+            DraftPick pick = draftPickRepository
+                    .findByFantasyGameSeqAndFantasyPlayerSeq(gameSeq, player.getSeq())
+                    .orElse(null);
+            if (pick == null) continue;
+
+            FantasyParticipant participant = fantasyParticipantRepository
+                    .findByFantasyGameSeqAndPlayerId(gameSeq, pick.getPlayerId())
+                    .orElse(null);
+            if (participant != null) {
+                return participant.getTeamName();
+            }
+        }
+        return null;
+    }
 
     @Transactional
     public void updatePlayer(Long seq, FantasyPlayerDto dto) {
