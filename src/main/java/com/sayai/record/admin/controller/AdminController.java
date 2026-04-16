@@ -30,6 +30,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -147,11 +148,24 @@ public class AdminController {
 
             List<FantasyParticipant> participants = fantasyParticipantRepository.findByFantasyGameSeq(gameSeq);
 
+            List<Long> playerIdsToFetch = participants.stream()
+                    .filter(p -> p.getTeamName() == null || p.getTeamName().trim().isEmpty())
+                    .map(FantasyParticipant::getPlayerId)
+                    .distinct()
+                    .collect(Collectors.toList());
+
+            Map<Long, String> memberNames = new HashMap<>();
+            if (!playerIdsToFetch.isEmpty()) {
+                memberRepository.findAllById(playerIdsToFetch).forEach(m -> {
+                    memberNames.put(m.getPlayerId(), m.getName() != null ? m.getName() : "Unknown");
+                });
+            }
+
             // Map teamName -> playerId. If teamName is null/empty, fallback to member's name.
             Map<String, Long> teamToPlayerId = participants.stream()
                     .collect(Collectors.toMap(
                             p -> p.getTeamName() != null && !p.getTeamName().trim().isEmpty() ? p.getTeamName().trim() :
-                                 memberRepository.findById(p.getPlayerId()).map(Member::getName).orElse("Unknown"),
+                                 memberNames.getOrDefault(p.getPlayerId(), "Unknown"),
                             FantasyParticipant::getPlayerId,
                             (existing, replacement) -> existing
                     ));
