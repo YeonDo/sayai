@@ -261,18 +261,12 @@ public class FantasyRosterService {
         FantasyParticipant requester = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(gameSeq, requesterId).orElse(null);
         String teamName = requester != null && requester.getTeamName() != null ? requester.getTeamName() : "Unknown Team";
 
-        String givingDetails = draftPickRepository.findAllById(givingPlayerSeqs).stream()
-                .map(p -> {
-                    FantasyPlayer fp = fantasyPlayerRepository.findById(p.getFantasyPlayerSeq()).orElse(null);
-                    return fp != null ? String.format("%s (%s, %s)", fp.getName(), fp.getTeam(), fp.getPosition()) : "";
-                })
+        String givingDetails = fantasyPlayerRepository.findAllById(givingPlayerSeqs).stream()
+                .map(fp -> String.format("%s (%s, %s)", fp.getName(), fp.getTeam(), fp.getPosition()))
                 .collect(Collectors.joining(", "));
 
-        String receivingDetails = draftPickRepository.findAllById(receivingPlayerSeqs).stream()
-                .map(p -> {
-                    FantasyPlayer fp = fantasyPlayerRepository.findById(p.getFantasyPlayerSeq()).orElse(null);
-                    return fp != null ? String.format("%s (%s, %s)", fp.getName(), fp.getTeam(), fp.getPosition()) : "";
-                })
+        String receivingDetails = fantasyPlayerRepository.findAllById(receivingPlayerSeqs).stream()
+                .map(fp -> String.format("%s (%s, %s)", fp.getName(), fp.getTeam(), fp.getPosition()))
                 .collect(Collectors.joining(", "));
 
         String body = String.format("%s팀에서 트레이드를 신청했습니다.\n주는 선수: %s\n받는 선수: %s",
