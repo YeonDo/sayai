@@ -4,11 +4,11 @@
 
 ### 타율 (AVG)
 ```
-AVG = hit / pa
-저장: String.format("%.3f", (double) hit / pa)
+AVG = hit / ab
+저장: String.format("%.3f", (double) hit / ab)
 예시: "0.289"
 ```
-- `pa == 0` 이면 `"0.000"` 저장
+- `ab == 0` 이면 `"0.000"` 저장
 
 ### 응답 DTO에서의 타율
 ```java
@@ -16,7 +16,7 @@ AVG = hit / pa
 dto.setBattingAvg(Double.parseDouble(stat.getAvg()));
 
 // 기간 집계 (KboHitStatInterface) → 직접 계산
-double battingAvg = (double) stat.getTotalHits() / stat.getAtBat();
+double battingAvg = (double) stat.getTotalHits() / stat.getPlayerAppearance();
 battingAvg = Math.round(battingAvg * 1000.0) / 1000.0;
 ```
 
