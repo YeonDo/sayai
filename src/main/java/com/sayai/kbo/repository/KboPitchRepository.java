@@ -8,7 +8,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -62,6 +61,21 @@ public interface KboPitchRepository extends JpaRepository<KboPitch, Long> {
     Optional<KboPitchStatInterface> getStatsByPeriodAndId(@Param("startIdx") Long startIdx, @Param("endIdx") Long endIdx, @Param("id") Long id);
 
     List<KboPitch> findByGameIdx(Long gameIdx);
+
+    @Query(value = "SELECT " +
+            " pi.PLAYER_ID as playerId, " +
+            " IFNULL(SUM(pi.inning * 3), 0) as outs, " +
+            " IFNULL(SUM(pi.er), 0) as er, " +
+            " IFNULL(SUM(pi.win), 0) as win, " +
+            " IFNULL(SUM(pi.so), 0) as so, " +
+            " IFNULL(SUM(pi.save), 0) as save, " +
+            " IFNULL(SUM(pi.bb), 0) as bb, " +
+            " IFNULL(SUM(pi.hit), 0) as phit " +
+            "FROM kbo_pitch pi " +
+            "JOIN kbo_game g ON pi.game_idx = g.game_idx " +
+            "WHERE pi.PLAYER_ID = :playerId " +
+            "AND g.game_idx BETWEEN :startIdx AND :endIdx", nativeQuery = true)
+    KboPitcherSeasonStatInterface getSeasonStatsByPlayerId(@Param("playerId") Long playerId, @Param("startIdx") Long startIdx, @Param("endIdx") Long endIdx);
 
     @Query(value = "SELECT " +
             " pi.PLAYER_ID as playerId, " +

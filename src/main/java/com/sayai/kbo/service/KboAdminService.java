@@ -2,12 +2,8 @@ package com.sayai.kbo.service;
 
 import com.sayai.kbo.dto.KboGameUploadRequest;
 import com.sayai.kbo.dto.KboGameUploadResponse;
-import com.sayai.kbo.model.KboGame;
-import com.sayai.kbo.model.KboHit;
-import com.sayai.kbo.model.KboPitch;
-import com.sayai.kbo.repository.KboGameRepository;
-import com.sayai.kbo.repository.KboHitRepository;
-import com.sayai.kbo.repository.KboPitchRepository;
+import com.sayai.kbo.model.*;
+import com.sayai.kbo.repository.*;
 import com.sayai.record.fantasy.entity.FantasyPlayer;
 import com.sayai.record.fantasy.repository.FantasyPlayerRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +19,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +28,8 @@ public class KboAdminService {
     private final KboGameRepository kboGameRepository;
     private final KboHitRepository kboHitRepository;
     private final KboPitchRepository kboPitchRepository;
+    private final KboHitterStatsRepository kboHitterStatsRepository;
+    private final KboPitcherStatsRepository kboPitcherStatsRepository;
     private final FantasyPlayerRepository fantasyPlayerRepository;
 
     private String getTeamCode(String teamName) {
@@ -120,11 +119,126 @@ public class KboAdminService {
             }
         }
 
+        int season = (int) (newGameId / 10_000_000_000L);
+        updateHitterStats(allHitters, season);
+        updatePitcherStats(allPitchers, season);
+
         return KboGameUploadResponse.builder()
                 .game(game)
                 .hitters(allHitters)
                 .pitchers(allPitchers)
                 .build();
+    }
+
+    private void updateHitterStats(List<KboHit> hitters, int season) {
+        long startIdx = (long) season * 10_000_000_000L;
+        long endIdx = (long) (season + 1) * 10_000_000_000L - 1;
+
+        for (KboHit hit : hitters) {
+            Long playerId = hit.getPlayerId();
+            Optional<KboHitterStats> existing = kboHitterStatsRepository.findByPlayerIdAndSeason(playerId, season);
+
+            if (existing.isPresent()) {
+                KboHitterStats stats = existing.get();
+                int newAb = stats.getAb() + hit.getAb().intValue();
+                int newPa = stats.getPa() + hit.getPa().intValue();
+                int newHit = stats.getHit() + hit.getHit().intValue();
+                int newHr = stats.getHr() + hit.getHr().intValue();
+                int newRbi = stats.getRbi() + hit.getRbi().intValue();
+                int newSo = stats.getSo() + hit.getSo().intValue();
+                int newSb = stats.getSb() + hit.getSb().intValue();
+                String newAvg = calcAvg(newHit, newPa);
+
+                kboHitterStatsRepository.save(KboHitterStats.builder()
+                        .playerId(playerId)
+                        .season(season)
+                        .ab(newAb).pa(newPa).hit(newHit).hr(newHr)
+                        .rbi(newRbi).so(newSo).sb(newSb).avg(newAvg)
+                        .build());
+            } else {
+                KboHitterSeasonStatInterface seasonStats = kboHitRepository.getSeasonStatsByPlayerId(playerId, startIdx, endIdx);
+                int totalAb = seasonStats != null ? seasonStats.getAb().intValue() : 0;
+                int totalPa = seasonStats != null ? seasonStats.getPa().intValue() : 0;
+                int totalHit = seasonStats != null ? seasonStats.getHit().intValue() : 0;
+                int totalHr = seasonStats != null ? seasonStats.getHr().intValue() : 0;
+                int totalRbi = seasonStats != null ? seasonStats.getRbi().intValue() : 0;
+                int totalSo = seasonStats != null ? seasonStats.getSo().intValue() : 0;
+                int totalSb = seasonStats != null ? seasonStats.getSb().intValue() : 0;
+                String avgStr = calcAvg(totalHit, totalPa);
+
+                kboHitterStatsRepository.save(KboHitterStats.builder()
+                        .playerId(playerId)
+                        .season(season)
+                        .ab(totalAb).pa(totalPa).hit(totalHit).hr(totalHr)
+                        .rbi(totalRbi).so(totalSo).sb(totalSb).avg(avgStr)
+                        .build());
+            }
+        }
+    }
+
+    private void updatePitcherStats(List<KboPitch> pitchers, int season) {
+        long startIdx = (long) season * 10_000_000_000L;
+        long endIdx = (long) (season + 1) * 10_000_000_000L - 1;
+
+        for (KboPitch pitch : pitchers) {
+            Long playerId = pitch.getPlayerId();
+            Optional<KboPitcherStats> existing = kboPitcherStatsRepository.findByPlayerIdAndSeason(playerId, season);
+
+            if (existing.isPresent()) {
+                KboPitcherStats stats = existing.get();
+                int newOuts = stats.getOuts() + (int) (pitch.getInning() * 3);
+                int newEr = stats.getEr() + pitch.getEr().intValue();
+                int newWin = stats.getWin() + pitch.getWin().intValue();
+                int newSo = stats.getSo() + pitch.getSo().intValue();
+                int newSave = stats.getSave() + pitch.getSave().intValue();
+                int newBb = stats.getBb() + pitch.getBb().intValue();
+                int newPhit = stats.getPhit() + pitch.getHit().intValue();
+                String newEra = calcEra(newEr, newOuts);
+                String newWhip = calcWhip(newBb, newPhit, newOuts);
+
+                kboPitcherStatsRepository.save(KboPitcherStats.builder()
+                        .playerId(playerId)
+                        .season(season)
+                        .outs(newOuts).er(newEr).win(newWin).so(newSo)
+                        .save(newSave).bb(newBb).phit(newPhit)
+                        .era(newEra).whip(newWhip)
+                        .build());
+            } else {
+                KboPitcherSeasonStatInterface seasonStats = kboPitchRepository.getSeasonStatsByPlayerId(playerId, startIdx, endIdx);
+                int totalOuts = seasonStats != null ? seasonStats.getOuts().intValue() : 0;
+                int totalEr = seasonStats != null ? seasonStats.getEr().intValue() : 0;
+                int totalWin = seasonStats != null ? seasonStats.getWin().intValue() : 0;
+                int totalSo = seasonStats != null ? seasonStats.getSo().intValue() : 0;
+                int totalSave = seasonStats != null ? seasonStats.getSave().intValue() : 0;
+                int totalBb = seasonStats != null ? seasonStats.getBb().intValue() : 0;
+                int totalPhit = seasonStats != null ? seasonStats.getPhit().intValue() : 0;
+                String eraStr = calcEra(totalEr, totalOuts);
+                String whipStr = calcWhip(totalBb, totalPhit, totalOuts);
+
+                kboPitcherStatsRepository.save(KboPitcherStats.builder()
+                        .playerId(playerId)
+                        .season(season)
+                        .outs(totalOuts).er(totalEr).win(totalWin).so(totalSo)
+                        .save(totalSave).bb(totalBb).phit(totalPhit)
+                        .era(eraStr).whip(whipStr)
+                        .build());
+            }
+        }
+    }
+
+    private String calcAvg(int hit, int pa) {
+        if (pa == 0) return "0.000";
+        return String.format("%.3f", (double) hit / pa);
+    }
+
+    private String calcEra(int er, int outs) {
+        if (outs == 0) return "0.00";
+        return String.format("%.2f", (double) er / outs * 27);
+    }
+
+    private String calcWhip(int bb, int phit, int outs) {
+        if (outs == 0) return "0.00";
+        return String.format("%.2f", (double) (bb + phit) / outs * 3);
     }
 
     private void processSheet(Sheet sheet, KboGame game, String teamName, List<KboHit> hittersOut, List<KboPitch> pitchersOut) {

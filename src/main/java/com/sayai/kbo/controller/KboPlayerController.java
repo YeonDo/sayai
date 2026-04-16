@@ -10,6 +10,7 @@ import com.sayai.record.util.Utils;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,20 +36,64 @@ public class KboPlayerController {
 
     @GetMapping("/hitter/all")
     @ResponseBody
-    public Page<PlayerDto> getAllHitter(@RequestParam("start") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
-                                        @RequestParam("end") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
-                                        @RequestParam(value = "page", defaultValue = "0") int page,
-                                        @RequestParam(value = "size", defaultValue = "20") int size) {
-        return kboHitService.findAllByPeriod(startDate, endDate, PageRequest.of(page, size));
+    public Page<PlayerDto> getAllHitter(
+            @RequestParam(required = false) Integer season,
+            @RequestParam(value = "start", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
+            @RequestParam(value = "end", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
+            @RequestParam(value = "sort", required = false) String sort,
+            @RequestParam(value = "limit", required = false) Integer limit,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "20") int size) {
+
+        if (season != null) {
+            PageRequest pageable = buildPageable(page, size, sort);
+            return kboHitService.findAllBySeason(season, limit, pageable);
+        } else if (startDate != null && endDate != null) {
+            return kboHitService.findAllByPeriod(startDate, endDate, PageRequest.of(page, size));
+        } else {
+            throw new IllegalArgumentException("season 또는 start+end 파라미터가 필요합니다.");
+        }
     }
 
     @GetMapping("/pitcher/all")
     @ResponseBody
-    public Page<PitcherDto> getAllPitcher(@RequestParam("start") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
-                                          @RequestParam("end") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
-                                          @RequestParam(value = "page", defaultValue = "0") int page,
-                                          @RequestParam(value = "size", defaultValue = "20") int size) {
-        return kboPitchService.select(startDate, endDate, PageRequest.of(page, size));
+    public Page<PitcherDto> getAllPitcher(
+            @RequestParam(required = false) Integer season,
+            @RequestParam(value = "start", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
+            @RequestParam(value = "end", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
+            @RequestParam(value = "sort", required = false) String sort,
+            @RequestParam(value = "limit", required = false) Integer limit,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "20") int size) {
+
+        if (season != null) {
+            // limit은 이닝(outs/3) 기준 → minOuts = limit * 3
+            Integer minOuts = limit != null ? limit * 3 : null;
+            PageRequest pageable = buildPageable(page, size, sort);
+            return kboPitchService.selectBySeason(season, minOuts, pageable);
+        } else if (startDate != null && endDate != null) {
+            return kboPitchService.select(startDate, endDate, PageRequest.of(page, size));
+        } else {
+            throw new IllegalArgumentException("season 또는 start+end 파라미터가 필요합니다.");
+        }
+    }
+
+    /**
+     * sort 파라미터를 파싱하여 PageRequest를 생성합니다.
+     * 형식: {field}_{direction} (예: hr_desc, pa_asc)
+     */
+    private PageRequest buildPageable(int page, int size, String sort) {
+        if (sort == null || sort.isBlank()) {
+            return PageRequest.of(page, size);
+        }
+        int lastUnderscore = sort.lastIndexOf('_');
+        if (lastUnderscore < 1) {
+            return PageRequest.of(page, size);
+        }
+        String field = sort.substring(0, lastUnderscore);
+        String direction = sort.substring(lastUnderscore + 1);
+        Sort.Direction sortDirection = "asc".equalsIgnoreCase(direction) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        return PageRequest.of(page, size, Sort.by(sortDirection, field));
     }
 
     @GetMapping("/hitter/{playerId}")

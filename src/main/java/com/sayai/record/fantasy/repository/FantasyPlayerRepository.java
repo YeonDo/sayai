@@ -29,4 +29,6 @@ public interface FantasyPlayerRepository extends JpaRepository<FantasyPlayer, Lo
 
     @Query("SELECT p FROM FantasyPlayer p WHERE p.isActive = 0")
     List<FantasyPlayer> findAllActivePlayers();
+
+    List<FantasyPlayer> findByName(String name);
 }
