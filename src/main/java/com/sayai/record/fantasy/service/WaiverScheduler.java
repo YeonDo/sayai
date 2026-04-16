@@ -40,6 +40,7 @@ public class WaiverScheduler {
 
         int processed = 0;
         java.util.Map<Long, Integer> maxOrdersByGameSeq = new java.util.HashMap<>();
+        java.util.Map<Long, java.util.Map<Long, FantasyWaiverOrder>> cachedWaiverOrders = new java.util.HashMap<>();
 
         for (RosterTransaction tx : pendingWaivers) {
             // Only process if the waiver was requested at least 30 minutes ago
@@ -50,15 +51,24 @@ public class WaiverScheduler {
                 if (!claims.isEmpty()) {
                     Long gameSeq = tx.getFantasyGameSeq();
 
+                    // Fetch all orders for this gameSeq and cache them
+                    java.util.Map<Long, FantasyWaiverOrder> gameOrders = cachedWaiverOrders.computeIfAbsent(gameSeq, key -> {
+                        List<FantasyWaiverOrder> orders = waiverOrderRepository.findByGameSeqOrderByOrderNumAsc(key);
+                        java.util.Map<Long, FantasyWaiverOrder> map = new java.util.HashMap<>();
+                        for (FantasyWaiverOrder order : orders) {
+                            map.put(order.getPlayerId(), order);
+                        }
+                        return map;
+                    });
+
                     // Find the claimer with the lowest orderNum (highest priority)
                     Long bestClaimerId = null;
                     int minOrder = Integer.MAX_VALUE;
                     FantasyWaiverOrder bestClaimerOrder = null;
 
                     for (FantasyWaiverClaim claim : claims) {
-                        Optional<FantasyWaiverOrder> orderOpt = waiverOrderRepository.findByGameSeqAndPlayerId(gameSeq, claim.getClaimPlayerId());
-                        if (orderOpt.isPresent()) {
-                            FantasyWaiverOrder order = orderOpt.get();
+                        FantasyWaiverOrder order = gameOrders.get(claim.getClaimPlayerId());
+                        if (order != null) {
                             if (order.getOrderNum() < minOrder) {
                                 minOrder = order.getOrderNum();
                                 bestClaimerId = claim.getClaimPlayerId();

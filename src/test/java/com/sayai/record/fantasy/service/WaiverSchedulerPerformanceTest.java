@@ -51,6 +51,7 @@ public class WaiverSchedulerPerformanceTest {
     public void benchmarkProcessWaivers() throws Exception {
         int numTransactions = 1000;
         List<RosterTransaction> pendingWaivers = new ArrayList<>();
+        List<FantasyWaiverOrder> mockOrders = new ArrayList<>();
 
         for (long i = 1; i <= numTransactions; i++) {
             RosterTransaction tx = instantiate(RosterTransaction.class);
@@ -66,8 +67,12 @@ public class WaiverSchedulerPerformanceTest {
 
             FantasyWaiverOrder order = instantiate(FantasyWaiverOrder.class);
             ReflectionTestUtils.setField(order, "orderNum", (int) i);
-            when(waiverOrderRepository.findByGameSeqAndPlayerId(1L, i)).thenReturn(Optional.of(order));
+            ReflectionTestUtils.setField(order, "playerId", i);
+            ReflectionTestUtils.setField(order, "gameSeq", 1L);
+            mockOrders.add(order);
         }
+
+        when(waiverOrderRepository.findByGameSeqOrderByOrderNumAsc(1L)).thenReturn(mockOrders);
 
         when(transactionRepository.findByStatusAndType(
                 RosterTransaction.TransactionStatus.REQUESTED,
