@@ -186,7 +186,7 @@ public class KboAdminService {
 
             if (existing.isPresent()) {
                 KboPitcherStats stats = existing.get();
-                int newOuts = stats.getOuts() + (int) (pitch.getInning() * 3);
+                int newOuts = stats.getOuts() + pitch.getInning().intValue();
                 int newEr = stats.getEr() + pitch.getEr().intValue();
                 int newWin = stats.getWin() + pitch.getWin().intValue();
                 int newSo = stats.getSo() + pitch.getSo().intValue();

@@ -64,7 +64,7 @@ public interface KboPitchRepository extends JpaRepository<KboPitch, Long> {
 
     @Query(value = "SELECT " +
             " pi.PLAYER_ID as playerId, " +
-            " IFNULL(SUM(pi.inning * 3), 0) as outs, " +
+            " IFNULL(SUM(pi.inning), 0) as outs, " +
             " IFNULL(SUM(pi.er), 0) as er, " +
             " IFNULL(SUM(pi.win), 0) as win, " +
             " IFNULL(SUM(pi.so), 0) as so, " +
