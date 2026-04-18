@@ -16,7 +16,7 @@ public interface KboPitcherStatsRepository extends JpaRepository<KboPitcherStats
 
     Optional<KboPitcherStats> findByPlayerIdAndSeason(Long playerId, Integer season);
 
-    @Query(value = "SELECT s.player_id as id, p.name as name, " +
+    @Query(value = "SELECT s.player_id as id, p.name as name, p.team as team, " +
             "s.outs as outs, s.er as er, s.era as era, s.win as win, " +
             "s.so as so, s.save as save, s.bb as bb, s.phit as phit, s.whip as whip " +
             "FROM kbo_pitcher_stats s " +

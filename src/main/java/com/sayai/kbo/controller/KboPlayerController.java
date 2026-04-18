@@ -24,15 +24,8 @@ import java.util.List;
 @RequestMapping("/apis/v1/kboplayer")
 public class KboPlayerController {
 
-    private final PlayerService playerService;
     private final KboPitchService kboPitchService;
     private final KboHitService kboHitService;
-
-    @GetMapping("/{id}")
-    @ResponseBody
-    public PlayerRecord getPlayer(@PathVariable("id") Long id) {
-        return playerService.getPlayer(id);
-    }
 
     @GetMapping("/hitter/all")
     @ResponseBody

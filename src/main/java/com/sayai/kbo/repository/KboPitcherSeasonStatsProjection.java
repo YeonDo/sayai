@@ -3,6 +3,7 @@ package com.sayai.kbo.repository;
 public interface KboPitcherSeasonStatsProjection {
     Long getId();
     String getName();
+    String getTeam();
     Integer getOuts();
     Integer getEr();
     String getEra();

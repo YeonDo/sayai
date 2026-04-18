@@ -52,6 +52,8 @@ public class KboPitchService {
                 .selfLossScore(stat.getEr() != null ? stat.getEr().longValue() : null)
                 .build();
 
+        dto.setTeam(stat.getTeam());
+
         if (stat.getOuts() != null) {
             double inn = stat.getOuts() / 3 + (stat.getOuts() % 3) * 0.1;
             dto.setInnings(inn);
@@ -106,6 +108,8 @@ public class KboPitchService {
                 .selfLossScore(stat.getSelfLossScore())
                 .stOut(stat.getStOut())
                 .build();
+
+        dto.setTeam(stat.getTeam());
 
         Double inn = stat.getInning() / 3 + (stat.getInning() % 3) * 0.1;
         dto.setInnings(inn);

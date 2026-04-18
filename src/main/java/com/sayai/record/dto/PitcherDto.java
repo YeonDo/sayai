@@ -15,6 +15,7 @@ public class PitcherDto {
     private Long id;
     private Long backNo;
     private String name;
+    private String team;
     private Long wins;
     private Long loses;
     private Long saves;

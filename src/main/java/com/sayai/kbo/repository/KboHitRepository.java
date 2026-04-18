@@ -15,7 +15,7 @@ import java.util.Optional;
 public interface KboHitRepository extends JpaRepository<KboHit, Long> {
 
     @Query(value = "SELECT " +
-            " p.seq as id, null as backNo, p.name as name, " +
+            " p.seq as id, null as backNo, p.name as name, p.team as team, " +
             " COUNT(DISTINCT h.game_idx) as totalGames, " +
             " IFNULL(SUM(h.pa), 0) as playerAppearance, " +
             " IFNULL(SUM(h.ab), 0) as atBat, " +
@@ -37,7 +37,7 @@ public interface KboHitRepository extends JpaRepository<KboHit, Long> {
     Page<KboHitStatInterface> getPlayerByPeriod(@Param("startIdx") Long startIdx, @Param("endIdx") Long endIdx, Pageable pageable);
 
     @Query(value = "SELECT " +
-            " p.seq as id, null as backNo, p.name as name, " +
+            " p.seq as id, null as backNo, p.name as name, p.team as team, " +
             " COUNT(DISTINCT h.game_idx) as totalGames, " +
             " IFNULL(SUM(h.pa), 0) as playerAppearance, " +
             " IFNULL(SUM(h.ab), 0) as atBat, " +

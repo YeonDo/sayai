@@ -15,6 +15,7 @@ public class PlayerDto {
     private Long id;
     private Long backNo;
     private String name;
+    private String team;
     private Long totalGames;
     private Double battingAvg;
     private Long playerAppearance;

@@ -4,6 +4,7 @@ public interface KboHitStatInterface {
     Long getId();
     Long getBackNo();
     String getName();
+    String getTeam();
     Long getTotalGames();
     Long getPlayerAppearance(); // pa
     Long getAtBat(); // ab

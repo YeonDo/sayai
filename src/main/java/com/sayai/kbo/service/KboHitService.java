@@ -64,6 +64,8 @@ public class KboHitService {
                 .sb(stat.getSb())
                 .build();
 
+        dto.setTeam(stat.getTeam());
+
         if (stat.getAvg() != null) {
             try {
                 dto.setBattingAvg(Double.parseDouble(stat.getAvg()));
@@ -96,6 +98,8 @@ public class KboHitService {
                 .runs(stat.getRuns())
                 .sb(stat.getSb())
                 .build();
+
+        dto.setTeam(stat.getTeam());
 
         double battingAvg = 0.0;
         if (stat.getAtBat() != null && stat.getAtBat() > 0) {

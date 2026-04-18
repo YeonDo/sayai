@@ -15,7 +15,7 @@ import java.util.Optional;
 public interface KboPitchRepository extends JpaRepository<KboPitch, Long> {
 
     @Query(value = "SELECT " +
-            " p.seq as id, null as backNo, p.name as name, " +
+            " p.seq as id, null as backNo, p.name as name, p.team as team, " +
             " IFNULL(SUM(pi.win), 0) as wins, " +
             " IFNULL(SUM(pi.lose), 0) as loses, " +
             " IFNULL(SUM(pi.save), 0) as saves, " +
@@ -39,7 +39,7 @@ public interface KboPitchRepository extends JpaRepository<KboPitch, Long> {
     Page<KboPitchStatInterface> getStatsByPeriod(@Param("startIdx") Long startIdx, @Param("endIdx") Long endIdx, Pageable pageable);
 
     @Query(value = "SELECT " +
-            " p.seq as id, null as backNo, p.name as name, " +
+            " p.seq as id, null as backNo, p.name as name, p.team as team, " +
             " IFNULL(SUM(pi.win), 0) as wins, " +
             " IFNULL(SUM(pi.lose), 0) as loses, " +
             " IFNULL(SUM(pi.save), 0) as saves, " +
