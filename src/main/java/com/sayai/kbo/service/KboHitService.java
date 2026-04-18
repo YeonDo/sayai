@@ -98,8 +98,8 @@ public class KboHitService {
                 .build();
 
         double battingAvg = 0.0;
-        if (stat.getAtBat() != null && stat.getPlayerAppearance() > 0) {
-            battingAvg = (double) stat.getTotalHits() / stat.getPlayerAppearance();
+        if (stat.getAtBat() != null && stat.getAtBat() > 0) {
+            battingAvg = (double) stat.getTotalHits() / stat.getAtBat();
             battingAvg = Math.round(battingAvg * 1000.0) / 1000.0;
         }
         dto.setBattingAvg(battingAvg);

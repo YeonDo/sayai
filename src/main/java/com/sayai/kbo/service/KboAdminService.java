@@ -164,7 +164,7 @@ public class KboAdminService {
                 int totalRbi = seasonStats != null ? seasonStats.getRbi().intValue() : 0;
                 int totalSo = seasonStats != null ? seasonStats.getSo().intValue() : 0;
                 int totalSb = seasonStats != null ? seasonStats.getSb().intValue() : 0;
-                String avgStr = calcAvg(totalHit, totalPa);
+                String avgStr = calcAvg(totalHit, totalAb);
 
                 kboHitterStatsRepository.save(KboHitterStats.builder()
                         .playerId(playerId)
@@ -226,9 +226,9 @@ public class KboAdminService {
         }
     }
 
-    private String calcAvg(int hit, int pa) {
-        if (pa == 0) return "0.000";
-        return String.format("%.3f", (double) hit / pa);
+    private String calcAvg(int hit, int ab) {
+        if (ab == 0) return "0.000";
+        return String.format("%.3f", (double) hit / ab);
     }
 
     private String calcEra(int er, int outs) {
