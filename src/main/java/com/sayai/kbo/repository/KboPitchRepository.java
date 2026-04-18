@@ -96,4 +96,26 @@ public interface KboPitchRepository extends JpaRepository<KboPitch, Long> {
             "AND pi.PLAYER_ID IN (:playerIds) " +
             "GROUP BY pi.PLAYER_ID", nativeQuery = true)
     List<KboParticipantStatsInterface> getAggregatedPitchStats(@Param("startIdx") Long startIdx, @Param("endIdx") Long endIdx, @Param("playerIds") List<Long> playerIds);
+
+    @Query(value = "SELECT " +
+            " SUBSTRING(CAST(g.game_idx AS CHAR), 1, 8) as gameDate, " +
+            " CASE WHEN g.home = p.team THEN g.away ELSE g.home END as opponent, " +
+            " pi.inning as inning, pi.win as win, pi.lose as lose, pi.save as save, " +
+            " pi.er as er, pi.bb as bb, pi.hbp as hbp, pi.hit as pHit, pi.so as so " +
+            "FROM kbo_pitch pi " +
+            "JOIN ft_players p ON pi.PLAYER_ID = p.seq " +
+            "JOIN kbo_game g ON pi.game_idx = g.game_idx " +
+            "WHERE pi.PLAYER_ID = :playerId " +
+            "AND g.game_idx BETWEEN :startIdx AND :endIdx " +
+            "ORDER BY g.game_idx DESC",
+            countQuery = "SELECT COUNT(*) FROM kbo_pitch pi " +
+            "JOIN kbo_game g ON pi.game_idx = g.game_idx " +
+            "WHERE pi.PLAYER_ID = :playerId " +
+            "AND g.game_idx BETWEEN :startIdx AND :endIdx",
+            nativeQuery = true)
+    Page<KboPitcherDailyStatInterface> getDailyStatsByPlayerId(
+            @Param("playerId") Long playerId,
+            @Param("startIdx") Long startIdx,
+            @Param("endIdx") Long endIdx,
+            Pageable pageable);
 }

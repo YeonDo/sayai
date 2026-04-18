@@ -1,8 +1,11 @@
 package com.sayai.kbo.service;
 
+import com.sayai.kbo.dto.HitterDailyStatDto;
+import com.sayai.kbo.dto.HitterDetailResponse;
 import com.sayai.record.dto.PlayerDto;
 import com.sayai.kbo.repository.KboHitRepository;
 import com.sayai.kbo.repository.KboHitStatInterface;
+import com.sayai.kbo.repository.KboHitterDailyStatInterface;
 import com.sayai.kbo.repository.KboHitterSeasonStatsProjection;
 import com.sayai.kbo.repository.KboHitterStatsRepository;
 import lombok.AllArgsConstructor;
@@ -10,6 +13,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -32,6 +38,16 @@ public class KboHitService {
         if (date == null) return 99999999999999L;
         String formatted = date.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         return Long.parseLong(formatted + "239999"); // End of the day
+    }
+
+    public HitterDetailResponse findOneWithDailyStats(LocalDate startDate, LocalDate endDate, Long id, Pageable pageable) {
+        PlayerDto summary = findOne(startDate, endDate, id);
+        Long startIdx = toStartIdx(startDate);
+        Long endIdx = toEndIdx(endDate);
+        Page<HitterDailyStatDto> dailyStats = kboHitRepository
+                .getDailyStatsByPlayerId(id, startIdx, endIdx, pageable)
+                .map(this::mapDailyToDto);
+        return new HitterDetailResponse(summary, dailyStats);
     }
 
     public PlayerDto findOne(LocalDate startDate, LocalDate endDate, Long id) {
@@ -122,5 +138,25 @@ public class KboHitService {
         dto.setSacFly(null);
 
         return dto;
+    }
+
+    private HitterDailyStatDto mapDailyToDto(KboHitterDailyStatInterface stat) {
+        double battingAvg = 0.0;
+        if (stat.getAb() != null && stat.getAb() > 0) {
+            battingAvg = Math.round((double) stat.getHit() / stat.getAb() * 1000.0) / 1000.0;
+        }
+        return HitterDailyStatDto.builder()
+                .gameDate(stat.getGameDate())
+                .opponent(stat.getOpponent())
+                .pa(stat.getPa())
+                .ab(stat.getAb())
+                .hit(stat.getHit())
+                .hr(stat.getHr())
+                .rbi(stat.getRbi())
+                .run(stat.getRun())
+                .sb(stat.getSb())
+                .so(stat.getSo())
+                .battingAvg(battingAvg)
+                .build();
     }
 }

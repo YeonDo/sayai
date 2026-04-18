@@ -1,5 +1,7 @@
 package com.sayai.kbo.controller;
 
+import com.sayai.kbo.dto.HitterDetailResponse;
+import com.sayai.kbo.dto.PitcherDetailResponse;
 import com.sayai.record.dto.PitcherDto;
 import com.sayai.record.dto.PlayerDto;
 import com.sayai.record.dto.PlayerRecord;
@@ -11,6 +13,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
@@ -91,18 +94,22 @@ public class KboPlayerController {
 
     @GetMapping("/hitter/{playerId}")
     @ResponseBody
-    public PlayerDto getHitter(@PathVariable("playerId") Long playerId,
-                               @RequestParam("start") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
-                               @RequestParam("end") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate) {
-        return kboHitService.findOne(startDate, endDate, playerId);
+    public HitterDetailResponse getHitter(@PathVariable("playerId") Long playerId,
+                                          @RequestParam("start") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
+                                          @RequestParam("end") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
+                                          @RequestParam(value = "page", defaultValue = "0") int page,
+                                          @RequestParam(value = "size", defaultValue = "10") int size) {
+        return kboHitService.findOneWithDailyStats(startDate, endDate, playerId, PageRequest.of(page, size));
     }
 
     @GetMapping("/pitcher/{playerId}")
     @ResponseBody
-    public PitcherDto getPitcher(@PathVariable("playerId") Long playerId,
-                                 @RequestParam("start") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
-                                 @RequestParam("end") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate) {
-        return kboPitchService.selectOne(startDate, endDate, playerId);
+    public PitcherDetailResponse getPitcher(@PathVariable("playerId") Long playerId,
+                                            @RequestParam("start") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
+                                            @RequestParam("end") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
+                                            @RequestParam(value = "page", defaultValue = "0") int page,
+                                            @RequestParam(value = "size", defaultValue = "10") int size) {
+        return kboPitchService.selectOneWithDailyStats(startDate, endDate, playerId, PageRequest.of(page, size));
     }
 
     @GetMapping("/hitter/{playerId}/period")

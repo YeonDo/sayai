@@ -152,6 +152,8 @@
 
 **Response** `200` — `Page<PlayerDto>`
 
+> `team` 필드 포함. `ft_players`에 등록되지 않은 선수는 `null`.
+
 **Error Cases**
 | 상황 | 상태코드 | 메시지 |
 |------|---------|--------|
@@ -162,20 +164,128 @@
 ### GET `/apis/v1/kboplayer/pitcher/all`
 전체 투수 목록 조회 (페이징). 파라미터 구조는 `/hitter/all`과 동일.
 
+> `team` 필드 포함. `ft_players`에 등록되지 않은 선수는 `null`.
+
 ---
 
 ### GET `/apis/v1/kboplayer/hitter/{playerId}`
-특정 타자 성적 조회.
+특정 타자 기간 합산 성적 + 일자별 성적 목록 조회.
 
 **Path Parameters**: `playerId`  
-**Query Parameters**: `start` (필수), `end` (필수)
+**Query Parameters**
+| 파라미터 | 필수 | 설명 |
+|---------|------|------|
+| `start` | 필수 | 시작 날짜 (`yyyy-MM-dd`) |
+| `end` | 필수 | 종료 날짜 (`yyyy-MM-dd`) |
+| `page` | 선택 | 일자별 성적 페이지 번호 (기본값: `0`) |
+| `size` | 선택 | 일자별 성적 페이지 크기 (기본값: `10`) |
 
-**Response** `200` — `PlayerDto`
+**Response** `200` — `HitterDetailResponse`
+```json
+{
+  "summary": {
+    "id": 123,
+    "name": "홍길동",
+    "team": "KIA",
+    "totalGames": 50,
+    "battingAvg": 0.312,
+    "playerAppearance": 210,
+    "atBat": 185,
+    "totalHits": 58,
+    "homeruns": 10,
+    "rbi": 42,
+    "runs": 30,
+    "sb": 5,
+    "strikeOut": 40
+  },
+  "dailyStats": {
+    "content": [
+      {
+        "gameDate": "20240418",
+        "opponent": "LG",
+        "pa": 4,
+        "ab": 3,
+        "hit": 2,
+        "hr": 1,
+        "rbi": 3,
+        "run": 2,
+        "sb": 0,
+        "so": 1,
+        "battingAvg": 0.667
+      }
+    ],
+    "totalElements": 50,
+    "totalPages": 5,
+    "number": 0,
+    "size": 10
+  }
+}
+```
+
+> `dailyStats.content`는 최근 날짜 순(내림차순) 정렬.  
+> `team`은 `ft_players`에 등록된 현재 소속팀. 미등록 선수는 `null`.
 
 ---
 
 ### GET `/apis/v1/kboplayer/pitcher/{playerId}`
-특정 투수 성적 조회. 파라미터 구조는 `/hitter/{playerId}`와 동일.
+특정 투수 기간 합산 성적 + 일자별 성적 목록 조회.
+
+**Path Parameters**: `playerId`  
+**Query Parameters**
+| 파라미터 | 필수 | 설명 |
+|---------|------|------|
+| `start` | 필수 | 시작 날짜 (`yyyy-MM-dd`) |
+| `end` | 필수 | 종료 날짜 (`yyyy-MM-dd`) |
+| `page` | 선택 | 일자별 성적 페이지 번호 (기본값: `0`) |
+| `size` | 선택 | 일자별 성적 페이지 크기 (기본값: `10`) |
+
+**Response** `200` — `PitcherDetailResponse`
+```json
+{
+  "summary": {
+    "id": 456,
+    "name": "김투수",
+    "team": "두산",
+    "innings": 120.2,
+    "wins": 10,
+    "loses": 5,
+    "saves": 0,
+    "era": 3.45,
+    "whip": 1.12,
+    "stOut": 130,
+    "baseOnBall": 40,
+    "pHit": 105,
+    "selfLossScore": 46
+  },
+  "dailyStats": {
+    "content": [
+      {
+        "gameDate": "20240418",
+        "opponent": "삼성",
+        "innings": 6.0,
+        "win": 1,
+        "lose": 0,
+        "save": 0,
+        "er": 2,
+        "bb": 3,
+        "hbp": 0,
+        "pHit": 7,
+        "so": 8,
+        "era": 3.0
+      }
+    ],
+    "totalElements": 20,
+    "totalPages": 2,
+    "number": 0,
+    "size": 10
+  }
+}
+```
+
+> `dailyStats.content`는 최근 날짜 순(내림차순) 정렬.  
+> `innings`는 `이닝수/3 + (나머지아웃수)*0.1` 포맷 (예: 6이닝 1/3 → `6.1`).  
+> `era`는 해당 등판 단독 ERA.  
+> `team`은 `ft_players`에 등록된 현재 소속팀. 미등록 선수는 `null`.
 
 ---
 

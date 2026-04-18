@@ -89,4 +89,26 @@ public interface KboHitRepository extends JpaRepository<KboHit, Long> {
             "WHERE h.PLAYER_ID = :playerId " +
             "AND g.game_idx BETWEEN :startIdx AND :endIdx", nativeQuery = true)
     KboHitterSeasonStatInterface getSeasonStatsByPlayerId(@Param("playerId") Long playerId, @Param("startIdx") Long startIdx, @Param("endIdx") Long endIdx);
+
+    @Query(value = "SELECT " +
+            " SUBSTRING(CAST(g.game_idx AS CHAR), 1, 8) as gameDate, " +
+            " CASE WHEN g.home = p.team THEN g.away ELSE g.home END as opponent, " +
+            " h.pa as pa, h.ab as ab, h.hit as hit, h.hr as hr, " +
+            " h.rbi as rbi, h.run as run, h.sb as sb, h.so as so " +
+            "FROM kbo_hit h " +
+            "JOIN ft_players p ON h.PLAYER_ID = p.seq " +
+            "JOIN kbo_game g ON h.game_idx = g.game_idx " +
+            "WHERE h.PLAYER_ID = :playerId " +
+            "AND g.game_idx BETWEEN :startIdx AND :endIdx " +
+            "ORDER BY g.game_idx DESC",
+            countQuery = "SELECT COUNT(*) FROM kbo_hit h " +
+            "JOIN kbo_game g ON h.game_idx = g.game_idx " +
+            "WHERE h.PLAYER_ID = :playerId " +
+            "AND g.game_idx BETWEEN :startIdx AND :endIdx",
+            nativeQuery = true)
+    Page<KboHitterDailyStatInterface> getDailyStatsByPlayerId(
+            @Param("playerId") Long playerId,
+            @Param("startIdx") Long startIdx,
+            @Param("endIdx") Long endIdx,
+            Pageable pageable);
 }

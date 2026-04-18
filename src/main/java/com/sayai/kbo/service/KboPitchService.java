@@ -1,8 +1,11 @@
 package com.sayai.kbo.service;
 
+import com.sayai.kbo.dto.PitcherDailyStatDto;
+import com.sayai.kbo.dto.PitcherDetailResponse;
 import com.sayai.record.dto.PitcherDto;
 import com.sayai.kbo.repository.KboPitchRepository;
 import com.sayai.kbo.repository.KboPitchStatInterface;
+import com.sayai.kbo.repository.KboPitcherDailyStatInterface;
 import com.sayai.kbo.repository.KboPitcherSeasonStatsProjection;
 import com.sayai.kbo.repository.KboPitcherStatsRepository;
 import lombok.AllArgsConstructor;
@@ -10,6 +13,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -82,6 +88,16 @@ public class KboPitchService {
         return stats.map(this::mapToDto);
     }
 
+    public PitcherDetailResponse selectOneWithDailyStats(LocalDate startDate, LocalDate endDate, Long id, Pageable pageable) {
+        PitcherDto summary = selectOne(startDate, endDate, id);
+        Long startIdx = toStartIdx(startDate);
+        Long endIdx = toEndIdx(endDate);
+        Page<PitcherDailyStatDto> dailyStats = kboPitchRepository
+                .getDailyStatsByPlayerId(id, startIdx, endIdx, pageable)
+                .map(this::mapDailyToDto);
+        return new PitcherDetailResponse(summary, dailyStats);
+    }
+
     public PitcherDto selectOne(LocalDate startDate, LocalDate endDate, Long id) {
         try {
             Long startIdx = toStartIdx(startDate);
@@ -141,5 +157,28 @@ public class KboPitchService {
         dto.setK9(null);
 
         return dto;
+    }
+
+    private PitcherDailyStatDto mapDailyToDto(KboPitcherDailyStatInterface stat) {
+        double innings = 0.0;
+        double era = 0.0;
+        if (stat.getInning() != null && stat.getInning() > 0) {
+            innings = stat.getInning() / 3 + (stat.getInning() % 3) * 0.1;
+            era = Math.round((stat.getEr() * 27.0) / stat.getInning() * 100.0) / 100.0;
+        }
+        return PitcherDailyStatDto.builder()
+                .gameDate(stat.getGameDate())
+                .opponent(stat.getOpponent())
+                .innings(innings)
+                .win(stat.getWin())
+                .lose(stat.getLose())
+                .save(stat.getSave())
+                .er(stat.getEr())
+                .bb(stat.getBb())
+                .hbp(stat.getHbp())
+                .pHit(stat.getPHit())
+                .so(stat.getSo())
+                .era(era)
+                .build();
     }
 }
