@@ -398,6 +398,61 @@
 
 ---
 
+### POST `/apis/v1/admin/fantasy/games/{gameSeq}/scores/{round}/upload-from-snapshot` 🔒 (Admin only)
+KBO 로스터 스냅샷의 조회하여 해당 선수들의 판타지 라운드 성적을 자동 계산 및 저장.  
+`kbo-stats` API로 집계한 데이터를 판타지 성적(FantasyScoreDto)으로 변환한 뒤 `saveAndCalculateScores`를 호출한다.
+
+**Path Parameters**
+| 파라미터 | 설명 |
+|---------|------|
+| `gameSeq` | 판타지 게임 seq |
+| `round` | 업데이트할 라운드 번호 |
+
+**Query Parameters**
+| 파라미터 | 필수 | 설명 |
+|---------|------|------|
+| `startDt` | 필수 | 라운드 시작 일자 (`yyyy-MM-dd`) |
+| `endDt` | 필수 | 라운드 종료 일자 (`yyyy-MM-dd`) |
+
+**성적 변환 공식**
+| 판타지 성적 | 계산식 | 비고 |
+|-----------|--------|------|
+| `avg` | `hit / ab` | ab = 0이면 0.0 |
+| `hr` | `hr` | |
+| `rbi` | `rbi` | |
+| `sb` | `sb` | |
+| `soBatter` | `so` | 타자 삼진 |
+| `era` | `er / inning * 27` | inning은 아웃카운트. inning = 0이면 0.0 |
+| `wins` | `win` | |
+| `soPitcher` | `pSo` | 투수 삼진 |
+| `whip` | `(pHit + bb) / inning * 3` | inning은 아웃카운트. inning = 0이면 0.0 |
+| `saves` | `save` | |
+
+**Response** `200` — `List<FantasyScoreDto>` (저장 후 해당 라운드 성적 전체 반환)
+```json
+[
+  {
+    "seq": 1,
+    "fantasyGameSeq": 10,
+    "playerId": 100,
+    "round": 1,
+    "avg": 0.312,
+    "hr": 5,
+    "rbi": 20,
+    "soBatter": 30,
+    "sb": 3,
+    "wins": 4,
+    "era": 3.45,
+    "soPitcher": 40,
+    "whip": 1.12,
+    "saves": 2,
+    "totalPoints": 85.0
+  }
+]
+```
+
+---
+
 ## 5. 판타지 드래프트 API
 
 ### GET `/apis/v1/fantasy/games/{gameSeq}/available-players`

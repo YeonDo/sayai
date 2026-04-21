@@ -1,5 +1,7 @@
 package com.sayai.record.admin.controller;
 
+import com.sayai.kbo.dto.ParticipantKboStatsDto;
+import com.sayai.kbo.service.FantasyKboService;
 import com.sayai.record.auth.entity.Member;
 import com.sayai.record.auth.repository.MemberRepository;
 import com.sayai.record.auth.service.AuthService;
@@ -17,6 +19,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.apache.poi.ss.usermodel.Row;
@@ -28,6 +31,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -47,6 +51,7 @@ public class AdminController {
     private final AuthService authService;
     private final FantasyScoringService fantasyScoringService;
     private final PostService postService;
+    private final FantasyKboService fantasyKboService;
 
     // --- Post Management ---
 
@@ -220,6 +225,41 @@ public class AdminController {
             e.printStackTrace();
             return ResponseEntity.badRequest().build();
         }
+    }
+
+    @PostMapping("/fantasy/games/{gameSeq}/scores/{round}/upload-from-snapshot")
+    public ResponseEntity<List<FantasyScoreDto>> uploadScoresFromSnapshot(
+            @PathVariable(name = "gameSeq") Long gameSeq,
+            @PathVariable(name = "round") Integer round,
+            @RequestParam("startDt") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDt,
+            @RequestParam("endDt") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDt) {
+
+        List<ParticipantKboStatsDto> kboStats = fantasyKboService.aggregateStats(gameSeq, startDt, endDt);
+
+        List<FantasyScoreDto> scores = kboStats.stream().map(stat -> {
+            double avg = stat.getAb() > 0 ? (double) stat.getHit() / stat.getAb() : 0.0;
+            double era = stat.getInning() > 0 ? (double) stat.getEr() / stat.getInning() * 27 : 0.0;
+            double whip = stat.getInning() > 0 ? (double) (stat.getPHit() + stat.getBb()) / stat.getInning() * 3 : 0.0;
+
+            return FantasyScoreDto.builder()
+                    .fantasyGameSeq(gameSeq)
+                    .playerId(stat.getPlayerId())
+                    .round(round)
+                    .avg(avg)
+                    .hr((int) stat.getHr())
+                    .rbi((int) stat.getRbi())
+                    .sb((int) stat.getSb())
+                    .soBatter((int) stat.getSo())
+                    .era(era)
+                    .wins((int) stat.getWin())
+                    .soPitcher((int) stat.getPSo())
+                    .whip(whip)
+                    .saves((int) stat.getSave())
+                    .build();
+        }).collect(Collectors.toList());
+
+        fantasyScoringService.saveAndCalculateScores(gameSeq, round, scores);
+        return ResponseEntity.ok(fantasyScoringService.getScores(gameSeq, round));
     }
 
     // --- User Management ---
