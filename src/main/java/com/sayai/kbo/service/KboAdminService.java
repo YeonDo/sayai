@@ -147,7 +147,7 @@ public class KboAdminService {
                 int newRbi = stats.getRbi() + hit.getRbi().intValue();
                 int newSo = stats.getSo() + hit.getSo().intValue();
                 int newSb = stats.getSb() + hit.getSb().intValue();
-                String newAvg = calcAvg(newHit, newPa);
+                String newAvg = calcAvg(newHit, newAb);
 
                 kboHitterStatsRepository.save(KboHitterStats.builder()
                         .playerId(playerId)
