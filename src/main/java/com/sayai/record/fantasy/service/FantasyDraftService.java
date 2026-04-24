@@ -1,5 +1,9 @@
 package com.sayai.record.fantasy.service;
 
+import com.sayai.kbo.model.KboHitterStats;
+import com.sayai.kbo.model.KboPitcherStats;
+import com.sayai.kbo.repository.KboHitterStatsRepository;
+import com.sayai.kbo.repository.KboPitcherStatsRepository;
 import com.sayai.record.fantasy.dto.DraftEventDto;
 import com.sayai.record.fantasy.dto.DraftRequest;
 import com.sayai.record.fantasy.dto.FantasyPlayerDto;
@@ -15,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Collections;
@@ -39,6 +44,10 @@ public class FantasyDraftService {
     private final DraftValidator draftValidator;
     private final SimpMessagingTemplate messagingTemplate;
     private final ObjectProvider<DraftScheduler> draftSchedulerProvider;
+    private final KboHitterStatsRepository kboHitterStatsRepository;
+    private final KboPitcherStatsRepository kboPitcherStatsRepository;
+
+    private static final Set<String> PITCHER_POSITIONS = Set.of("SP", "RP", "CL");
 
     @Transactional
     public void joinGame(Long gameSeq, Long playerId, String preferredTeam, String teamName) {
@@ -113,9 +122,41 @@ public class FantasyDraftService {
             }
         }
 
-        return filteredPlayers.stream()
+        List<FantasyPlayer> availablePlayers = filteredPlayers.stream()
                 .filter(p -> !pickedPlayerSeqs.contains(p.getSeq()))
-                .map(FantasyPlayerDto::from)
+                .collect(Collectors.toList());
+
+        // Bulk fetch current-season stats (2 queries total regardless of player count)
+        int currentSeason = LocalDate.now().getYear();
+        Set<Long> playerSeqs = availablePlayers.stream().map(FantasyPlayer::getSeq).collect(Collectors.toSet());
+
+        Map<Long, KboHitterStats> hitterStatsMap = kboHitterStatsRepository
+                .findByPlayerIdInAndSeason(playerSeqs, currentSeason)
+                .stream()
+                .collect(Collectors.toMap(KboHitterStats::getPlayerId, Function.identity()));
+
+        Map<Long, KboPitcherStats> pitcherStatsMap = kboPitcherStatsRepository
+                .findByPlayerIdInAndSeason(playerSeqs, currentSeason)
+                .stream()
+                .collect(Collectors.toMap(KboPitcherStats::getPlayerId, Function.identity()));
+
+        return availablePlayers.stream()
+                .map(p -> {
+                    FantasyPlayerDto dto = FantasyPlayerDto.from(p);
+                    String primaryPos = p.getPosition() != null ? p.getPosition().split(",")[0].trim() : "";
+                    if (PITCHER_POSITIONS.contains(primaryPos)) {
+                        KboPitcherStats ps = pitcherStatsMap.get(p.getSeq());
+                        if (ps != null) {
+                            dto.setStats(ps.getWin() + "승, " + ps.getEra() + " ERA, " + ps.getWhip() + " WHIP");
+                        }
+                    } else {
+                        KboHitterStats hs = hitterStatsMap.get(p.getSeq());
+                        if (hs != null) {
+                            dto.setStats(hs.getAvg() + ", " + hs.getHr() + "홈런, " + hs.getRbi() + "타점, " + hs.getSb() + "도루");
+                        }
+                    }
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
 

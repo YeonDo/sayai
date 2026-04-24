@@ -9,12 +9,16 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface KboHitterStatsRepository extends JpaRepository<KboHitterStats, KboHitterStatsId> {
 
     Optional<KboHitterStats> findByPlayerIdAndSeason(Long playerId, Integer season);
+
+    List<KboHitterStats> findByPlayerIdInAndSeason(Collection<Long> playerIds, Integer season);
 
     @Query(value = "SELECT s.player_id as id, p.name as name, p.team as team, " +
             "s.pa as pa, s.ab as ab, s.hit as hit, s.avg as avg, " +
