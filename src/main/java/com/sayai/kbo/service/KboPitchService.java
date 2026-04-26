@@ -19,6 +19,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 @Service
@@ -28,6 +29,11 @@ public class KboPitchService {
 
     private final KboPitchRepository kboPitchRepository;
     private final KboPitcherStatsRepository kboPitcherStatsRepository;
+
+    private List<String> resolvePositions(String position) {
+        if (position == null) return null;
+        return List.of(position.toUpperCase());
+    }
 
     private Long toStartIdx(LocalDate date) {
         if (date == null) return 0L;
@@ -41,8 +47,11 @@ public class KboPitchService {
         return Long.parseLong(formatted + "239999"); // End of the day
     }
 
-    public Page<PitcherDto> selectBySeason(int season, Integer minOuts, Pageable pageable) {
-        Page<KboPitcherSeasonStatsProjection> stats = kboPitcherStatsRepository.findBySeasonWithPlayerInfo(season, minOuts, pageable);
+    public Page<PitcherDto> selectBySeason(int season, Integer minOuts, String position, Pageable pageable) {
+        List<String> positions = resolvePositions(position);
+        Page<KboPitcherSeasonStatsProjection> stats = positions != null
+                ? kboPitcherStatsRepository.findBySeasonWithPlayerInfoAndPositions(season, minOuts, positions, pageable)
+                : kboPitcherStatsRepository.findBySeasonWithPlayerInfo(season, minOuts, pageable);
         return stats.map(this::mapSeasonToDto);
     }
 
@@ -81,10 +90,13 @@ public class KboPitchService {
         return dto;
     }
 
-    public Page<PitcherDto> select(LocalDate startDate, LocalDate endDate, Pageable pageable) {
+    public Page<PitcherDto> select(LocalDate startDate, LocalDate endDate, String position, Pageable pageable) {
         Long startIdx = toStartIdx(startDate);
         Long endIdx = toEndIdx(endDate);
-        Page<KboPitchStatInterface> stats = kboPitchRepository.getStatsByPeriod(startIdx, endIdx, pageable);
+        List<String> positions = resolvePositions(position);
+        Page<KboPitchStatInterface> stats = positions != null
+                ? kboPitchRepository.getStatsByPeriodAndPositions(startIdx, endIdx, positions, pageable)
+                : kboPitchRepository.getStatsByPeriod(startIdx, endIdx, pageable);
         return stats.map(this::mapToDto);
     }
 

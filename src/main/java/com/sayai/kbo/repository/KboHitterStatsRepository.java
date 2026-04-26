@@ -34,4 +34,22 @@ public interface KboHitterStatsRepository extends JpaRepository<KboHitterStats, 
             @Param("season") Integer season,
             @Param("minPa") Integer minPa,
             Pageable pageable);
+
+    @Query(value = "SELECT s.player_id as id, p.name as name, p.team as team, " +
+            "s.pa as pa, s.ab as ab, s.hit as hit, s.avg as avg, " +
+            "s.hr as hr, s.rbi as rbi, s.so as so, s.sb as sb " +
+            "FROM kbo_hitter_stats s " +
+            "JOIN ft_players p ON s.player_id = p.seq " +
+            "WHERE s.season = :season " +
+            "AND (:minPa IS NULL OR s.pa >= :minPa) " +
+            "AND p.position IN :positions",
+            countQuery = "SELECT COUNT(*) FROM kbo_hitter_stats s " +
+            "JOIN ft_players p ON s.player_id = p.seq " +
+            "WHERE s.season = :season AND (:minPa IS NULL OR s.pa >= :minPa) AND p.position IN :positions",
+            nativeQuery = true)
+    Page<KboHitterSeasonStatsProjection> findBySeasonWithPlayerInfoAndPositions(
+            @Param("season") Integer season,
+            @Param("minPa") Integer minPa,
+            @Param("positions") List<String> positions,
+            Pageable pageable);
 }
