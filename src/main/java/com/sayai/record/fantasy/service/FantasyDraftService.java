@@ -496,12 +496,14 @@ public class FantasyDraftService {
 
             // Helper to increment and check
             java.util.function.BiConsumer<String, String> checkLimit = (pos, source) -> {
+                if ("BENCH".equals(pos)) return;
+
                 int count = positionCounts.getOrDefault(pos, 0) + 1;
                 positionCounts.put(pos, count);
 
-                int limit = 1;
+                int limit;
                 if ("SP".equals(pos) || "RP".equals(pos)) limit = 4;
-                // CL usually 1, others 1
+                else limit = 1;
 
                 if (count > limit) {
                     throw new IllegalArgumentException("Position limit exceeded for " + pos + " (Max " + limit + ")");
