@@ -29,13 +29,14 @@ public class KboHitService {
     private final KboHitRepository kboHitRepository;
     private final KboHitterStatsRepository kboHitterStatsRepository;
 
-    private List<String> resolvePositions(String position) {
+    private String resolvePositionPattern(String position) {
         if (position == null) return null;
-        return switch (position.toUpperCase()) {
+        List<String> positions = switch (position.toUpperCase()) {
             case "IF" -> List.of("1B", "2B", "3B", "SS");
             case "OF" -> List.of("LF", "CF", "RF");
             default -> List.of(position.toUpperCase());
         };
+        return "(^|,)(" + String.join("|", positions) + ")(,|$)";
     }
 
     private Long toStartIdx(LocalDate date) {
@@ -73,9 +74,9 @@ public class KboHitService {
     }
 
     public Page<PlayerDto> findAllBySeason(int season, Integer minPa, String position, Pageable pageable) {
-        List<String> positions = resolvePositions(position);
-        Page<KboHitterSeasonStatsProjection> stats = positions != null
-                ? kboHitterStatsRepository.findBySeasonWithPlayerInfoAndPositions(season, minPa, positions, pageable)
+        String positionPattern = resolvePositionPattern(position);
+        Page<KboHitterSeasonStatsProjection> stats = positionPattern != null
+                ? kboHitterStatsRepository.findBySeasonWithPlayerInfoAndPositions(season, minPa, positionPattern, pageable)
                 : kboHitterStatsRepository.findBySeasonWithPlayerInfo(season, minPa, pageable);
         return stats.map(this::mapSeasonToDto);
     }
@@ -108,9 +109,9 @@ public class KboHitService {
     public Page<PlayerDto> findAllByPeriod(LocalDate startDate, LocalDate endDate, String position, Pageable pageable) {
         Long startIdx = toStartIdx(startDate);
         Long endIdx = toEndIdx(endDate);
-        List<String> positions = resolvePositions(position);
-        Page<KboHitStatInterface> stats = positions != null
-                ? kboHitRepository.getPlayerByPeriodAndPositions(startIdx, endIdx, positions, pageable)
+        String positionPattern = resolvePositionPattern(position);
+        Page<KboHitStatInterface> stats = positionPattern != null
+                ? kboHitRepository.getPlayerByPeriodAndPositions(startIdx, endIdx, positionPattern, pageable)
                 : kboHitRepository.getPlayerByPeriod(startIdx, endIdx, pageable);
         return stats.map(this::mapToDto);
     }

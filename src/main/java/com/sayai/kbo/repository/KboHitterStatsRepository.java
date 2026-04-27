@@ -42,14 +42,14 @@ public interface KboHitterStatsRepository extends JpaRepository<KboHitterStats, 
             "JOIN ft_players p ON s.player_id = p.seq " +
             "WHERE s.season = :season " +
             "AND (:minPa IS NULL OR s.pa >= :minPa) " +
-            "AND p.position IN :positions",
+            "AND p.position REGEXP :positionPattern",
             countQuery = "SELECT COUNT(*) FROM kbo_hitter_stats s " +
             "JOIN ft_players p ON s.player_id = p.seq " +
-            "WHERE s.season = :season AND (:minPa IS NULL OR s.pa >= :minPa) AND p.position IN :positions",
+            "WHERE s.season = :season AND (:minPa IS NULL OR s.pa >= :minPa) AND p.position REGEXP :positionPattern",
             nativeQuery = true)
     Page<KboHitterSeasonStatsProjection> findBySeasonWithPlayerInfoAndPositions(
             @Param("season") Integer season,
             @Param("minPa") Integer minPa,
-            @Param("positions") List<String> positions,
+            @Param("positionPattern") String positionPattern,
             Pageable pageable);
 }

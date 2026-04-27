@@ -55,12 +55,12 @@ public interface KboPitchRepository extends JpaRepository<KboPitch, Long> {
             "JOIN ft_players p ON pi.PLAYER_ID = p.seq " +
             "JOIN kbo_game g ON pi.game_idx = g.game_idx " +
             "WHERE g.game_idx BETWEEN :startIdx AND :endIdx " +
-            "AND p.position IN :positions " +
+            "AND p.position REGEXP :positionPattern " +
             "GROUP BY p.seq " +
             "ORDER BY inning DESC",
-            countQuery = "SELECT COUNT(DISTINCT p.seq) FROM kbo_pitch pi JOIN ft_players p ON pi.PLAYER_ID = p.seq JOIN kbo_game g ON pi.game_idx = g.game_idx WHERE g.game_idx BETWEEN :startIdx AND :endIdx AND p.position IN :positions",
+            countQuery = "SELECT COUNT(DISTINCT p.seq) FROM kbo_pitch pi JOIN ft_players p ON pi.PLAYER_ID = p.seq JOIN kbo_game g ON pi.game_idx = g.game_idx WHERE g.game_idx BETWEEN :startIdx AND :endIdx AND p.position REGEXP :positionPattern",
             nativeQuery = true)
-    Page<KboPitchStatInterface> getStatsByPeriodAndPositions(@Param("startIdx") Long startIdx, @Param("endIdx") Long endIdx, @Param("positions") List<String> positions, Pageable pageable);
+    Page<KboPitchStatInterface> getStatsByPeriodAndPositions(@Param("startIdx") Long startIdx, @Param("endIdx") Long endIdx, @Param("positionPattern") String positionPattern, Pageable pageable);
 
     @Query(value = "SELECT " +
             " p.seq as id, null as backNo, p.name as name, p.team as team, " +
