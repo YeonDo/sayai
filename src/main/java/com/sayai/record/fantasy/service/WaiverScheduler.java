@@ -29,6 +29,37 @@ public class WaiverScheduler {
     // Runs every 30 minutes from 10:00 to 23:30 KST
     @Scheduled(cron = "0 0,30 10-23 * * *", zone = "Asia/Seoul")
     @Transactional
+    public void processAll() {
+        processTrades();
+        processWaivers();
+    }
+
+    private void processTrades() {
+        log.info("Starting scheduled trade processing...");
+
+        LocalDateTime cutoffTime = LocalDateTime.now().minusHours(24);
+
+        List<RosterTransaction> pendingTrades = transactionRepository.findByStatusAndType(
+                RosterTransaction.TransactionStatus.REQUESTED,
+                RosterTransaction.TransactionType.TRADE);
+
+        int processed = 0;
+        for (RosterTransaction tx : pendingTrades) {
+            if (tx.getCreatedAt() != null && tx.getCreatedAt().isBefore(cutoffTime)) {
+                try {
+                    log.info("Auto-approving trade tx {} (24h elapsed, unvoted = agree)", tx.getSeq());
+                    rosterService.processTrade(tx.getSeq(), "APPROVE");
+                    processed++;
+                } catch (Exception e) {
+                    log.error("Failed to auto-approve trade tx {}: {}", tx.getSeq(), e.getMessage());
+                }
+            }
+        }
+
+        log.info("Trade processing completed. Processed {} trades.", processed);
+    }
+
+    @Transactional
     public void processWaivers() {
         log.info("Starting scheduled waiver processing...");
 

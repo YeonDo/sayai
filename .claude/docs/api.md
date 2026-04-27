@@ -622,6 +622,89 @@ KBO 로스터 스냅샷의 조회하여 해당 선수들의 판타지 라운드 
 
 ---
 
+### GET `/apis/v1/fantasy/roster/games/{gameSeq}/trades`
+현재 진행 중인 트레이드 목록 조회. 로그인 시 내 투표 정보 포함.
+
+**Response** `200` — `List<TradeBoardDto>`
+```json
+[
+  {
+    "transactionSeq": 1,
+    "requesterTeamName": "홍길동팀",
+    "targetTeamName": "김철수팀",
+    "givingPlayers": [
+      { "playerName": "이정후", "teamName": "키움" }
+    ],
+    "receivingPlayers": [
+      { "playerName": "류현진", "teamName": "한화" }
+    ],
+    "agreeCount": 2,
+    "disagreeCount": 1,
+    "myVote": null,
+    "isParty": false,
+    "createdAt": "2025-04-27T10:00:00"
+  }
+]
+```
+
+**Response 필드 설명**
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| `transactionSeq` | `Long` | 트레이드 거래 식별자 |
+| `requesterTeamName` | `String` | 트레이드를 신청한 팀 이름 (`ft_participants.teamName`) |
+| `targetTeamName` | `String` | 트레이드 상대 팀 이름 (`ft_participants.teamName`) |
+| `givingPlayers` | `List` | 신청 팀이 내보내는 선수 목록 |
+| `givingPlayers[].playerName` | `String` | 선수 이름 (`ft_players.name`) |
+| `givingPlayers[].teamName` | `String` | 선수 소속 KBO 팀 (`ft_players.team`) |
+| `receivingPlayers` | `List` | 신청 팀이 받아오는 선수 목록 (구조 동일) |
+| `agreeCount` | `int` | 현재까지 누적된 찬성 투표 수 |
+| `disagreeCount` | `int` | 현재까지 누적된 반대 투표 수 |
+| `myVote` | `Boolean` | 내 투표 여부. `null`=미투표, `true`=찬성, `false`=반대 |
+| `isParty` | `boolean` | 내가 이 트레이드의 당사자(신청자 또는 상대방)인지 여부 |
+| `createdAt` | `LocalDateTime` | 트레이드 신청 시각 |
+
+**`myVote` / `isParty` 조합 설명**
+
+| `isParty` | `myVote` | 의미 |
+|-----------|----------|------|
+| `true` | `null` | 트레이드 당사자 — 투표 불가 |
+| `false` | `null` | 미투표 — 찬성/반대 가능 |
+| `false` | `true` | 찬성 투표함 |
+| `false` | `false` | 반대 투표함 |
+
+> 비로그인 조회 시 `myVote: null`, `isParty: false` 고정.
+
+---
+
+### POST `/apis/v1/fantasy/roster/games/{gameSeq}/trades/{transactionSeq}/vote` 🔒
+트레이드 찬성/반대 투표.
+
+**제약 조건**
+- 트레이드 당사자(requester, target)는 투표 불가
+- 이전 투표로부터 1분 이내 재투표 불가
+- n명 참가 게임: `ceil((n-2)/2)`개 반대 → 즉시 REJECT, `floor((n-2)/2)+1`개 찬성 → 즉시 APPROVE
+- 트레이드 신청 24시간 경과 시 미투표는 찬성으로 간주하여 자동 승인
+
+**Request Body**
+```json
+{
+  "voteAgree": true
+}
+```
+
+**Response** `200` `"Vote registered"`
+
+**Error Cases**
+| 상황 | 상태코드 | 메시지 |
+|------|---------|--------|
+| 트레이드 당사자가 투표 시도 | 400 | `"Trade parties cannot vote"` |
+| 1분 이내 재투표 시도 | 500 | `"재투표는 이전 투표로부터 1분 후에 가능합니다"` |
+| 이미 처리된 트레이드 | 500 | `"Trade is already processed"` |
+| 게임 참여자가 아님 | 400 | `"Not a participant of this game"` |
+
+---
+
 ## 7. 판타지 순위/로그 API
 
 ### GET `/apis/v1/fantasy/games/{gameSeq}/ranking`

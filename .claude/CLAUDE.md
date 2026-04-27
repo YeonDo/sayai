@@ -192,6 +192,17 @@ DraftRuleValidator
 
 ---
 
+## 판타지 데이터 조회 규칙
+
+> **항상 준수** — 판타지 관련 기능 작업 시 아래 테이블을 반드시 참조할 것
+
+| 항목 | 테이블 | 비고 |
+|------|--------|------|
+| 선수명 | `ft_players` (FantasyPlayer) | `playerName` 컬럼 |
+| 팀명 | `ft_participants` (FantasyParticipant) | `teamName` 컬럼 |
+
+---
+
 ## 개발 / 배포 참고
 
 - QueryDSL APT 어노테이션 프로세서 사용 → `build/generated` 경로에 Q클래스 생성
