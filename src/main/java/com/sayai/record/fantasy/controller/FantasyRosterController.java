@@ -42,9 +42,22 @@ public class FantasyRosterController {
                 userDetails.getPlayerId(),
                 request.getTargetId(),
                 request.getGivingPlayerSeqs(),
-                request.getReceivingPlayerSeqs()
+                request.getReceivingPlayerSeqs(),
+                request.getComment()
         );
-        return ResponseEntity.ok("Trade requested");
+        return ResponseEntity.ok("Trade suggested");
+    }
+
+    @PostMapping("/games/{gameSeq}/trades/{transactionSeq}/respond")
+    public ResponseEntity<String> respondToTrade(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                                 @PathVariable(name = "gameSeq") Long gameSeq,
+                                                 @PathVariable(name = "transactionSeq") Long transactionSeq,
+                                                 @RequestBody TradeRespondRequest request) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
+        fantasyRosterService.respondToTrade(transactionSeq, userDetails.getPlayerId(), request.isAccept());
+        return ResponseEntity.ok(request.isAccept() ? "Trade accepted" : "Trade rejected");
     }
 
     @GetMapping("/games/{gameSeq}/waivers")
@@ -93,6 +106,11 @@ public class FantasyRosterController {
     }
 
     @Data
+    public static class TradeRespondRequest {
+        private boolean accept;
+    }
+
+    @Data
     public static class WaiverRequest {
         private Long gameSeq;
         private Long fantasyPlayerSeq;
@@ -104,5 +122,6 @@ public class FantasyRosterController {
         private Long targetId;
         private List<Long> givingPlayerSeqs;
         private List<Long> receivingPlayerSeqs;
+        private String comment;
     }
 }

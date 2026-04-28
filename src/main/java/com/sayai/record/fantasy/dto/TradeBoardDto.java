@@ -15,10 +15,13 @@ public class TradeBoardDto {
     private String targetTeamName;
     private List<PlayerInfo> givingPlayers;
     private List<PlayerInfo> receivingPlayers;
+    private String status;     // SUGGESTED(제안됨), REQUESTED(투표 중)
+    private String comment;    // 트레이드 제안 메시지
     private int agreeCount;
     private int disagreeCount;
-    private Boolean myVote;   // null=미투표, true=찬성, false=반대 (isParty=true면 항상 null)
-    private boolean isParty;  // 내가 트레이드 당사자 여부 (true면 투표 불가)
+    private Boolean myVote;    // null=미투표, true=찬성, false=반대 (isParty=true면 항상 null)
+    private boolean isParty;   // 내가 트레이드 당사자 여부
+    private boolean canRespond; // 내가 수락/거절 가능한지 여부 (SUGGESTED이고 내가 target인 경우)
     private LocalDateTime createdAt;
 
     @Getter

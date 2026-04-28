@@ -565,23 +565,26 @@ KBO 로스터 스냅샷의 조회하여 해당 선수들의 판타지 라운드 
 ---
 
 ### POST `/apis/v1/fantasy/roster/trade` 🔒
-트레이드 신청.
+트레이드 제안. 성공 시 상태 `SUGGESTED`로 생성되며, 상대방이 수락해야 투표 단계로 진행됨.
 
 **Request Body**
 ```json
 {
   "gameSeq": 1,
+  "targetId": 5,
   "givingPlayerSeqs": [10],
   "receivingPlayerSeqs": [20],
-  "targetParticipantId": 5
+  "comment": "트레이드 제안 메시지 (선택)"
 }
 ```
 
 **제약조건**
-- 주는 선수: 최소 1명, 최대 2명
-- 받는 선수: 최소 1명, 최대 2명
+- 주는 선수: 최소 1명, 최대 2명 (BENCH 아닌 선수도 가능)
+- 받는 선수: 최소 1명, 최대 2명 (BENCH 아닌 선수도 가능)
+- 신청자가 내보내는 선수들은 `TRADE_PENDING` 상태로 변경됨
+- 24시간 내 상대방 미수락 시 자동 거절 (WaiverScheduler)
 
-**Response** `200` `"OK"`
+**Response** `200` `"Trade suggested"`
 
 **Error Cases**
 | 상황 | 상태코드 | 메시지 |
@@ -589,9 +592,8 @@ KBO 로스터 스냅샷의 조회하여 해당 선수들의 판타지 라운드 
 | 주는 선수 없음 | 400 | `"Must give at least one player"` |
 | 받는 선수 없음 | 400 | `"Must receive at least one player"` |
 | 한 쪽에 3명 이상 | 400 | `"Max 2 players per side"` |
-| 신청자 샐캡 초과 | 500 | `"Trade failed: Requester Salary Cap Exceeded ({cost} > {cap})"` |
-| 상대방 샐캡 초과 | 500 | `"Trade failed: Target Salary Cap Exceeded ({cost} > {cap})"` |
-| 소유권 변경됨 | 500 | `"Player {seq} ownership changed"` |
+| 선수가 NORMAL 상태 아님 | 500 | `"Player {seq} is not in NORMAL status"` |
+| 소유하지 않은 선수 포함 | 400 | `"Not all players found in roster for user {id}"` |
 
 ---
 
@@ -622,8 +624,35 @@ KBO 로스터 스냅샷의 조회하여 해당 선수들의 판타지 라운드 
 
 ---
 
+### POST `/apis/v1/fantasy/roster/games/{gameSeq}/trades/{transactionSeq}/respond` 🔒
+트레이드 제안 수락/거절. 트레이드 `target`만 호출 가능.
+
+**Request Body**
+```json
+{
+  "accept": true
+}
+```
+
+**동작**
+- `accept: true` → 상태 `REQUESTED`로 변경, 참가자 투표 단계 진입. 게임 전체에 FCM 알림 발송
+- `accept: false` → 상태 `REJECTED`로 변경, 신청자의 `TRADE_PENDING` 선수들 `NORMAL`로 복원. 게임 전체에 FCM 알림 발송
+
+**Response** `200` `"Trade accepted"` 또는 `"Trade rejected"`
+
+**Error Cases**
+| 상황 | 상태코드 | 메시지 |
+|------|---------|--------|
+| target이 아닌 사용자 호출 | 400 | `"Only the trade target can respond"` |
+| SUGGESTED 상태가 아님 | 500 | `"Trade is not in SUGGESTED status"` |
+
+---
+
 ### GET `/apis/v1/fantasy/roster/games/{gameSeq}/trades`
-현재 진행 중인 트레이드 목록 조회. 로그인 시 내 투표 정보 포함.
+진행 중인 트레이드 목록 조회. 로그인 시 내 투표/수락 정보 포함.
+
+- `REQUESTED` 상태 트레이드: 모든 참가자에게 노출 (투표 단계)
+- `SUGGESTED` 상태 트레이드: 트레이드 당사자(신청자, 상대방)에게만 노출
 
 **Response** `200` — `List<TradeBoardDto>`
 ```json
@@ -652,17 +681,20 @@ KBO 로스터 스냅샷의 조회하여 해당 선수들의 판타지 라운드 
 | 필드 | 타입 | 설명 |
 |------|------|------|
 | `transactionSeq` | `Long` | 트레이드 거래 식별자 |
+| `status` | `String` | 트레이드 상태. `SUGGESTED`=수락 대기 중, `REQUESTED`=투표 진행 중 |
+| `comment` | `String` | 트레이드 제안 메시지 (없으면 `null`) |
 | `requesterTeamName` | `String` | 트레이드를 신청한 팀 이름 (`ft_participants.teamName`) |
 | `targetTeamName` | `String` | 트레이드 상대 팀 이름 (`ft_participants.teamName`) |
 | `givingPlayers` | `List` | 신청 팀이 내보내는 선수 목록 |
 | `givingPlayers[].playerName` | `String` | 선수 이름 (`ft_players.name`) |
 | `givingPlayers[].teamName` | `String` | 선수 소속 KBO 팀 (`ft_players.team`) |
 | `receivingPlayers` | `List` | 신청 팀이 받아오는 선수 목록 (구조 동일) |
-| `agreeCount` | `int` | 현재까지 누적된 찬성 투표 수 |
-| `disagreeCount` | `int` | 현재까지 누적된 반대 투표 수 |
-| `myVote` | `Boolean` | 내 투표 여부. `null`=미투표, `true`=찬성, `false`=반대 |
+| `agreeCount` | `int` | 현재까지 누적된 찬성 투표 수 (`SUGGESTED` 상태에서는 항상 0) |
+| `disagreeCount` | `int` | 현재까지 누적된 반대 투표 수 (`SUGGESTED` 상태에서는 항상 0) |
+| `myVote` | `Boolean` | 내 투표 여부. `null`=미투표, `true`=찬성, `false`=반대. `isParty=true`면 항상 `null` |
 | `isParty` | `boolean` | 내가 이 트레이드의 당사자(신청자 또는 상대방)인지 여부 |
-| `createdAt` | `LocalDateTime` | 트레이드 신청 시각 |
+| `canRespond` | `boolean` | 내가 수락/거절 가능한지 여부 (`SUGGESTED` 상태이고 내가 상대방인 경우만 `true`) |
+| `createdAt` | `LocalDateTime` | 트레이드 제안 시각 |
 
 **`myVote` / `isParty` 조합 설명**
 

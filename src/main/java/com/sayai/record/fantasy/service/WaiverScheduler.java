@@ -28,7 +28,6 @@ public class WaiverScheduler {
 
     // Runs every 30 minutes from 10:00 to 23:30 KST
     @Scheduled(cron = "0 0,30 10-23 * * *", zone = "Asia/Seoul")
-    @Transactional
     public void processAll() {
         processTrades();
         processWaivers();
@@ -38,14 +37,30 @@ public class WaiverScheduler {
         log.info("Starting scheduled trade processing...");
 
         LocalDateTime cutoffTime = LocalDateTime.now().minusHours(24);
+        int processed = 0;
 
-        List<RosterTransaction> pendingTrades = transactionRepository.findByStatusAndType(
+        // SUGGESTED 트레이드 24시간 내 미수락 → 자동 거절
+        List<RosterTransaction> suggestedTrades = transactionRepository.findByStatusAndType(
+                RosterTransaction.TransactionStatus.SUGGESTED,
+                RosterTransaction.TransactionType.TRADE);
+        for (RosterTransaction tx : suggestedTrades) {
+            if (tx.getCreatedAt() != null && tx.getCreatedAt().isBefore(cutoffTime)) {
+                try {
+                    log.info("Auto-rejecting suggested trade tx {} (24h elapsed, no response)", tx.getSeq());
+                    rosterService.respondToTrade(tx.getSeq(), tx.getTargetId(), false);
+                    processed++;
+                } catch (Exception e) {
+                    log.error("Failed to auto-reject suggested trade tx {}: {}", tx.getSeq(), e.getMessage());
+                }
+            }
+        }
+
+        // REQUESTED 트레이드 24시간 경과 → 미투표 찬성 간주하여 자동 승인
+        List<RosterTransaction> requestedTrades = transactionRepository.findByStatusAndType(
                 RosterTransaction.TransactionStatus.REQUESTED,
                 RosterTransaction.TransactionType.TRADE);
-
-        int processed = 0;
-        for (RosterTransaction tx : pendingTrades) {
-            if (tx.getCreatedAt() != null && tx.getCreatedAt().isBefore(cutoffTime)) {
+        for (RosterTransaction tx : requestedTrades) {
+            if (tx.getUpdatedAt() != null && tx.getUpdatedAt().isBefore(cutoffTime)) {
                 try {
                     log.info("Auto-approving trade tx {} (24h elapsed, unvoted = agree)", tx.getSeq());
                     rosterService.processTrade(tx.getSeq(), "APPROVE");
