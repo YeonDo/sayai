@@ -312,11 +312,7 @@ public class FantasyRosterService {
             tx.setStatus(RosterTransaction.TransactionStatus.REJECTED);
             rosterTransactionRepository.save(tx);
 
-            if (isRequester) {
-                // 신청자 취소 — 조용히 처리 (FCM/로그 없음)
-            } else {
-                logAction(tx.getFantasyGameSeq(), responderId, null, RosterLog.LogActionType.TRADE_REJECT,
-                        "Trade Rejected by " + targetTeam);
+            if (!isRequester) {
                 fcmService.sendTopicMessage("game_" + tx.getFantasyGameSeq(), "트레이드 거절",
                         String.format("%s팀이 %s팀의 트레이드 제안을 거절했습니다.", targetTeam, requesterTeam));
             }
