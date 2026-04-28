@@ -442,11 +442,14 @@ public class FantasyRosterService {
                     String.format("%s ↔ %s 트레이드가 승인되었습니다.\n(%s ↔ %s)", reqTeam, tgtTeam, givingNames, receivingNames));
 
         } else if ("REJECT".equalsIgnoreCase(decision)) {
-            // Revert Giving status
             for (DraftPick p : givingPicks) {
                 p.setPickStatus(DraftPick.PickStatus.NORMAL);
             }
+            for (DraftPick p : receivingPicks) {
+                p.setPickStatus(DraftPick.PickStatus.NORMAL);
+            }
             draftPickRepository.saveAll(givingPicks);
+            draftPickRepository.saveAll(receivingPicks);
 
             tx.setStatus(RosterTransaction.TransactionStatus.REJECTED);
             logAction(tx.getFantasyGameSeq(), tx.getRequesterId(), null, RosterLog.LogActionType.TRADE_REJECT, "Trade Rejected");
