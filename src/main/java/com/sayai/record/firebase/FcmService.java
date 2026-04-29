@@ -1,6 +1,7 @@
 package com.sayai.record.firebase;
 
 import com.google.firebase.messaging.AndroidConfig;
+import com.google.firebase.messaging.AndroidNotification;
 import com.google.firebase.messaging.ApnsConfig;
 import com.google.firebase.messaging.Aps;
 import com.google.firebase.messaging.FirebaseMessaging;
@@ -37,6 +38,11 @@ public class FcmService {
                             .build())
                     .setAndroidConfig(AndroidConfig.builder()
                             .setPriority(AndroidConfig.Priority.HIGH)
+                            .setNotification(AndroidNotification.builder()
+                                    .setPriority(AndroidNotification.Priority.HIGH)
+                                    .setDefaultVibrateTimings(true)
+                                    .setDefaultSound(false)
+                                    .build())
                             .build())
                     .setApnsConfig(ApnsConfig.builder()
                             .setAps(Aps.builder()
