@@ -236,11 +236,7 @@ public class FantasyRosterService {
         for (DraftPick p : givingPicks) {
             p.setPickStatus(DraftPick.PickStatus.TRADE_PENDING);
         }
-        for (DraftPick p : receivingPicks) {
-            p.setPickStatus(DraftPick.PickStatus.TRADE_PENDING);
-        }
         draftPickRepository.saveAll(givingPicks);
-        draftPickRepository.saveAll(receivingPicks);
 
         RosterTransaction tx = RosterTransaction.builder()
                 .fantasyGameSeq(gameSeq)
@@ -299,6 +295,17 @@ public class FantasyRosterService {
         String targetTeam = target != null ? target.getTeamName() : "Unknown";
 
         if (accept) {
+            // 수락 시 상대 선수도 잠금 (REQUESTED 상태에서는 양쪽 모두 TRADE_PENDING)
+            List<Long> receivingSeqs = getSeqsStream(tx.getReceivingPlayerSeqs(), "respondToTrade receiving tx:" + tx.getSeq())
+                    .collect(Collectors.toList());
+            List<DraftPick> receivingPicks = draftPickRepository.findByFantasyGameSeq(tx.getFantasyGameSeq()).stream()
+                    .filter(p -> receivingSeqs.contains(p.getFantasyPlayerSeq()))
+                    .collect(Collectors.toList());
+            for (DraftPick p : receivingPicks) {
+                p.setPickStatus(DraftPick.PickStatus.TRADE_PENDING);
+            }
+            draftPickRepository.saveAll(receivingPicks);
+
             tx.setStatus(RosterTransaction.TransactionStatus.REQUESTED);
             rosterTransactionRepository.save(tx);
 
@@ -323,14 +330,11 @@ public class FantasyRosterService {
     }
 
     private void resetGivingPlayersPending(RosterTransaction tx) {
-        List<Long> allSeqs = getSeqsStream(tx.getGivingPlayerSeqs(), "resetPending giving tx:" + tx.getSeq())
+        List<Long> givingSeqs = getSeqsStream(tx.getGivingPlayerSeqs(), "resetPending giving tx:" + tx.getSeq())
                 .collect(Collectors.toList());
-        List<Long> receivingSeqs = getSeqsStream(tx.getReceivingPlayerSeqs(), "resetPending receiving tx:" + tx.getSeq())
-                .collect(Collectors.toList());
-        allSeqs.addAll(receivingSeqs);
 
         List<DraftPick> picks = draftPickRepository.findByFantasyGameSeq(tx.getFantasyGameSeq()).stream()
-                .filter(p -> allSeqs.contains(p.getFantasyPlayerSeq()))
+                .filter(p -> givingSeqs.contains(p.getFantasyPlayerSeq()))
                 .collect(Collectors.toList());
         for (DraftPick p : picks) {
             p.setPickStatus(DraftPick.PickStatus.NORMAL);
@@ -390,13 +394,12 @@ public class FantasyRosterService {
         }
 
         if ("APPROVE".equalsIgnoreCase(decision)) {
-            // Re-validate ownership for receiving side (giving side is locked/pending)
             for (DraftPick p : receivingPicks) {
                 if (!p.getPlayerId().equals(tx.getTargetId())) {
                      throw new IllegalStateException("Player " + p.getFantasyPlayerSeq() + " ownership changed");
                 }
-                if (p.getPickStatus() != DraftPick.PickStatus.NORMAL) {
-                    throw new IllegalStateException("Player " + p.getFantasyPlayerSeq() + " is not NORMAL");
+                if (p.getPickStatus() != DraftPick.PickStatus.TRADE_PENDING) {
+                    throw new IllegalStateException("Player " + p.getFantasyPlayerSeq() + " is not TRADE_PENDING");
                 }
             }
             // Giving picks should be TRADE_PENDING and owned by requester
