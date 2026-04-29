@@ -421,10 +421,9 @@ public class FantasyDraftService {
     }
 
     private String determineInitialPosition(List<DraftPick> existingPicks, FantasyPlayer newPlayer) {
-        Set<String> occupied = existingPicks.stream()
-                .map(DraftPick::getAssignedPosition)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
+        Map<String, Long> occupiedCounts = existingPicks.stream()
+                .filter(p -> p.getAssignedPosition() != null)
+                .collect(Collectors.groupingBy(DraftPick::getAssignedPosition, Collectors.counting()));
 
         String positionStr = newPlayer.getPosition() != null ? newPlayer.getPosition() : "";
         if (positionStr.trim().isEmpty()) {
@@ -435,12 +434,9 @@ public class FantasyDraftService {
         String primaryPos = positions[0].trim();
 
         if (isPitcher(primaryPos)) {
-            // Pitcher logic: find first open slot (SP-1..SP-4, RP-1..RP-4, CL-1)
-            // Or simple logic: Just store "SP", "RP", "CL". Frontend handles slots.
-            // But if user has 4 SPs, 5th SP -> Bench.
-            long spCount = occupied.stream().filter(p -> p.equals("SP")).count();
-            long rpCount = occupied.stream().filter(p -> p.equals("RP")).count();
-            long clCount = occupied.stream().filter(p -> p.equals("CL")).count();
+            long spCount = occupiedCounts.getOrDefault("SP", 0L);
+            long rpCount = occupiedCounts.getOrDefault("RP", 0L);
+            long clCount = occupiedCounts.getOrDefault("CL", 0L);
 
             if (primaryPos.equals("SP")) return spCount < 4 ? "SP" : "BENCH";
             if (primaryPos.equals("RP")) return rpCount < 4 ? "RP" : "BENCH";
@@ -450,11 +446,11 @@ public class FantasyDraftService {
             // Batter Logic: 주포지션 → 부포지션 → DH → BENCH
             for (String p : positions) {
                 String pos = p.trim();
-                if (!pos.isEmpty() && !occupied.contains(pos)) {
+                if (!pos.isEmpty() && occupiedCounts.getOrDefault(pos, 0L) == 0) {
                     return pos;
                 }
             }
-            if (!occupied.contains("DH")) {
+            if (occupiedCounts.getOrDefault("DH", 0L) == 0) {
                 return "DH";
             }
             return "BENCH";
