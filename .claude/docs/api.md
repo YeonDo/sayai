@@ -672,7 +672,7 @@ KBO 로스터 스냅샷의 조회하여 해당 선수들의 판타지 라운드 
     "disagreeCount": 1,
     "myVote": null,
     "isParty": false,
-    "createdAt": "2025-04-27T10:00:00"
+    "createdAt": "2025-04-27T10:00:00
   }
 ]
 ```

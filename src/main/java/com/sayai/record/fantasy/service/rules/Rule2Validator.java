@@ -32,7 +32,7 @@ public class Rule2Validator extends Rule1Validator {
     @Override
     protected boolean canFit(List<FantasyPlayer> team) {
         Map<String, Integer> slots = new HashMap<>(getRequiredSlots());
-        slots.put("BENCH", 2); // Add Bench Slots
+        slots.put("BENCH", 3); // Add Bench Slots (CL 선택적으로 만들기 위한 여유 슬롯 포함)
         return backtrack(team, 0, slots);
     }
 

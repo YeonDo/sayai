@@ -203,6 +203,35 @@ DraftRuleValidator
 
 ---
 
+## 참조 문서
+
+작업 전 반드시 해당 기능의 문서를 먼저 확인할 것.
+
+### API 문서 (`.claude/docs/apis/`)
+
+| 파일 | 내용 |
+|------|------|
+| `common.md` | 공통 사항, 에러 코드, GameStatus |
+| `auth.md` | 인증 API |
+| `player-stats.md` | KBO 선수 통계 API |
+| `game-record.md` | KBO 게임 기록 API |
+| `fantasy-game.md` | 판타지 게임 API (생성/참가/성적 업로드) |
+| `fantasy-draft.md` | 드래프트/픽/로스터 배치 API |
+| `fantasy-roster.md` | 웨이버/트레이드 API |
+| `fantasy-ranking.md` | 순위/드래프트로그/로스터로그 API |
+| `fcm.md` | FCM 구독 API + 알림 발송 시점 정리 |
+
+### 시스템 문서 (`.claude/docs/system/`)
+
+| 파일 | 내용 |
+|------|------|
+| `trade-system.md` | 트레이드 전 단계 DB 변화, FCM, RosterLog, 스케줄러 처리 |
+| `waiver-system.md` | 웨이버 신청~처리 DB 변화, FCM, RosterLog, 우선순위 처리 |
+| `draft-system.md` | 드래프트 전체 흐름, 스네이크 순서, 자동픽, FA 영입 |
+| `rotisserie-scoring.md` | 로티세리 카테고리, 포인트 공식, 동률 처리, 라운드 집계 |
+
+---
+
 ## 개발 / 배포 참고
 
 - QueryDSL APT 어노테이션 프로세서 사용 → `build/generated` 경로에 Q클래스 생성

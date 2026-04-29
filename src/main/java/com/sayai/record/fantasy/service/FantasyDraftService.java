@@ -447,15 +447,16 @@ public class FantasyDraftService {
             if (primaryPos.equals("CL")) return clCount < 1 ? "CL" : "BENCH";
             return "BENCH";
         } else {
-            // Batter Logic
-            if (!occupied.contains(primaryPos)) {
-                return primaryPos;
+            // Batter Logic: 주포지션 → 부포지션 → DH → BENCH
+            for (String p : positions) {
+                String pos = p.trim();
+                if (!pos.isEmpty() && !occupied.contains(pos)) {
+                    return pos;
+                }
             }
-            // Try DH
             if (!occupied.contains("DH")) {
                 return "DH";
             }
-            // Bench
             return "BENCH";
         }
     }
