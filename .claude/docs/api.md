@@ -635,8 +635,9 @@ KBO 로스터 스냅샷의 조회하여 해당 선수들의 판타지 라운드 
 ```
 
 **동작**
-- `accept: true` → 상태 `REQUESTED`로 변경, 참가자 투표 단계 진입. 게임 전체에 FCM 알림 발송
-- `accept: false` → 상태 `REJECTED`로 변경, 신청자의 `TRADE_PENDING` 선수들 `NORMAL`로 복원. 게임 전체에 FCM 알림 발송
+- `accept: true` → 상태 `REQUESTED`로 변경, 참가자 투표 단계 진입. FCM 알림 없음
+- `accept: false` (상대팀 거절) → 상태 `REJECTED`로 변경, 신청자의 `TRADE_PENDING` 선수들 `NORMAL`로 복원. 신청자에게 개인 FCM 알림 발송
+- `accept: false` (신청자 취소) → 상태 `REJECTED`로 변경, 신청자의 `TRADE_PENDING` 선수들 `NORMAL`로 복원. 상대팀에게 개인 FCM 알림 발송
 
 **Response** `200` `"Trade accepted"` 또는 `"Trade rejected"`
 
@@ -785,17 +786,17 @@ KBO 로스터 스냅샷의 조회하여 해당 선수들의 판타지 라운드 
 ## 8. FCM 알림 API
 
 ### POST `/apis/v1/fcm/subscribe` 🔒
-FCM 토픽 구독 등록.
+FCM 토픽 구독 등록. 여러 토픽을 한 번에 구독할 수 있다.
 
 **Request Body**
 ```json
 {
   "token": "FCM_DEVICE_TOKEN",
-  "topic": "TOPIC_NAME"
+  "topics": ["game_1", "user_42_game_1"]
 }
 ```
 
-**Response** `200` `"OK"` (token 또는 topic이 없으면 처리 없이 200 반환)
+**Response** `200` `"Subscribed"` (token 또는 topics이 없으면 처리 없이 200 반환)
 
 ---
 
