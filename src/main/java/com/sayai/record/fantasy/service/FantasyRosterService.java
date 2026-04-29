@@ -304,8 +304,6 @@ public class FantasyRosterService {
 
             logAction(tx.getFantasyGameSeq(), responderId, null, RosterLog.LogActionType.TRADE_REQ,
                     "Trade Accepted by " + targetTeam + " - voting started");
-            fcmService.sendTopicMessage("game_" + tx.getFantasyGameSeq(), "트레이드 투표 시작",
-                    String.format("%s ↔ %s 트레이드가 수락되었습니다. 참가자 투표를 진행해주세요.", requesterTeam, targetTeam));
         } else {
             // 거절(target) 또는 취소(requester) — 공통 처리
             resetGivingPlayersPending(tx);
