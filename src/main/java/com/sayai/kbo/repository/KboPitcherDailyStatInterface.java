@@ -12,4 +12,6 @@ public interface KboPitcherDailyStatInterface {
     Long getHbp();
     Long getPHit();
     Long getSo();
+    Long getPitchCnt();
+    Long getBatter();
 }

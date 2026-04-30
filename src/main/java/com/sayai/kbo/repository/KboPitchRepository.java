@@ -74,7 +74,8 @@ public interface KboPitchRepository extends JpaRepository<KboPitch, Long> {
             " IFNULL(SUM(pi.hit), 0) as pHit, " +
             " IFNULL(SUM(pi.er), 0) as selfLossScore, " +
             " IFNULL(SUM(pi.pitch_cnt), 0) as pitchCnt, " +
-            " IFNULL(SUM(pi.so), 0) as stOut " +
+            " IFNULL(SUM(pi.so), 0) as stOut, " +
+            " COUNT(DISTINCT g.game_idx) as totalGames " +
             "FROM kbo_pitch pi " +
             "JOIN ft_players p ON pi.PLAYER_ID = p.seq " +
             "JOIN kbo_game g ON pi.game_idx = g.game_idx " +
@@ -125,7 +126,8 @@ public interface KboPitchRepository extends JpaRepository<KboPitch, Long> {
             " SUBSTRING(CAST(g.game_idx AS CHAR), 1, 8) as gameDate, " +
             " CASE WHEN g.home = p.team THEN g.away ELSE g.home END as opponent, " +
             " pi.inning as inning, pi.win as win, pi.lose as lose, pi.save as save, " +
-            " pi.er as er, pi.bb as bb, pi.hbp as hbp, pi.hit as pHit, pi.so as so " +
+            " pi.er as er, pi.bb as bb, pi.hbp as hbp, pi.hit as pHit, pi.so as so, " +
+            " pi.pitch_cnt as pitchCnt, pi.batter as batter " +
             "FROM kbo_pitch pi " +
             "JOIN ft_players p ON pi.PLAYER_ID = p.seq " +
             "JOIN kbo_game g ON pi.game_idx = g.game_idx " +

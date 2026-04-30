@@ -19,4 +19,8 @@ public class HitterDailyStatDto {
     private Long sb;
     private Long so;
     private Double battingAvg;
+    private Long bb;
+    private Double bbPerK;
+    private Double bbPct;
+    private Double kPct;
 }

@@ -115,7 +115,7 @@ public class KboPitchService {
             Long startIdx = toStartIdx(startDate);
             Long endIdx = toEndIdx(endDate);
             KboPitchStatInterface stat = kboPitchRepository.getStatsByPeriodAndId(startIdx, endIdx, id).get();
-            return mapToDto(stat);
+            return mapToDetailDto(stat);
         } catch (NoSuchElementException e) {
             return new PitcherDto();
         }
@@ -166,17 +166,70 @@ public class KboPitchService {
         dto.setBalk(null);
         dto.setLossScore(null);
         dto.setBattingAvg(null);
-        dto.setK9(null);
+
+        return dto;
+    }
+
+    private PitcherDto mapToDetailDto(KboPitchStatInterface stat) {
+        long inning = stat.getInning() != null ? stat.getInning() : 0L;
+        long so = stat.getStOut() != null ? stat.getStOut() : 0L;
+        long bb = stat.getBaseOnBall() != null ? stat.getBaseOnBall() : 0L;
+        long pitchCnt = stat.getPitchCnt() != null ? stat.getPitchCnt() : 0L;
+        long batter = stat.getBatter() != null ? stat.getBatter() : 0L;
+        long totalGames = stat.getTotalGames() != null ? stat.getTotalGames() : 0L;
+
+        PitcherDto dto = PitcherDto.builder()
+                .id(stat.getId())
+                .backNo(stat.getBackNo())
+                .name(stat.getName())
+                .wins(stat.getWins())
+                .loses(stat.getLoses())
+                .saves(stat.getSaves())
+                .batter(batter)
+                .baseOnBall(bb)
+                .hitByBall(stat.getHitByBall())
+                .pHit(stat.getPHit())
+                .selfLossScore(stat.getSelfLossScore())
+                .stOut(so)
+                .build();
+
+        dto.setTeam(stat.getTeam());
+        dto.setInnings(inning > 0 ? inning / 3 + (inning % 3) * 0.1 : 0.0);
+        dto.setInn(null);
+        dto.setEra(inning > 0 ? Math.round(stat.getSelfLossScore() * 27.0 / inning * 100.0) / 100.0 : 0.0);
+        dto.setWhip(inning > 0 ? Math.round((stat.getPHit() + bb) * 3.0 / inning * 100.0) / 100.0 : 0.0);
+        dto.setHitter(null);
+        dto.setPHomerun(null);
+        dto.setSacrifice(null);
+        dto.setSacFly(null);
+        dto.setFallingBall(null);
+        dto.setBalk(null);
+        dto.setLossScore(null);
+        dto.setBattingAvg(null);
+
+        dto.setPitchCnt(pitchCnt);
+        dto.setK9(inning > 0 ? Math.round(so * 27.0 / inning * 100.0) / 100.0 : 0.0);
+        dto.setBb9(inning > 0 ? Math.round(bb * 27.0 / inning * 100.0) / 100.0 : 0.0);
+        dto.setKbb(bb > 0 ? Math.round((double) so / bb * 100.0) / 100.0 : 0.0);
+        dto.setPg(totalGames > 0 ? Math.round((double) pitchCnt / totalGames * 10.0) / 10.0 : 0.0);
+        dto.setPip(inning > 0 ? Math.round((double) pitchCnt * 3 / inning * 100.0) / 100.0 : 0.0);
+        dto.setPpa(batter > 0 ? Math.round((double) pitchCnt / batter * 100.0) / 100.0 : 0.0);
 
         return dto;
     }
 
     private PitcherDailyStatDto mapDailyToDto(KboPitcherDailyStatInterface stat) {
+        long inning = stat.getInning() != null ? stat.getInning() : 0L;
+        long so = stat.getSo() != null ? stat.getSo() : 0L;
+        long bb = stat.getBb() != null ? stat.getBb() : 0L;
+        long pitchCnt = stat.getPitchCnt() != null ? stat.getPitchCnt() : 0L;
+        long batter = stat.getBatter() != null ? stat.getBatter() : 0L;
+
         double innings = 0.0;
         double era = 0.0;
-        if (stat.getInning() != null && stat.getInning() > 0) {
-            innings = stat.getInning() / 3 + (stat.getInning() % 3) * 0.1;
-            era = Math.round((stat.getEr() * 27.0) / stat.getInning() * 100.0) / 100.0;
+        if (inning > 0) {
+            innings = inning / 3 + (inning % 3) * 0.1;
+            era = Math.round((stat.getEr() * 27.0) / inning * 100.0) / 100.0;
         }
         return PitcherDailyStatDto.builder()
                 .gameDate(stat.getGameDate())
@@ -191,6 +244,12 @@ public class KboPitchService {
                 .pHit(stat.getPHit())
                 .so(stat.getSo())
                 .era(era)
+                .pitchCnt(pitchCnt)
+                .k9(inning > 0 ? Math.round(so * 27.0 / inning * 100.0) / 100.0 : 0.0)
+                .bb9(inning > 0 ? Math.round(bb * 27.0 / inning * 100.0) / 100.0 : 0.0)
+                .kbb(bb > 0 ? Math.round((double) so / bb * 100.0) / 100.0 : 0.0)
+                .pip(inning > 0 ? Math.round((double) pitchCnt * 3 / inning * 100.0) / 100.0 : 0.0)
+                .ppa(batter > 0 ? Math.round((double) pitchCnt / batter * 100.0) / 100.0 : 0.0)
                 .build();
     }
 }

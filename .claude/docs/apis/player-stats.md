@@ -89,7 +89,11 @@
     "rbi": 42,
     "runs": 30,
     "sb": 5,
-    "strikeOut": 40
+    "strikeOut": 40,
+    "bb": 25,
+    "bbPerK": 0.625,
+    "bbPct": 0.119,
+    "kPct": 0.190
   },
   "dailyStats": {
     "content": [
@@ -104,7 +108,11 @@
         "run": 2,
         "sb": 0,
         "so": 1,
-        "battingAvg": 0.667
+        "battingAvg": 0.667,
+        "bb": 1,
+        "bbPerK": 1.0,
+        "bbPct": 0.25,
+        "kPct": 0.25
       }
     ],
     "totalElements": 50,
@@ -131,6 +139,10 @@
 | `runs` | `Integer` | 득점 |
 | `sb` | `Integer` | 도루 |
 | `strikeOut` | `Integer` | 삼진 |
+| `bb` | `Long` | 볼넷 (`PA - AB`) |
+| `bbPerK` | `Double` | BB/K (`bb / strikeOut`) |
+| `bbPct` | `Double` | BB% (`bb / PA`, 소수점 3자리) |
+| `kPct` | `Double` | K% (`strikeOut / PA`, 소수점 3자리) |
 
 **dailyStats.content 필드**
 | 필드 | 타입 | 설명 |
@@ -146,6 +158,10 @@
 | `sb` | `Integer` | 도루 |
 | `so` | `Integer` | 삼진 |
 | `battingAvg` | `Double` | 해당 경기 타율 |
+| `bb` | `Long` | 볼넷 (`pa - ab`) |
+| `bbPerK` | `Double` | BB/K |
+| `bbPct` | `Double` | BB% |
+| `kPct` | `Double` | K% |
 
 > `dailyStats.content`는 최근 날짜 순(내림차순) 정렬.
 
@@ -174,7 +190,15 @@
     "stOut": 130,
     "baseOnBall": 40,
     "pHit": 105,
-    "selfLossScore": 46
+    "selfLossScore": 46,
+    "batter": 480,
+    "k9": 9.75,
+    "bb9": 3.0,
+    "kbb": 3.25,
+    "pitchCnt": 1920,
+    "pg": 64.0,
+    "pip": 16.0,
+    "ppa": 4.0
   },
   "dailyStats": {
     "content": [
@@ -190,7 +214,13 @@
         "hbp": 0,
         "pHit": 7,
         "so": 8,
-        "era": 3.0
+        "era": 3.0,
+        "pitchCnt": 96,
+        "k9": 12.0,
+        "bb9": 4.5,
+        "kbb": 2.67,
+        "pip": 16.0,
+        "ppa": 3.84
       }
     ],
     "totalElements": 20,
@@ -214,6 +244,16 @@
 | `baseOnBall` | `Integer` | 볼넷 |
 | `pHit` | `Integer` | 피안타 |
 | `selfLossScore` | `Integer` | 자책점 |
+| `batter` | `Long` | 상대 타자 수 |
+| `k9` | `Double` | K/9 (`so / outs * 27`) |
+| `bb9` | `Double` | BB/9 (`bb / outs * 27`) |
+| `kbb` | `Double` | K/BB (`so / bb`) |
+| `pitchCnt` | `Long` | 총 투구 수 |
+| `pg` | `Double` | P/G (`pitchCnt / games`, 소수점 1자리) |
+| `pip` | `Double` | P/IP (`pitchCnt * 3 / outs`) |
+| `ppa` | `Double` | P/PA (`pitchCnt / batter`) |
+
+> `outs`: DB의 `inning` 컬럼 (아웃카운트 원시값, 3 = 1이닝)
 
 **dailyStats.content 필드**
 | 필드 | 타입 | 설명 |
@@ -228,8 +268,15 @@
 | `pHit` | `Integer` | 피안타 |
 | `so` | `Integer` | 삼진 |
 | `era` | `Double` | 해당 등판 단독 ERA |
+| `pitchCnt` | `Long` | 투구 수 |
+| `k9` | `Double` | K/9 |
+| `bb9` | `Double` | BB/9 |
+| `kbb` | `Double` | K/BB |
+| `pip` | `Double` | P/IP |
+| `ppa` | `Double` | P/PA |
 
-> `dailyStats.content`는 최근 날짜 순(내림차순) 정렬.
+> `dailyStats.content`는 최근 날짜 순(내림차순) 정렬.  
+> P/G는 일별 통계에 포함되지 않음 (1경기 단위이므로 `pitchCnt`와 동일).
 
 ---
 

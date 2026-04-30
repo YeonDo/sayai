@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/docs-update-reminder.sh"
+            "command": "/usr/bin/bash F:/personal/sayai/.claude/hooks/docs-update-reminder.sh"
           }
         ]
       }

@@ -67,7 +67,7 @@ public class KboHitService {
             Long endIdx = toEndIdx(endDate);
             KboHitStatInterface stat = kboHitRepository.getPlayerByPeriodAndId(startIdx, endIdx, id)
                     .orElseThrow(java.util.NoSuchElementException::new);
-            return mapToDto(stat);
+            return mapToDetailDto(stat);
         } catch (java.util.NoSuchElementException e) {
             return PlayerDto.builder().build();
         }
@@ -157,11 +157,30 @@ public class KboHitService {
         return dto;
     }
 
+    private PlayerDto mapToDetailDto(KboHitStatInterface stat) {
+        PlayerDto dto = mapToDto(stat);
+
+        long pa = stat.getPlayerAppearance() != null ? stat.getPlayerAppearance() : 0L;
+        long ab = stat.getAtBat() != null ? stat.getAtBat() : 0L;
+        long so = stat.getStrikeOut() != null ? stat.getStrikeOut() : 0L;
+        long bb = pa - ab;
+        dto.setBb(bb);
+        dto.setBbPerK(so > 0 ? Math.round((double) bb / so * 1000.0) / 1000.0 : 0.0);
+        dto.setBbPct(pa > 0 ? Math.round((double) bb / pa * 1000.0) / 1000.0 : 0.0);
+        dto.setKPct(pa > 0 ? Math.round((double) so / pa * 1000.0) / 1000.0 : 0.0);
+
+        return dto;
+    }
+
     private HitterDailyStatDto mapDailyToDto(KboHitterDailyStatInterface stat) {
         double battingAvg = 0.0;
         if (stat.getAb() != null && stat.getAb() > 0) {
             battingAvg = Math.round((double) stat.getHit() / stat.getAb() * 1000.0) / 1000.0;
         }
+        long pa = stat.getPa() != null ? stat.getPa() : 0L;
+        long ab = stat.getAb() != null ? stat.getAb() : 0L;
+        long so = stat.getSo() != null ? stat.getSo() : 0L;
+        long bb = pa - ab;
         return HitterDailyStatDto.builder()
                 .gameDate(stat.getGameDate())
                 .opponent(stat.getOpponent())
@@ -174,6 +193,10 @@ public class KboHitService {
                 .sb(stat.getSb())
                 .so(stat.getSo())
                 .battingAvg(battingAvg)
+                .bb(bb)
+                .bbPerK(so > 0 ? Math.round((double) bb / so * 1000.0) / 1000.0 : 0.0)
+                .bbPct(pa > 0 ? Math.round((double) bb / pa * 1000.0) / 1000.0 : 0.0)
+                .kPct(pa > 0 ? Math.round((double) so / pa * 1000.0) / 1000.0 : 0.0)
                 .build();
     }
 }
