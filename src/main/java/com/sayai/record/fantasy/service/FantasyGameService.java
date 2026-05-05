@@ -157,26 +157,29 @@ public class FantasyGameService {
             throw new IllegalStateException("Cannot start game with no participants.");
         }
 
-        // Shuffle and assign order
-        Collections.shuffle(participants);
+        // draft_order 가 이미 설정된 경우 기존 순서 그대로 사용
+        boolean alreadyOrdered = participants.stream().anyMatch(p -> p.getDraftOrder() != null);
 
-        int order = 1;
-        int n = participants.size();
-        List<FantasyWaiverOrder> waiverOrders = new ArrayList<>();
+        if (!alreadyOrdered) {
+            Collections.shuffle(participants);
 
-        for (FantasyParticipant p : participants) {
-            p.setDraftOrder(order);
-            // Waiver order is reverse of draft order: 1st draft pick gets Nth waiver priority
-            int waiverOrderNum = n - order + 1;
-            waiverOrders.add(FantasyWaiverOrder.builder()
-                    .gameSeq(gameSeq)
-                    .playerId(p.getPlayerId())
-                    .orderNum(waiverOrderNum)
-                    .build());
-            order++;
+            int order = 1;
+            int n = participants.size();
+            List<FantasyWaiverOrder> waiverOrders = new ArrayList<>();
+
+            for (FantasyParticipant p : participants) {
+                p.setDraftOrder(order);
+                int waiverOrderNum = n - order + 1;
+                waiverOrders.add(FantasyWaiverOrder.builder()
+                        .gameSeq(gameSeq)
+                        .playerId(p.getPlayerId())
+                        .orderNum(waiverOrderNum)
+                        .build());
+                order++;
+            }
+            fantasyParticipantRepository.saveAll(participants);
+            waiverOrderRepository.saveAll(waiverOrders);
         }
-        fantasyParticipantRepository.saveAll(participants);
-        waiverOrderRepository.saveAll(waiverOrders);
 
         // Update Game Status
         game.setStatus(FantasyGame.GameStatus.DRAFTING);
@@ -198,15 +201,17 @@ public class FantasyGameService {
                 .build())
             .collect(Collectors.toList());
 
+        FantasyDraftService.NextPickInfo nextPick = fantasyDraftService.getNextPickInfo(game);
+
         DraftEventDto event = DraftEventDto.builder()
                 .type("START")
                 .fantasyGameSeq(gameSeq)
                 .message("Draft Started")
                 .draftOrder(orderList)
-                .nextPickerId(orderList.get(0).getParticipantId()) // First picker
+                .nextPickerId(nextPick.pickerId)
                 .nextPickDeadline(game.getNextPickDeadline() != null ? game.getNextPickDeadline().atZone(ZoneId.of("UTC")) : null)
-                .round(1)
-                .pickInRound(1)
+                .round(nextPick.round)
+                .pickInRound(nextPick.pickInRound)
                 .build();
 
         messagingTemplate.convertAndSend("/topic/draft/" + gameSeq, event);
