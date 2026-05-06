@@ -42,6 +42,8 @@ public class PlayerDto {
     private Double bbPerK;
     private Double bbPct;
     private Double kPct;
+    private Integer games;
+    private Double pRank;
 
     @Builder
     public PlayerDto(Long id, Long backNo, String name, Long totalGames, Double battingAvg, Long playerAppearance, Double avgPa, Long atBat, Double onBasePer, Double slugPer, Long totalHits, Long singles, Long doubles, Long triples, Long homeruns,Long baseOnBall, Long hitByPitch, Long strikeOut, Long ibb, Long dp, Long sacrifice, Long sacFly, Integer rbi, Integer runs, Integer sb) {

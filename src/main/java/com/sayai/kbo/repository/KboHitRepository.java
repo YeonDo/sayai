@@ -80,6 +80,7 @@ public interface KboHitRepository extends JpaRepository<KboHit, Long> {
 
     List<KboHit> findByGameIdx(Long gameIdx);
 
+
     @Query(value = "SELECT " +
             " h.PLAYER_ID as playerId, " +
             " IFNULL(SUM(h.pa), 0) as pa, " +
@@ -105,7 +106,8 @@ public interface KboHitRepository extends JpaRepository<KboHit, Long> {
             " IFNULL(SUM(h.rbi), 0) as rbi, " +
             " IFNULL(SUM(h.sb), 0) as sb, " +
             " IFNULL(SUM(h.so), 0) as so, " +
-            " IFNULL(SUM(h.hr), 0) as hr " +
+            " IFNULL(SUM(h.hr), 0) as hr, " +
+            " COUNT(DISTINCT h.game_idx) as games " +
             "FROM kbo_hit h " +
             "JOIN kbo_game g ON h.game_idx = g.game_idx " +
             "WHERE h.PLAYER_ID = :playerId " +

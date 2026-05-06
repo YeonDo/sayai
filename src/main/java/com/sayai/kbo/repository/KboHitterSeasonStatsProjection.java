@@ -12,4 +12,6 @@ public interface KboHitterSeasonStatsProjection {
     Integer getRbi();
     Integer getSo();
     Integer getSb();
+    Integer getGames();
+    Double getPRank();
 }

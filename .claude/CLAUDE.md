@@ -229,6 +229,7 @@ DraftRuleValidator
 | `waiver-system.md` | 웨이버 신청~처리 DB 변화, FCM, RosterLog, 우선순위 처리 |
 | `draft-system.md` | 드래프트 전체 흐름, 스네이크 순서, 자동픽, FA 영입 |
 | `rotisserie-scoring.md` | 로티세리 카테고리, 포인트 공식, 동률 처리, 라운드 집계 |
+| `pandasy_rank.md` | p_rank 산출 공식, 가중치, 갱신 흐름, API 응답 필드 |
 
 ---
 

@@ -20,9 +20,12 @@ public interface KboHitterStatsRepository extends JpaRepository<KboHitterStats, 
 
     List<KboHitterStats> findByPlayerIdInAndSeason(Collection<Long> playerIds, Integer season);
 
+    List<KboHitterStats> findAllBySeason(Integer season);
+
     @Query(value = "SELECT s.player_id as id, p.name as name, p.team as team, " +
             "s.pa as pa, s.ab as ab, s.hit as hit, s.avg as avg, " +
-            "s.hr as hr, s.rbi as rbi, s.so as so, s.sb as sb " +
+            "s.hr as hr, s.rbi as rbi, s.so as so, s.sb as sb, " +
+            "s.games as games, s.p_rank as pRank " +
             "FROM kbo_hitter_stats s " +
             "JOIN ft_players p ON s.player_id = p.seq " +
             "WHERE s.season = :season " +
@@ -37,7 +40,8 @@ public interface KboHitterStatsRepository extends JpaRepository<KboHitterStats, 
 
     @Query(value = "SELECT s.player_id as id, p.name as name, p.team as team, " +
             "s.pa as pa, s.ab as ab, s.hit as hit, s.avg as avg, " +
-            "s.hr as hr, s.rbi as rbi, s.so as so, s.sb as sb " +
+            "s.hr as hr, s.rbi as rbi, s.so as so, s.sb as sb, " +
+            "s.games as games, s.p_rank as pRank " +
             "FROM kbo_hitter_stats s " +
             "JOIN ft_players p ON s.player_id = p.seq " +
             "WHERE s.season = :season " +

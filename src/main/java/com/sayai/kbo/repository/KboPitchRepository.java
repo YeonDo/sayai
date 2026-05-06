@@ -87,6 +87,7 @@ public interface KboPitchRepository extends JpaRepository<KboPitch, Long> {
 
     List<KboPitch> findByGameIdx(Long gameIdx);
 
+
     @Query(value = "SELECT " +
             " pi.PLAYER_ID as playerId, " +
             " IFNULL(SUM(pi.inning), 0) as outs, " +
@@ -95,7 +96,8 @@ public interface KboPitchRepository extends JpaRepository<KboPitch, Long> {
             " IFNULL(SUM(pi.so), 0) as so, " +
             " IFNULL(SUM(pi.save), 0) as save, " +
             " IFNULL(SUM(pi.bb), 0) as bb, " +
-            " IFNULL(SUM(pi.hit), 0) as phit " +
+            " IFNULL(SUM(pi.hit), 0) as phit, " +
+            " COUNT(DISTINCT pi.game_idx) as games " +
             "FROM kbo_pitch pi " +
             "JOIN kbo_game g ON pi.game_idx = g.game_idx " +
             "WHERE pi.PLAYER_ID = :playerId " +

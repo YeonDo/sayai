@@ -47,4 +47,14 @@ public class KboPitcherStats {
 
     @Column(name = "whip")
     private String whip;
+
+    @Column(name = "games")
+    private Integer games;
+
+    @Column(name = "p_rank")
+    private Double pRank;
+
+    public void updatePRank(Double pRank) {
+        this.pRank = pRank;
+    }
 }

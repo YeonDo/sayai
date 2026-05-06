@@ -95,6 +95,8 @@ public class KboHitService {
                 .build();
 
         dto.setTeam(stat.getTeam());
+        dto.setGames(stat.getGames());
+        dto.setPRank(stat.getPRank());
 
         if (stat.getAvg() != null) {
             try {

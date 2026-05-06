@@ -68,6 +68,8 @@ public class KboPitchService {
                 .build();
 
         dto.setTeam(stat.getTeam());
+        dto.setGames(stat.getGames());
+        dto.setPRank(stat.getPRank());
 
         if (stat.getOuts() != null) {
             double inn = stat.getOuts() / 3 + (stat.getOuts() % 3) * 0.1;

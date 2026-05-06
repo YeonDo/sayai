@@ -9,4 +9,5 @@ public interface KboHitterSeasonStatInterface {
     Long getSb();
     Long getSo();
     Long getHr();
+    Long getGames();
 }

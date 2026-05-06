@@ -31,6 +31,7 @@ public class KboAdminService {
     private final KboHitterStatsRepository kboHitterStatsRepository;
     private final KboPitcherStatsRepository kboPitcherStatsRepository;
     private final FantasyPlayerRepository fantasyPlayerRepository;
+    private final PRankService pRankService;
 
     private String getTeamCode(String teamName) {
         if (teamName == null) return "99";
@@ -122,6 +123,7 @@ public class KboAdminService {
         int season = (int) (newGameId / 10_000_000_000L);
         updateHitterStats(allHitters, season);
         updatePitcherStats(allPitchers, season);
+        pRankService.updatePRank(season);
 
         return KboGameUploadResponse.builder()
                 .game(game)
@@ -147,6 +149,7 @@ public class KboAdminService {
                 int newRbi = stats.getRbi() + hit.getRbi().intValue();
                 int newSo = stats.getSo() + hit.getSo().intValue();
                 int newSb = stats.getSb() + hit.getSb().intValue();
+                int newGames = (stats.getGames() != null ? stats.getGames() : 0) + 1;
                 String newAvg = calcAvg(newHit, newAb);
 
                 kboHitterStatsRepository.save(KboHitterStats.builder()
@@ -154,6 +157,7 @@ public class KboAdminService {
                         .season(season)
                         .ab(newAb).pa(newPa).hit(newHit).hr(newHr)
                         .rbi(newRbi).so(newSo).sb(newSb).avg(newAvg)
+                        .games(newGames)
                         .build());
             } else {
                 KboHitterSeasonStatInterface seasonStats = kboHitRepository.getSeasonStatsByPlayerId(playerId, startIdx, endIdx);
@@ -164,6 +168,7 @@ public class KboAdminService {
                 int totalRbi = seasonStats != null ? seasonStats.getRbi().intValue() : 0;
                 int totalSo = seasonStats != null ? seasonStats.getSo().intValue() : 0;
                 int totalSb = seasonStats != null ? seasonStats.getSb().intValue() : 0;
+                int totalGames = seasonStats != null ? seasonStats.getGames().intValue() : 0;
                 String avgStr = calcAvg(totalHit, totalAb);
 
                 kboHitterStatsRepository.save(KboHitterStats.builder()
@@ -171,6 +176,7 @@ public class KboAdminService {
                         .season(season)
                         .ab(totalAb).pa(totalPa).hit(totalHit).hr(totalHr)
                         .rbi(totalRbi).so(totalSo).sb(totalSb).avg(avgStr)
+                        .games(totalGames)
                         .build());
             }
         }
@@ -193,6 +199,7 @@ public class KboAdminService {
                 int newSave = stats.getSave() + pitch.getSave().intValue();
                 int newBb = stats.getBb() + pitch.getBb().intValue();
                 int newPhit = stats.getPhit() + pitch.getHit().intValue();
+                int newGames = (stats.getGames() != null ? stats.getGames() : 0) + 1;
                 String newEra = calcEra(newEr, newOuts);
                 String newWhip = calcWhip(newBb, newPhit, newOuts);
 
@@ -202,6 +209,7 @@ public class KboAdminService {
                         .outs(newOuts).er(newEr).win(newWin).so(newSo)
                         .save(newSave).bb(newBb).phit(newPhit)
                         .era(newEra).whip(newWhip)
+                        .games(newGames)
                         .build());
             } else {
                 KboPitcherSeasonStatInterface seasonStats = kboPitchRepository.getSeasonStatsByPlayerId(playerId, startIdx, endIdx);
@@ -212,6 +220,7 @@ public class KboAdminService {
                 int totalSave = seasonStats != null ? seasonStats.getSave().intValue() : 0;
                 int totalBb = seasonStats != null ? seasonStats.getBb().intValue() : 0;
                 int totalPhit = seasonStats != null ? seasonStats.getPhit().intValue() : 0;
+                int totalGames = seasonStats != null ? seasonStats.getGames().intValue() : 0;
                 String eraStr = calcEra(totalEr, totalOuts);
                 String whipStr = calcWhip(totalBb, totalPhit, totalOuts);
 
@@ -221,6 +230,7 @@ public class KboAdminService {
                         .outs(totalOuts).er(totalEr).win(totalWin).so(totalSo)
                         .save(totalSave).bb(totalBb).phit(totalPhit)
                         .era(eraStr).whip(whipStr)
+                        .games(totalGames)
                         .build());
             }
         }

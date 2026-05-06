@@ -32,6 +32,8 @@
 | `content[].rbi` | `Integer` | 타점 |
 | `content[].sb` | `Integer` | 도루 |
 | `content[].strikeOut` | `Integer` | 삼진 |
+| `content[].games` | `Integer` | 출전 경기 수 |
+| `content[].pRank` | `Double` | 포지션 종합 점수 (6경기 기준 판타지 예상 점수) |
 | `totalElements` | `Long` | 전체 선수 수 |
 | `totalPages` | `Integer` | 전체 페이지 수 |
 | `number` | `Integer` | 현재 페이지 번호 |
@@ -57,6 +59,8 @@
 | `saves` | `Integer` | 세이브 |
 | `whip` | `Double` | WHIP |
 | `stOut` | `Integer` | 삼진 |
+| `games` | `Integer` | 출전 경기 수 |
+| `pRank` | `Double` | 포지션 종합 점수 (18아웃 기준 판타지 예상 점수) |
 
 ---
 
