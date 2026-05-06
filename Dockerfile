@@ -1,13 +1,14 @@
-FROM amazoncorretto:21-al2023-jdk
-# The application's jar file
+FROM amazoncorretto:21-al2023-jdk AS builder
 ARG JAR_FILE=build/libs/record-0.0.1-SNAPSHOT.jar
+COPY ${JAR_FILE} app.jar
+RUN java -Djarmode=layertools -jar app.jar extract
 
-# Add the application's jar to the container
-ADD ${JAR_FILE} app.jar
+FROM amazoncorretto:21-al2023-jdk
+COPY --from=builder dependencies/ ./
+COPY --from=builder spring-boot-loader/ ./
+COPY --from=builder snapshot-dependencies/ ./
+COPY --from=builder application/ ./
 COPY record-private/private/fcm-key.json /etc/conf/fcm-key.json
-# Make port 8080 available to the world outside this container]
 ENV SPRING_PROFILES_ACTIVE=prod
 EXPOSE 8080
-
-# Run the jar file
-ENTRYPOINT ["java","-jar","/app.jar"]
+ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]
