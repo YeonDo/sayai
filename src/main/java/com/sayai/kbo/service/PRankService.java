@@ -36,10 +36,10 @@ public class PRankService {
             }
 
             double avg  = parseDouble(stats.getAvg());
-            double hr6  = stats.getHr()  * 6.0 / games;
-            double rbi6 = stats.getRbi() * 6.0 / games;
-            double sb6  = stats.getSb()  * 6.0 / games;
-            double so6  = stats.getSo()  * 6.0 / games;
+            double hr6  = (stats.getHr()  != null ? stats.getHr()  : 0) * 6.0 / games;
+            double rbi6 = (stats.getRbi() != null ? stats.getRbi() : 0) * 6.0 / games;
+            double sb6  = (stats.getSb()  != null ? stats.getSb()  : 0) * 6.0 / games;
+            double so6  = (stats.getSo()  != null ? stats.getSo()  : 0) * 6.0 / games;
 
             double pRank = PRankWeight.HITTER_AVG_A  * avg  + PRankWeight.HITTER_AVG_B
                          + PRankWeight.HITTER_HR_A   * hr6  + PRankWeight.HITTER_HR_B
@@ -63,9 +63,9 @@ public class PRankService {
 
             double era   = parseDouble(stats.getEra());
             double whip  = parseDouble(stats.getWhip());
-            double win18  = stats.getWin()  * 18.0 / outs;
-            double so18   = stats.getSo()   * 18.0 / outs;
-            double save18 = stats.getSave() * 18.0 / outs;
+            double win18  = (stats.getWin()  != null ? stats.getWin()  : 0) * 18.0 / outs;
+            double so18   = (stats.getSo()   != null ? stats.getSo()   : 0) * 18.0 / outs;
+            double save18 = (stats.getSave() != null ? stats.getSave() : 0) * 18.0 / outs;
 
             double pRank = PRankWeight.PITCHER_WIN_A  * win18  + PRankWeight.PITCHER_WIN_B
                          + PRankWeight.PITCHER_ERA_A  * era    + PRankWeight.PITCHER_ERA_B
