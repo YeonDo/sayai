@@ -620,19 +620,33 @@ public class FantasyRosterService {
         List<DraftPick> requesterPicks = draftPickRepository.findByFantasyGameSeqAndPlayerId(gameSeq, requesterId);
         List<DraftPick> targetPicks = draftPickRepository.findByFantasyGameSeqAndPlayerId(gameSeq, targetId);
 
-        // Calculate Requester New Cost
         FantasyParticipant requesterParticipant = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(gameSeq, requesterId).orElse(null);
         int requesterCost = calculateTeamCostAfterTrade(game, requesterParticipant, requesterPicks, givingSeqs, receivingSeqs);
-        if (requesterCost > game.getSalaryCap()) {
-            throw new IllegalStateException("Trade failed: Requester Salary Cap Exceeded (" + requesterCost + " > " + game.getSalaryCap() + ")");
-        }
+        boolean requesterExceeded = requesterCost > game.getSalaryCap();
 
-        // Calculate Target New Cost
-        // For target: Giving = receivingSeqs, Receiving = givingSeqs
         FantasyParticipant targetParticipant = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(gameSeq, targetId).orElse(null);
         int targetCost = calculateTeamCostAfterTrade(game, targetParticipant, targetPicks, receivingSeqs, givingSeqs);
-        if (targetCost > game.getSalaryCap()) {
-            throw new IllegalStateException("Trade failed: Target Salary Cap Exceeded (" + targetCost + " > " + game.getSalaryCap() + ")");
+        boolean targetExceeded = targetCost > game.getSalaryCap();
+
+        if (requesterExceeded) {
+            String teamName = requesterParticipant != null ? requesterParticipant.getTeamName() : "Unknown";
+            fcmService.sendTopicMessage(
+                    "user_" + requesterId + "_game_" + gameSeq,
+                    "트레이드 취소 - 샐러리캡 초과",
+                    String.format("%s팀의 트레이드가 샐러리캡 초과로 취소되었습니다. (현재: %d / 제한: %d)", teamName, requesterCost, game.getSalaryCap())
+            );
+        }
+        if (targetExceeded) {
+            String teamName = targetParticipant != null ? targetParticipant.getTeamName() : "Unknown";
+            fcmService.sendTopicMessage(
+                    "user_" + targetId + "_game_" + gameSeq,
+                    "트레이드 취소 - 샐러리캡 초과",
+                    String.format("%s팀의 트레이드가 샐러리캡 초과로 취소되었습니다. (현재: %d / 제한: %d)", teamName, targetCost, game.getSalaryCap())
+            );
+        }
+
+        if (requesterExceeded || targetExceeded) {
+            throw new IllegalStateException("Trade failed: Salary Cap Exceeded");
         }
     }
 
