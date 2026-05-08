@@ -232,14 +232,8 @@ public class FantasyDraftService {
             hypotheticalTeam.add(targetPlayer);
             int projectedCost = com.sayai.record.fantasy.util.SalaryCapCalculator.calculateTeamCost(game, participant, hypotheticalTeam).getTotalCost();
 
-            // Penalty check for 21st player
-            int penalty = 0;
-            if (isFA && userPicks.size() == 20) {
-                penalty = 5;
-            }
-
-            if (projectedCost + penalty > game.getSalaryCap()) {
-                throw new IllegalStateException("샐캡 초과: " + (projectedCost + penalty) + " / " + game.getSalaryCap());
+            if (projectedCost > game.getSalaryCap()) {
+                throw new IllegalStateException("샐캡 초과: " + projectedCost + " / " + game.getSalaryCap());
             }
         }
 
