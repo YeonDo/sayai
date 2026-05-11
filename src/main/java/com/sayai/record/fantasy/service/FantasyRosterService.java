@@ -226,8 +226,8 @@ public class FantasyRosterService {
         if (receivingPlayerSeqs == null || receivingPlayerSeqs.isEmpty()) {
             throw new IllegalArgumentException("Must receive at least one player");
         }
-        if (givingPlayerSeqs.size() > 2 || receivingPlayerSeqs.size() > 2) {
-            throw new IllegalArgumentException("Max 2 players per side");
+        if (givingPlayerSeqs.size() > 4 || receivingPlayerSeqs.size() > 4) {
+            throw new IllegalArgumentException("Max 4 players per side");
         }
 
         List<DraftPick> givingPicks = validateTradePlayers(gameSeq, requesterId, givingPlayerSeqs);
@@ -416,6 +416,9 @@ public class FantasyRosterService {
 
             // Check Salary Cap
             validateTradeSalaryCap(tx.getFantasyGameSeq(), tx.getRequesterId(), tx.getTargetId(), givingSeqs, receivingSeqs);
+
+            // Check Roster Size
+            validateTradeRosterSize(tx.getFantasyGameSeq(), tx.getRequesterId(), tx.getTargetId(), givingSeqs, receivingSeqs);
 
             // Swap
             for (DraftPick p : givingPicks) {
@@ -647,6 +650,42 @@ public class FantasyRosterService {
 
         if (requesterExceeded || targetExceeded) {
             throw new IllegalStateException("Trade failed: Salary Cap Exceeded");
+        }
+    }
+
+    private void validateTradeRosterSize(Long gameSeq, Long requesterId, Long targetId, List<Long> givingSeqs, List<Long> receivingSeqs) {
+        int limit = 21;
+
+        int requesterSize = draftPickRepository.findByFantasyGameSeqAndPlayerId(gameSeq, requesterId).size();
+        int requesterAfter = requesterSize - givingSeqs.size() + receivingSeqs.size();
+
+        int targetSize = draftPickRepository.findByFantasyGameSeqAndPlayerId(gameSeq, targetId).size();
+        int targetAfter = targetSize - receivingSeqs.size() + givingSeqs.size();
+
+        boolean requesterExceeded = requesterAfter > limit;
+        boolean targetExceeded = targetAfter > limit;
+
+        if (requesterExceeded) {
+            FantasyParticipant p = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(gameSeq, requesterId).orElse(null);
+            String teamName = p != null ? p.getTeamName() : "Unknown";
+            fcmService.sendTopicMessage(
+                    "user_" + requesterId + "_game_" + gameSeq,
+                    "트레이드 취소 - 로스터 초과",
+                    String.format("%s팀의 트레이드가 로스터 초과로 취소되었습니다. (트레이드 후 %d명 / 제한: %d명)", teamName, requesterAfter, limit)
+            );
+        }
+        if (targetExceeded) {
+            FantasyParticipant p = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(gameSeq, targetId).orElse(null);
+            String teamName = p != null ? p.getTeamName() : "Unknown";
+            fcmService.sendTopicMessage(
+                    "user_" + targetId + "_game_" + gameSeq,
+                    "트레이드 취소 - 로스터 초과",
+                    String.format("%s팀의 트레이드가 로스터 초과로 취소되었습니다. (트레이드 후 %d명 / 제한: %d명)", teamName, targetAfter, limit)
+            );
+        }
+
+        if (requesterExceeded || targetExceeded) {
+            throw new IllegalStateException("Trade failed: Roster size exceeded");
         }
     }
 
