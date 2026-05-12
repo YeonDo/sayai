@@ -65,10 +65,16 @@ public class FcmService {
      */
     public void subscribeToTopic(List<String> tokens, String topic) {
         try {
-            FirebaseMessaging.getInstance().subscribeToTopic(tokens, topic);
-            log.info("Subscribed {} tokens to topic {}", tokens.size(), topic);
+            com.google.firebase.messaging.TopicManagementResponse response =
+                    FirebaseMessaging.getInstance().subscribeToTopic(tokens, topic);
+            log.info("FCM subscribe topic={} success={} failure={}",
+                    topic, response.getSuccessCount(), response.getFailureCount());
+            if (response.getFailureCount() > 0) {
+                response.getErrors().forEach(e ->
+                        log.warn("FCM subscribe failed topic={} tokenIndex={} reason={}", topic, e.getIndex(), e.getReason()));
+            }
         } catch (FirebaseMessagingException | RuntimeException e) {
-            log.error("Failed to subscribe to topic {}", topic, e);
+            log.error("FCM subscribe error topic={}", topic, e);
         }
     }
 }
