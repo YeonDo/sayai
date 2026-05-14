@@ -18,6 +18,7 @@ function performLogin() {
         url: '/apis/v1/auth/login',
         type: 'POST',
         contentType: 'application/json',
+        headers: { 'X-Login-Source': 'modal' },
         data: JSON.stringify({ userId: userId, password: password }),
         success: function(response) {
             localStorage.setItem('isLoggedIn', 'true');
