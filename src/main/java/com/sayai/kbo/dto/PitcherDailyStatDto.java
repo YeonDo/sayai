@@ -20,4 +20,10 @@ public class PitcherDailyStatDto {
     private Long pHit;
     private Long so;
     private Double era;
+    private Long pitchCnt;
+    private Double k9;
+    private Double bb9;
+    private Double kbb;
+    private Double pip;
+    private Double ppa;
 }

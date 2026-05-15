@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/bash F:/personal/sayai/.claude/hooks/docs-update-reminder.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

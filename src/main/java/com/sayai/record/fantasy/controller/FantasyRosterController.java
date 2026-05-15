@@ -2,6 +2,7 @@ package com.sayai.record.fantasy.controller;
 
 import com.sayai.record.auth.jwt.CustomUserDetails;
 import com.sayai.record.auth.repository.MemberRepository;
+import com.sayai.record.fantasy.dto.TradeBoardDto;
 import com.sayai.record.fantasy.dto.WaiverBoardDto;
 import com.sayai.record.fantasy.service.FantasyRosterService;
 import lombok.Data;
@@ -41,9 +42,22 @@ public class FantasyRosterController {
                 userDetails.getPlayerId(),
                 request.getTargetId(),
                 request.getGivingPlayerSeqs(),
-                request.getReceivingPlayerSeqs()
+                request.getReceivingPlayerSeqs(),
+                request.getComment()
         );
-        return ResponseEntity.ok("Trade requested");
+        return ResponseEntity.ok("Trade suggested");
+    }
+
+    @PostMapping("/games/{gameSeq}/trades/{transactionSeq}/respond")
+    public ResponseEntity<String> respondToTrade(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                                 @PathVariable(name = "gameSeq") Long gameSeq,
+                                                 @PathVariable(name = "transactionSeq") Long transactionSeq,
+                                                 @RequestBody TradeRespondRequest request) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
+        fantasyRosterService.respondToTrade(transactionSeq, userDetails.getPlayerId(), request.isAccept());
+        return ResponseEntity.ok(request.isAccept() ? "Trade accepted" : "Trade rejected");
     }
 
     @GetMapping("/games/{gameSeq}/waivers")
@@ -67,6 +81,35 @@ public class FantasyRosterController {
         return ResponseEntity.ok("Waiver claim successful");
     }
 
+    @GetMapping("/games/{gameSeq}/trades")
+    public ResponseEntity<List<TradeBoardDto>> getTradeBoard(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                                             @PathVariable(name = "gameSeq") Long gameSeq) {
+        Long viewerPlayerId = userDetails != null ? userDetails.getPlayerId() : null;
+        return ResponseEntity.ok(fantasyRosterService.getTradeBoardList(gameSeq, viewerPlayerId));
+    }
+
+    @PostMapping("/games/{gameSeq}/trades/{transactionSeq}/vote")
+    public ResponseEntity<String> voteOnTrade(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                              @PathVariable(name = "gameSeq") Long gameSeq,
+                                              @PathVariable(name = "transactionSeq") Long transactionSeq,
+                                              @RequestBody VoteRequest request) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
+        fantasyRosterService.voteOnTrade(gameSeq, transactionSeq, userDetails.getPlayerId(), request.isVoteAgree());
+        return ResponseEntity.ok("Vote registered");
+    }
+
+    @Data
+    public static class VoteRequest {
+        private boolean voteAgree;
+    }
+
+    @Data
+    public static class TradeRespondRequest {
+        private boolean accept;
+    }
+
     @Data
     public static class WaiverRequest {
         private Long gameSeq;
@@ -79,5 +122,6 @@ public class FantasyRosterController {
         private Long targetId;
         private List<Long> givingPlayerSeqs;
         private List<Long> receivingPlayerSeqs;
+        private String comment;
     }
 }

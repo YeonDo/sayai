@@ -38,6 +38,8 @@ public class SalaryCapCalculator {
             int discountedCost = (int) Math.round(originalCost / 2.0);
             totalCost = totalCost - originalCost + discountedCost;
 
+            if (team.size() == 21) totalCost += 5;
+
             return SalaryCapResult.builder()
                     .totalCost(totalCost)
                     .discountedPlayerSeq(discountTarget.getSeq())
@@ -45,6 +47,8 @@ public class SalaryCapCalculator {
                     .discountedCost(discountedCost)
                     .build();
         }
+
+        if (team.size() == 21) totalCost += 5;
 
         return SalaryCapResult.builder()
                 .totalCost(totalCost)

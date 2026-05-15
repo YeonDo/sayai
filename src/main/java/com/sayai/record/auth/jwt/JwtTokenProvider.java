@@ -7,6 +7,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.PostConstruct;
@@ -14,19 +15,23 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import java.security.Key;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Date;
 
 @Component
 @RequiredArgsConstructor
 public class JwtTokenProvider {
 
+    @Value("${jwt.secret}")
+    private String secret;
+
     private Key secretKey;
     private final long tokenValidityInMilliseconds = 21600000; // 6h
 
     @PostConstruct
     protected void init() {
-        // Generate a secure key for HS256
-        this.secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+        byte[] keyBytes = Base64.getDecoder().decode(secret);
+        this.secretKey = Keys.hmacShaKeyFor(keyBytes);
     }
 
     public String createToken(Long playerId, String userId, Member.Role role, String name) {
@@ -63,28 +68,31 @@ public class JwtTokenProvider {
         return null;
     }
 
+    public Claims getClaims(String token) {
+        return Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token).getBody();
+    }
+
     public boolean validateToken(String token) {
         try {
-            Jws<Claims> claims = Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token);
-            return !claims.getBody().getExpiration().before(new Date());
+            return !getClaims(token).getExpiration().before(new Date());
         } catch (Exception e) {
             return false;
         }
     }
 
     public String getUserId(String token) {
-        return Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token).getBody().getSubject();
+        return getClaims(token).getSubject();
     }
 
     public Long getPlayerId(String token) {
-        return Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token).getBody().get("playerId", Long.class);
+        return getClaims(token).get("playerId", Long.class);
     }
 
     public String getRole(String token) {
-        return Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token).getBody().get("role", String.class);
+        return getClaims(token).get("role", String.class);
     }
 
     public String getName(String token) {
-        return Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token).getBody().get("name", String.class);
+        return getClaims(token).get("name", String.class);
     }
 }

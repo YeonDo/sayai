@@ -49,12 +49,7 @@ public class DraftScheduler {
         List<FantasyGame> draftingGames = fantasyGameRepository.findExpiredDraftingGames(FantasyGame.GameStatus.DRAFTING, LocalDateTime.now());
 
         for (FantasyGame game : draftingGames) {
-            try {
-                // Double check status in case it changed
-                fantasyDraftService.autoPick(game.getSeq());
-            } catch (Exception e) {
-                log.error("Error in autoPick for game {}: {}", game.getSeq(), e.getMessage());
-            }
+            fantasyDraftService.autoPickAsync(game.getSeq());
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.sayai.record.firebase;
 
 import com.google.firebase.messaging.AndroidConfig;
+import com.google.firebase.messaging.AndroidNotification;
 import com.google.firebase.messaging.ApnsConfig;
 import com.google.firebase.messaging.Aps;
 import com.google.firebase.messaging.FirebaseMessaging;
@@ -37,6 +38,11 @@ public class FcmService {
                             .build())
                     .setAndroidConfig(AndroidConfig.builder()
                             .setPriority(AndroidConfig.Priority.HIGH)
+                            .setNotification(AndroidNotification.builder()
+                                    .setPriority(AndroidNotification.Priority.HIGH)
+                                    .setDefaultVibrateTimings(true)
+                                    .setDefaultSound(false)
+                                    .build())
                             .build())
                     .setApnsConfig(ApnsConfig.builder()
                             .setAps(Aps.builder()
@@ -59,10 +65,16 @@ public class FcmService {
      */
     public void subscribeToTopic(List<String> tokens, String topic) {
         try {
-            FirebaseMessaging.getInstance().subscribeToTopic(tokens, topic);
-            log.info("Subscribed {} tokens to topic {}", tokens.size(), topic);
+            com.google.firebase.messaging.TopicManagementResponse response =
+                    FirebaseMessaging.getInstance().subscribeToTopic(tokens, topic);
+            log.info("FCM subscribe topic={} success={} failure={}",
+                    topic, response.getSuccessCount(), response.getFailureCount());
+            if (response.getFailureCount() > 0) {
+                response.getErrors().forEach(e ->
+                        log.warn("FCM subscribe failed topic={} tokenIndex={} reason={}", topic, e.getIndex(), e.getReason()));
+            }
         } catch (FirebaseMessagingException | RuntimeException e) {
-            log.error("Failed to subscribe to topic {}", topic, e);
+            log.error("FCM subscribe error topic={}", topic, e);
         }
     }
 }

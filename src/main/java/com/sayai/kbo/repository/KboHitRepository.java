@@ -51,12 +51,35 @@ public interface KboHitRepository extends JpaRepository<KboHit, Long> {
             "JOIN ft_players p ON h.PLAYER_ID = p.seq " +
             "JOIN kbo_game g ON h.game_idx = g.game_idx " +
             "WHERE g.game_idx BETWEEN :startIdx AND :endIdx " +
+            "AND p.position REGEXP :positionPattern " +
+            "GROUP BY p.seq " +
+            "ORDER BY totalHits DESC",
+            countQuery = "SELECT COUNT(DISTINCT p.seq) FROM kbo_hit h JOIN ft_players p ON h.PLAYER_ID = p.seq JOIN kbo_game g ON h.game_idx = g.game_idx WHERE g.game_idx BETWEEN :startIdx AND :endIdx AND p.position REGEXP :positionPattern",
+            nativeQuery = true)
+    Page<KboHitStatInterface> getPlayerByPeriodAndPositions(@Param("startIdx") Long startIdx, @Param("endIdx") Long endIdx, @Param("positionPattern") String positionPattern, Pageable pageable);
+
+    @Query(value = "SELECT " +
+            " p.seq as id, null as backNo, p.name as name, p.team as team, " +
+            " COUNT(DISTINCT h.game_idx) as totalGames, " +
+            " IFNULL(SUM(h.pa), 0) as playerAppearance, " +
+            " IFNULL(SUM(h.ab), 0) as atBat, " +
+            " IFNULL(SUM(h.hit), 0) as totalHits, " +
+            " IFNULL(SUM(h.so), 0) as strikeOut, " +
+            " IFNULL(SUM(h.hr), 0) as homeruns, " +
+            " IFNULL(SUM(h.rbi), 0) as rbi, " +
+            " IFNULL(SUM(h.run), 0) as runs, " +
+            " IFNULL(SUM(h.sb), 0) as sb " +
+            "FROM kbo_hit h " +
+            "JOIN ft_players p ON h.PLAYER_ID = p.seq " +
+            "JOIN kbo_game g ON h.game_idx = g.game_idx " +
+            "WHERE g.game_idx BETWEEN :startIdx AND :endIdx " +
             "AND p.seq = :id " +
             "AND p.position NOT IN ('SP', 'RP', 'CL') " +
             "GROUP BY p.seq", nativeQuery = true)
     Optional<KboHitStatInterface> getPlayerByPeriodAndId(@Param("startIdx") Long startIdx, @Param("endIdx") Long endIdx, @Param("id") Long id);
 
     List<KboHit> findByGameIdx(Long gameIdx);
+
 
     @Query(value = "SELECT " +
             " h.PLAYER_ID as playerId, " +
@@ -83,7 +106,8 @@ public interface KboHitRepository extends JpaRepository<KboHit, Long> {
             " IFNULL(SUM(h.rbi), 0) as rbi, " +
             " IFNULL(SUM(h.sb), 0) as sb, " +
             " IFNULL(SUM(h.so), 0) as so, " +
-            " IFNULL(SUM(h.hr), 0) as hr " +
+            " IFNULL(SUM(h.hr), 0) as hr, " +
+            " COUNT(DISTINCT h.game_idx) as games " +
             "FROM kbo_hit h " +
             "JOIN kbo_game g ON h.game_idx = g.game_idx " +
             "WHERE h.PLAYER_ID = :playerId " +

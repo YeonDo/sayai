@@ -5,6 +5,7 @@ import com.sayai.record.auth.service.AuthService;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -14,8 +15,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+@Slf4j
 @RestController
 @RequestMapping("/apis/v1/auth")
 @RequiredArgsConstructor
@@ -24,21 +27,36 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request, HttpServletResponse response) {
-        String token = authService.login(request.getUserId(), request.getPassword());
-        String name = authService.getUserName(request.getUserId());
+    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request, HttpServletRequest httpRequest, HttpServletResponse response) {
+        String ip = httpRequest.getRemoteAddr();
+        String userId = request.getUserId();
+        boolean fromModal = "modal".equals(httpRequest.getHeader("X-Login-Source"));
+        if (fromModal) {
+            log.info("[LOGIN] attempt userId={} ip={}", userId, ip);
+        }
+        try {
+            String token = authService.login(userId, request.getPassword());
+            String name = authService.getUserName(userId);
 
-        ResponseCookie cookie = ResponseCookie.from("accessToken", token)
-                .httpOnly(true)
-                .secure(false) // Set true in production (HTTPS)
-                .path("/")
-                .maxAge(21600) // 6 hours
-                .sameSite("Strict")
-                .build();
+            ResponseCookie cookie = ResponseCookie.from("accessToken", token)
+                    .httpOnly(true)
+                    .secure(true)
+                    .path("/")
+                    .maxAge(21600) // 6 hours
+                    .sameSite("Strict")
+                    .build();
 
-        response.addHeader("Set-Cookie", cookie.toString());
-
-        return ResponseEntity.ok(new LoginResponse(name));
+            response.addHeader("Set-Cookie", cookie.toString());
+            if (fromModal) {
+                log.info("[LOGIN] success userId={} ip={}", userId, ip);
+            }
+            return ResponseEntity.ok(new LoginResponse(name));
+        } catch (IllegalArgumentException e) {
+            if (fromModal) {
+                log.warn("[LOGIN] failed userId={} ip={} reason={}", userId, ip, e.getMessage());
+            }
+            return ResponseEntity.status(401).build();
+        }
     }
 
     @PostMapping("/logout")

@@ -35,6 +35,7 @@ public class Rule1Validator implements DraftRuleValidator {
         BASE_SLOTS.put("SP", 4);
         BASE_SLOTS.put("RP", 4);
         BASE_SLOTS.put("CL", 1);
+        BASE_SLOTS.put("BENCH", 1); // CL을 선택적으로 만들기 위한 여유 슬롯
     }
 
     @Override
@@ -187,6 +188,7 @@ public class Rule1Validator implements DraftRuleValidator {
         if (!isPitcher) {
             possiblePositions.add("DH");
         }
+        possiblePositions.add("BENCH");
 
         for (String pos : possiblePositions) {
             if (slots.getOrDefault(pos, 0) > 0) {

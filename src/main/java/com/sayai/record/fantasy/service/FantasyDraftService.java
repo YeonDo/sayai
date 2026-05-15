@@ -1,5 +1,9 @@
 package com.sayai.record.fantasy.service;
 
+import com.sayai.kbo.model.KboHitterStats;
+import com.sayai.kbo.model.KboPitcherStats;
+import com.sayai.kbo.repository.KboHitterStatsRepository;
+import com.sayai.kbo.repository.KboPitcherStatsRepository;
 import com.sayai.record.fantasy.dto.DraftEventDto;
 import com.sayai.record.fantasy.dto.DraftRequest;
 import com.sayai.record.fantasy.dto.FantasyPlayerDto;
@@ -10,11 +14,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Collections;
@@ -39,6 +45,10 @@ public class FantasyDraftService {
     private final DraftValidator draftValidator;
     private final SimpMessagingTemplate messagingTemplate;
     private final ObjectProvider<DraftScheduler> draftSchedulerProvider;
+    private final KboHitterStatsRepository kboHitterStatsRepository;
+    private final KboPitcherStatsRepository kboPitcherStatsRepository;
+
+    private static final Set<String> PITCHER_POSITIONS = Set.of("SP", "RP", "CL");
 
     @Transactional
     public void joinGame(Long gameSeq, Long playerId, String preferredTeam, String teamName) {
@@ -113,9 +123,41 @@ public class FantasyDraftService {
             }
         }
 
-        return filteredPlayers.stream()
+        List<FantasyPlayer> availablePlayers = filteredPlayers.stream()
                 .filter(p -> !pickedPlayerSeqs.contains(p.getSeq()))
-                .map(FantasyPlayerDto::from)
+                .collect(Collectors.toList());
+
+        // Bulk fetch current-season stats (2 queries total regardless of player count)
+        int currentSeason = LocalDate.now().getYear();
+        Set<Long> playerSeqs = availablePlayers.stream().map(FantasyPlayer::getSeq).collect(Collectors.toSet());
+
+        Map<Long, KboHitterStats> hitterStatsMap = kboHitterStatsRepository
+                .findByPlayerIdInAndSeason(playerSeqs, currentSeason)
+                .stream()
+                .collect(Collectors.toMap(KboHitterStats::getPlayerId, Function.identity()));
+
+        Map<Long, KboPitcherStats> pitcherStatsMap = kboPitcherStatsRepository
+                .findByPlayerIdInAndSeason(playerSeqs, currentSeason)
+                .stream()
+                .collect(Collectors.toMap(KboPitcherStats::getPlayerId, Function.identity()));
+
+        return availablePlayers.stream()
+                .map(p -> {
+                    FantasyPlayerDto dto = FantasyPlayerDto.from(p);
+                    String primaryPos = p.getPosition() != null ? p.getPosition().split(",")[0].trim() : "";
+                    if (PITCHER_POSITIONS.contains(primaryPos)) {
+                        KboPitcherStats ps = pitcherStatsMap.get(p.getSeq());
+                        if (ps != null) {
+                            dto.setStats(ps.getWin() + "승, " + ps.getEra() + " ERA, " + ps.getWhip() + " WHIP");
+                        }
+                    } else {
+                        KboHitterStats hs = hitterStatsMap.get(p.getSeq());
+                        if (hs != null) {
+                            dto.setStats(hs.getAvg() + ", " + hs.getHr() + "홈런, " + hs.getRbi() + "타점, " + hs.getSb() + "도루");
+                        }
+                    }
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
 
@@ -191,14 +233,8 @@ public class FantasyDraftService {
             hypotheticalTeam.add(targetPlayer);
             int projectedCost = com.sayai.record.fantasy.util.SalaryCapCalculator.calculateTeamCost(game, participant, hypotheticalTeam).getTotalCost();
 
-            // Penalty check for 21st player
-            int penalty = 0;
-            if (isFA && userPicks.size() == 20) {
-                penalty = 5;
-            }
-
-            if (projectedCost + penalty > game.getSalaryCap()) {
-                throw new IllegalStateException("샐캡 초과: " + (projectedCost + penalty) + " / " + game.getSalaryCap());
+            if (projectedCost > game.getSalaryCap()) {
+                throw new IllegalStateException("샐캡 초과: " + projectedCost + " / " + game.getSalaryCap());
             }
         }
 
@@ -380,10 +416,9 @@ public class FantasyDraftService {
     }
 
     private String determineInitialPosition(List<DraftPick> existingPicks, FantasyPlayer newPlayer) {
-        Set<String> occupied = existingPicks.stream()
-                .map(DraftPick::getAssignedPosition)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
+        Map<String, Long> occupiedCounts = existingPicks.stream()
+                .filter(p -> p.getAssignedPosition() != null)
+                .collect(Collectors.groupingBy(DraftPick::getAssignedPosition, Collectors.counting()));
 
         String positionStr = newPlayer.getPosition() != null ? newPlayer.getPosition() : "";
         if (positionStr.trim().isEmpty()) {
@@ -394,27 +429,25 @@ public class FantasyDraftService {
         String primaryPos = positions[0].trim();
 
         if (isPitcher(primaryPos)) {
-            // Pitcher logic: find first open slot (SP-1..SP-4, RP-1..RP-4, CL-1)
-            // Or simple logic: Just store "SP", "RP", "CL". Frontend handles slots.
-            // But if user has 4 SPs, 5th SP -> Bench.
-            long spCount = occupied.stream().filter(p -> p.equals("SP")).count();
-            long rpCount = occupied.stream().filter(p -> p.equals("RP")).count();
-            long clCount = occupied.stream().filter(p -> p.equals("CL")).count();
+            long spCount = occupiedCounts.getOrDefault("SP", 0L);
+            long rpCount = occupiedCounts.getOrDefault("RP", 0L);
+            long clCount = occupiedCounts.getOrDefault("CL", 0L);
 
             if (primaryPos.equals("SP")) return spCount < 4 ? "SP" : "BENCH";
             if (primaryPos.equals("RP")) return rpCount < 4 ? "RP" : "BENCH";
             if (primaryPos.equals("CL")) return clCount < 1 ? "CL" : "BENCH";
             return "BENCH";
         } else {
-            // Batter Logic
-            if (!occupied.contains(primaryPos)) {
-                return primaryPos;
+            // Batter Logic: 주포지션 → 부포지션 → DH → BENCH
+            for (String p : positions) {
+                String pos = p.trim();
+                if (!pos.isEmpty() && occupiedCounts.getOrDefault(pos, 0L) == 0) {
+                    return pos;
+                }
             }
-            // Try DH
-            if (!occupied.contains("DH")) {
+            if (occupiedCounts.getOrDefault("DH", 0L) == 0) {
                 return "DH";
             }
-            // Bench
             return "BENCH";
         }
     }
@@ -455,12 +488,14 @@ public class FantasyDraftService {
 
             // Helper to increment and check
             java.util.function.BiConsumer<String, String> checkLimit = (pos, source) -> {
+                if ("BENCH".equals(pos)) return;
+
                 int count = positionCounts.getOrDefault(pos, 0) + 1;
                 positionCounts.put(pos, count);
 
-                int limit = 1;
+                int limit;
                 if ("SP".equals(pos) || "RP".equals(pos)) limit = 4;
-                // CL usually 1, others 1
+                else limit = 1;
 
                 if (count > limit) {
                     throw new IllegalArgumentException("Position limit exceeded for " + pos + " (Max " + limit + ")");
@@ -494,6 +529,15 @@ public class FantasyDraftService {
             }
         }
         draftPickRepository.saveAll(myPicks);
+    }
+
+    @Async
+    public void autoPickAsync(Long gameSeq) {
+        try {
+            autoPick(gameSeq);
+        } catch (Exception e) {
+            log.error("Error in autoPick for game {}: {}", gameSeq, e.getMessage());
+        }
     }
 
     @Transactional

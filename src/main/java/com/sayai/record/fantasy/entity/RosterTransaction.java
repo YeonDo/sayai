@@ -39,6 +39,9 @@ public class RosterTransaction {
     @Column(name = "receiving_player_seqs")
     private String receivingPlayerSeqs; // Comma-separated IDs (Nullable for Waiver)
 
+    @Column(length = 200)
+    private String comment; // TRADE 타입에만 사용
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -59,9 +62,10 @@ public class RosterTransaction {
     }
 
     public enum TransactionStatus {
-        REQUESTED,
+        SUGGESTED, // 트레이드 제안 (상대방 수락 대기 중, 당사자만 조회 가능)
+        REQUESTED, // 상대방 수락 완료, 다른 참가자 투표 진행 중
         APPROVED,
         REJECTED,
-        FA_MOVED // For Waiver -> FA
+        FA_MOVED   // For Waiver -> FA
     }
 }

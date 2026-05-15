@@ -38,14 +38,15 @@ public class KboPlayerController {
             @RequestParam(value = "end", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
             @RequestParam(value = "sort", required = false) String sort,
             @RequestParam(value = "limit", required = false) Integer limit,
+            @RequestParam(value = "position", required = false) String position,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "20") int size) {
 
         if (season != null) {
             PageRequest pageable = buildPageable(page, size, sort);
-            return kboHitService.findAllBySeason(season, limit, pageable);
+            return kboHitService.findAllBySeason(season, limit, position, pageable);
         } else if (startDate != null && endDate != null) {
-            return kboHitService.findAllByPeriod(startDate, endDate, PageRequest.of(page, size));
+            return kboHitService.findAllByPeriod(startDate, endDate, position, PageRequest.of(page, size));
         } else {
             throw new IllegalArgumentException("season 또는 start+end 파라미터가 필요합니다.");
         }
@@ -59,6 +60,7 @@ public class KboPlayerController {
             @RequestParam(value = "end", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
             @RequestParam(value = "sort", required = false) String sort,
             @RequestParam(value = "limit", required = false) Integer limit,
+            @RequestParam(value = "position", required = false) String position,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "20") int size) {
 
@@ -66,9 +68,9 @@ public class KboPlayerController {
             // limit은 이닝(outs/3) 기준 → minOuts = limit * 3
             Integer minOuts = limit != null ? limit * 3 : null;
             PageRequest pageable = buildPageable(page, size, sort);
-            return kboPitchService.selectBySeason(season, minOuts, pageable);
+            return kboPitchService.selectBySeason(season, minOuts, position, pageable);
         } else if (startDate != null && endDate != null) {
-            return kboPitchService.select(startDate, endDate, PageRequest.of(page, size));
+            return kboPitchService.select(startDate, endDate, position, PageRequest.of(page, size));
         } else {
             throw new IllegalArgumentException("season 또는 start+end 파라미터가 필요합니다.");
         }

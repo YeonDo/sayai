@@ -27,7 +27,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                         "http://teamsayai.com",
                         "https://teamsayai.com",
                         "http://*.teamsayai.com",
-                        "https://*.teamsayai.com"
+                        "https://*.teamsayai.com",
+                        "https://*.vercel.app"
                 )
                 .withSockJS();
     }

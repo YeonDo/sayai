@@ -16,4 +16,5 @@ public interface KboPitchStatInterface {
     Long getSelfLossScore(); // er
     Long getPitchCnt(); // pitch_cnt
     Long getStOut(); // so
+    Long getTotalGames();
 }

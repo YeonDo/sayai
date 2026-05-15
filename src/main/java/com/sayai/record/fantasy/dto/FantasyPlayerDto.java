@@ -13,6 +13,7 @@ public class FantasyPlayerDto {
     private String name;
     private String position;
     private String team;
+    @Setter
     private String stats;
 
 

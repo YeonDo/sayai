@@ -56,7 +56,11 @@ public class SecurityConfig {
                         .authenticationEntryPoint((request, response, authException) -> {
                             String uri = request.getRequestURI();
                             if (uri.startsWith("/apis/")) {
-                                response.sendError(HttpServletResponse.SC_FORBIDDEN);
+                                if (Boolean.TRUE.equals(request.getAttribute("tokenExpired"))) {
+                                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                                } else {
+                                    response.sendError(HttpServletResponse.SC_FORBIDDEN);
+                                }
                             } else {
                                 String redirectUrl = "/?login=required";
                                 if (!"/".equals(uri)) {

@@ -7,4 +7,6 @@ import org.springframework.data.jpa.repository.Query;
 public interface KboGameRepository extends JpaRepository<KboGame, Long> {
     @Query("SELECT MAX(g.id) FROM KboGame g")
     Long findMaxId();
+
+    long countBySeason(Long season);
 }

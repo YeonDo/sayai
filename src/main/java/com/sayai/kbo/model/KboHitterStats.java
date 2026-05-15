@@ -44,4 +44,14 @@ public class KboHitterStats {
 
     @Column(name = "sb")
     private Integer sb;
+
+    @Column(name = "games")
+    private Integer games;
+
+    @Column(name = "p_rank")
+    private Double pRank;
+
+    public void updatePRank(Double pRank) {
+        this.pRank = pRank;
+    }
 }

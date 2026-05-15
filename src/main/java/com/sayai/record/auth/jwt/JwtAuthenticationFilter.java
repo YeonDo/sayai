@@ -1,5 +1,7 @@
 package com.sayai.record.auth.jwt;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -13,7 +15,6 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.List;
 
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -24,23 +25,28 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String token = jwtTokenProvider.resolveToken(request);
 
-        if (token != null && jwtTokenProvider.validateToken(token)) {
-            String userId = jwtTokenProvider.getUserId(token);
-            String role = jwtTokenProvider.getRole(token);
-            Long playerId = jwtTokenProvider.getPlayerId(token);
-            String name = jwtTokenProvider.getName(token);
+        if (token != null) {
+            try {
+                Claims claims = jwtTokenProvider.getClaims(token);
+                String userId = claims.getSubject();
+                String role = claims.get("role", String.class);
+                Long playerId = claims.get("playerId", Long.class);
+                String name = claims.get("name", String.class);
 
-            UserDetails userDetails = new CustomUserDetails(
-                    userId,
-                    "",
-                    Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role)),
-                    playerId,
-                    name != null ? name : "Unknown"
-            );
+                UserDetails userDetails = new CustomUserDetails(
+                        userId,
+                        "",
+                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role)),
+                        playerId,
+                        name != null ? name : "Unknown"
+                );
 
-            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
-
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            } catch (ExpiredJwtException e) {
+                request.setAttribute("tokenExpired", true);
+            } catch (Exception ignored) {
+            }
         }
         filterChain.doFilter(request, response);
     }

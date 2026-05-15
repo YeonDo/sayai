@@ -38,6 +38,14 @@ public class PitcherDto {
     private Double whip;
     private Double battingAvg;
     private Double k9;
+    private Double bb9;
+    private Double kbb;
+    private Long pitchCnt;
+    private Double pg;
+    private Double pip;
+    private Double ppa;
+    private Integer games;
+    private Double pRank;
     @Builder
     public PitcherDto(Long id, Long backNo, String name, Long wins, Long loses, Long saves, Long inn, Long batter, Long hitter, Long pHit, Long pHomerun, Long sacrifice, Long sacFly, Long baseOnBall, Long hitByBall, Long stOut, Long fallingBall, Long balk, Long lossScore, Long selfLossScore) {
         this.id = id;

@@ -19,6 +19,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 @Service
 @AllArgsConstructor
@@ -27,6 +28,16 @@ public class KboHitService {
 
     private final KboHitRepository kboHitRepository;
     private final KboHitterStatsRepository kboHitterStatsRepository;
+
+    private String resolvePositionPattern(String position) {
+        if (position == null) return null;
+        List<String> positions = switch (position.toUpperCase()) {
+            case "IF" -> List.of("1B", "2B", "3B", "SS");
+            case "OF" -> List.of("LF", "CF", "RF");
+            default -> List.of(position.toUpperCase());
+        };
+        return "(^|,)(" + String.join("|", positions) + ")(,|$)";
+    }
 
     private Long toStartIdx(LocalDate date) {
         if (date == null) return 0L;
@@ -56,14 +67,17 @@ public class KboHitService {
             Long endIdx = toEndIdx(endDate);
             KboHitStatInterface stat = kboHitRepository.getPlayerByPeriodAndId(startIdx, endIdx, id)
                     .orElseThrow(java.util.NoSuchElementException::new);
-            return mapToDto(stat);
+            return mapToDetailDto(stat);
         } catch (java.util.NoSuchElementException e) {
             return PlayerDto.builder().build();
         }
     }
 
-    public Page<PlayerDto> findAllBySeason(int season, Integer minPa, Pageable pageable) {
-        Page<KboHitterSeasonStatsProjection> stats = kboHitterStatsRepository.findBySeasonWithPlayerInfo(season, minPa, pageable);
+    public Page<PlayerDto> findAllBySeason(int season, Integer minPa, String position, Pageable pageable) {
+        String positionPattern = resolvePositionPattern(position);
+        Page<KboHitterSeasonStatsProjection> stats = positionPattern != null
+                ? kboHitterStatsRepository.findBySeasonWithPlayerInfoAndPositions(season, minPa, positionPattern, pageable)
+                : kboHitterStatsRepository.findBySeasonWithPlayerInfo(season, minPa, pageable);
         return stats.map(this::mapSeasonToDto);
     }
 
@@ -81,6 +95,8 @@ public class KboHitService {
                 .build();
 
         dto.setTeam(stat.getTeam());
+        dto.setGames(stat.getGames());
+        dto.setPRank(stat.getPRank());
 
         if (stat.getAvg() != null) {
             try {
@@ -92,10 +108,13 @@ public class KboHitService {
         return dto;
     }
 
-    public Page<PlayerDto> findAllByPeriod(LocalDate startDate, LocalDate endDate, Pageable pageable) {
+    public Page<PlayerDto> findAllByPeriod(LocalDate startDate, LocalDate endDate, String position, Pageable pageable) {
         Long startIdx = toStartIdx(startDate);
         Long endIdx = toEndIdx(endDate);
-        Page<KboHitStatInterface> stats = kboHitRepository.getPlayerByPeriod(startIdx, endIdx, pageable);
+        String positionPattern = resolvePositionPattern(position);
+        Page<KboHitStatInterface> stats = positionPattern != null
+                ? kboHitRepository.getPlayerByPeriodAndPositions(startIdx, endIdx, positionPattern, pageable)
+                : kboHitRepository.getPlayerByPeriod(startIdx, endIdx, pageable);
         return stats.map(this::mapToDto);
     }
 
@@ -140,11 +159,30 @@ public class KboHitService {
         return dto;
     }
 
+    private PlayerDto mapToDetailDto(KboHitStatInterface stat) {
+        PlayerDto dto = mapToDto(stat);
+
+        long pa = stat.getPlayerAppearance() != null ? stat.getPlayerAppearance() : 0L;
+        long ab = stat.getAtBat() != null ? stat.getAtBat() : 0L;
+        long so = stat.getStrikeOut() != null ? stat.getStrikeOut() : 0L;
+        long bb = pa - ab;
+        dto.setBb(bb);
+        dto.setBbPerK(so > 0 ? Math.round((double) bb / so * 1000.0) / 1000.0 : 0.0);
+        dto.setBbPct(pa > 0 ? Math.round((double) bb / pa * 1000.0) / 1000.0 : 0.0);
+        dto.setKPct(pa > 0 ? Math.round((double) so / pa * 1000.0) / 1000.0 : 0.0);
+
+        return dto;
+    }
+
     private HitterDailyStatDto mapDailyToDto(KboHitterDailyStatInterface stat) {
         double battingAvg = 0.0;
         if (stat.getAb() != null && stat.getAb() > 0) {
             battingAvg = Math.round((double) stat.getHit() / stat.getAb() * 1000.0) / 1000.0;
         }
+        long pa = stat.getPa() != null ? stat.getPa() : 0L;
+        long ab = stat.getAb() != null ? stat.getAb() : 0L;
+        long so = stat.getSo() != null ? stat.getSo() : 0L;
+        long bb = pa - ab;
         return HitterDailyStatDto.builder()
                 .gameDate(stat.getGameDate())
                 .opponent(stat.getOpponent())
@@ -157,6 +195,10 @@ public class KboHitService {
                 .sb(stat.getSb())
                 .so(stat.getSo())
                 .battingAvg(battingAvg)
+                .bb(bb)
+                .bbPerK(so > 0 ? Math.round((double) bb / so * 1000.0) / 1000.0 : 0.0)
+                .bbPct(pa > 0 ? Math.round((double) bb / pa * 1000.0) / 1000.0 : 0.0)
+                .kPct(pa > 0 ? Math.round((double) so / pa * 1000.0) / 1000.0 : 0.0)
                 .build();
     }
 }
