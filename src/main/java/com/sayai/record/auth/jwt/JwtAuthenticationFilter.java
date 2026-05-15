@@ -1,5 +1,6 @@
 package com.sayai.record.auth.jwt;
 
+import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -13,7 +14,6 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.List;
 
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -25,10 +25,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = jwtTokenProvider.resolveToken(request);
 
         if (token != null && jwtTokenProvider.validateToken(token)) {
-            String userId = jwtTokenProvider.getUserId(token);
-            String role = jwtTokenProvider.getRole(token);
-            Long playerId = jwtTokenProvider.getPlayerId(token);
-            String name = jwtTokenProvider.getName(token);
+            Claims claims = jwtTokenProvider.getClaims(token);
+            String userId = claims.getSubject();
+            String role = claims.get("role", String.class);
+            Long playerId = claims.get("playerId", Long.class);
+            String name = claims.get("name", String.class);
 
             UserDetails userDetails = new CustomUserDetails(
                     userId,
