@@ -49,7 +49,10 @@ SUGGESTED → REQUESTED → APPROVED
 
 > REQUESTED 상태에서는 giving/receiving 양쪽 모두 TRADE_PENDING
 
-**FCM**: 없음
+**FCM**
+| 토픽 | 제목 | 내용 |
+|------|------|------|
+| `game_{gameSeq}` | 트레이드 투표 시작 | `{requesterTeam} ↔ {targetTeam} 트레이드 투표가 시작되었습니다. ({givingNames} ↔ {receivingNames})` |
 
 **RosterLog**: `TRADE_REQ` — `"Trade Accepted by {targetTeam} - voting started"`
 

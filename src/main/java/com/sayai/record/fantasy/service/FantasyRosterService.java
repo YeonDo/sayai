@@ -120,6 +120,10 @@ public class FantasyRosterService {
         waiverOrderRepository.findByGameSeqAndPlayerId(gameSeq, claimerId)
                 .orElseThrow(() -> new IllegalArgumentException("User not participating in this game"));
 
+        if (waiverClaimRepository.existsById(new FantasyWaiverClaimId(transactionSeq, claimerId))) {
+            throw new IllegalStateException("Already claimed this waiver");
+        }
+
         waiverClaimRepository.save(FantasyWaiverClaim.builder()
                 .waiverSeq(transactionSeq)
                 .claimPlayerId(claimerId)
@@ -311,6 +315,12 @@ public class FantasyRosterService {
 
             logAction(tx.getFantasyGameSeq(), responderId, null, RosterLog.LogActionType.TRADE_REQ,
                     "Trade Accepted by " + targetTeam + " - voting started");
+
+            List<Long> givingSeqs = getSeqsStream(tx.getGivingPlayerSeqs(), "respondToTrade giving tx:" + tx.getSeq()).collect(Collectors.toList());
+            String givingNames = fantasyPlayerRepository.findAllById(givingSeqs).stream().map(FantasyPlayer::getName).collect(Collectors.joining(", "));
+            String receivingNames = fantasyPlayerRepository.findAllById(receivingSeqs).stream().map(FantasyPlayer::getName).collect(Collectors.joining(", "));
+            fcmService.sendTopicMessage("game_" + tx.getFantasyGameSeq(), "트레이드 투표 시작",
+                    String.format("%s ↔ %s 트레이드 투표가 시작되었습니다.\n(%s ↔ %s)", requesterTeam, targetTeam, givingNames, receivingNames));
         } else {
             // 거절(target) 또는 취소(requester) — 공통 처리
             resetGivingPlayersPending(tx);
