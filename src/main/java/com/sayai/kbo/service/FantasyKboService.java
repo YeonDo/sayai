@@ -27,6 +27,12 @@ public class FantasyKboService {
     private final KboHitRepository kboHitRepository;
     private final KboPitchRepository kboPitchRepository;
 
+    private static final Set<String> PITCHER_POSITIONS = Set.of("SP", "RP", "CL");
+    private static final int REQUIRED_BATTERS = 9;
+    private static final int REQUIRED_PITCHERS = 9;
+    private static final int MIN_PA = 20;
+    private static final int MIN_INNINGS = 15;
+
     private Long toStartIdx(LocalDate date) {
         if (date == null) return 0L;
         String formatted = date.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
@@ -49,22 +55,24 @@ public class FantasyKboService {
 
         Map<Long, List<Long>> participantToPlayerIds = new HashMap<>();
         Map<Long, Long> playerToParticipantId = new HashMap<>();
+        Map<Long, Integer> batterCountByParticipant = new HashMap<>();
+        Map<Long, Integer> pitcherCountByParticipant = new HashMap<>();
 
         for (DraftPickSnapshot pick : draftPicks) {
-            if (pick.getPickStatus() != DraftPickSnapshot.PickStatus.NORMAL && pick.getPickStatus() != DraftPickSnapshot.PickStatus.TRADE_PENDING) {
-                // If waiver req or other non-roster status, decide whether to include.
-                // Usually NORMAL implies they are on the roster.
-                // Assuming we just include them if they have a draft pick record. Let's include NORMAL.
-            }
             Long pId = pick.getFantasyPlayerSeq();
-            if (pId == null) pId = pick.getPlayerId(); // fallback just in case
+            if (pId == null) pId = pick.getPlayerId();
 
-            if (pId != null && pick.getPlayerId() != null) { // Actually participant is pick.getPlayerId()
-                Long participantUserId = pick.getPlayerId(); // In DraftPick, playerId refers to the user/participant's user_id or participant ID.
-                // Let's verify DraftPick mappings.
-                // DraftPick has `playerId` (the user who picked) and `fantasyPlayerSeq` (the real KBO player).
+            if (pId != null && pick.getPlayerId() != null) {
+                Long participantUserId = pick.getPlayerId();
                 participantToPlayerIds.computeIfAbsent(participantUserId, k -> new ArrayList<>()).add(pId);
                 playerToParticipantId.put(pId, participantUserId);
+
+                String pos = pick.getAssignedPosition();
+                if (PITCHER_POSITIONS.contains(pos)) {
+                    pitcherCountByParticipant.merge(participantUserId, 1, Integer::sum);
+                } else {
+                    batterCountByParticipant.merge(participantUserId, 1, Integer::sum);
+                }
             }
         }
 
@@ -119,6 +127,42 @@ public class FantasyKboService {
                 dto.setPSo(dto.getPSo() + safelyGet(ps.getPSo()));
                 dto.setEr(dto.getEr() + safelyGet(ps.getEr()));
                 dto.setHbp(dto.getHbp() + safelyGet(ps.getHbp()));
+            }
+        }
+
+        for (FantasyParticipant p : participants) {
+            Long userId = p.getPlayerId();
+            ParticipantKboStatsDto dto = resultMap.get(userId);
+            if (dto == null) continue;
+
+            int missingBatters = Math.max(0, REQUIRED_BATTERS - batterCountByParticipant.getOrDefault(userId, 0));
+            int missingPitchers = Math.max(0, REQUIRED_PITCHERS - pitcherCountByParticipant.getOrDefault(userId, 0));
+
+            // Ghost batter: 12 AB, 12 SO, 0 H, 0 SB, 0 RBI
+            if (missingBatters > 0) {
+                dto.setAb(dto.getAb() + (long) missingBatters * 12);
+                dto.setSo(dto.getSo() + (long) missingBatters * 12);
+            }
+
+            // Ghost pitcher: 9 ER, 9 pHit, 0 inning, 0 SO, 0 BB
+            if (missingPitchers > 0) {
+                dto.setEr(dto.getEr() + (long) missingPitchers * 9);
+                dto.setPHit(dto.getPHit() + (long) missingPitchers * 9);
+            }
+
+            // Minimum PA: 1 missing PA → +1 AB, +1 SO
+            long missingPa = Math.max(0L, MIN_PA - dto.getPa());
+            if (missingPa > 0) {
+                dto.setPa(dto.getPa() + missingPa);
+                dto.setAb(dto.getAb() + missingPa);
+                dto.setSo(dto.getSo() + missingPa);
+            }
+
+            // Minimum innings (stored as outs): 1 missing inning → +1 ER, +1 pHit
+            long missingInnings = Math.max(0L, MIN_INNINGS - dto.getInning() / 3);
+            if (missingInnings > 0) {
+                dto.setEr(dto.getEr() + missingInnings);
+                dto.setPHit(dto.getPHit() + missingInnings);
             }
         }
 
