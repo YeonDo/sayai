@@ -23,6 +23,7 @@ public class TradeBoardDto {
     private boolean isParty;   // 내가 트레이드 당사자 여부
     private boolean canRespond; // 내가 수락/거절 가능한지 여부 (SUGGESTED이고 내가 target인 경우)
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     @Getter
     @Builder

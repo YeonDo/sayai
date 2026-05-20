@@ -567,6 +567,7 @@ public class FantasyRosterService {
                     .isParty(isParty)
                     .canRespond(canRespond)
                     .createdAt(tx.getCreatedAt())
+                    .updatedAt(tx.getUpdatedAt())
                     .build();
         }).collect(Collectors.toList());
     }

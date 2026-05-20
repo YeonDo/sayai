@@ -1,13 +1,18 @@
 package com.sayai.kbo.service;
 
+import com.sayai.kbo.dto.MyRosterStatDto;
 import com.sayai.kbo.dto.ParticipantKboStatsDto;
 import com.sayai.kbo.repository.KboHitRepository;
 import com.sayai.kbo.repository.KboParticipantStatsInterface;
 import com.sayai.kbo.repository.KboPitchRepository;
-import com.sayai.record.fantasy.entity.FantasyParticipant;
+import com.sayai.record.fantasy.entity.DraftPick;
 import com.sayai.record.fantasy.entity.DraftPickSnapshot;
+import com.sayai.record.fantasy.entity.FantasyParticipant;
+import com.sayai.record.fantasy.entity.FantasyPlayer;
+import com.sayai.record.fantasy.repository.DraftPickRepository;
 import com.sayai.record.fantasy.repository.DraftPickSnapshotRepository;
 import com.sayai.record.fantasy.repository.FantasyParticipantRepository;
+import com.sayai.record.fantasy.repository.FantasyPlayerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,9 +28,11 @@ import java.util.stream.Collectors;
 public class FantasyKboService {
 
     private final FantasyParticipantRepository participantRepository;
+    private final DraftPickRepository draftPickRepository;
     private final DraftPickSnapshotRepository draftPickSnapshotRepository;
     private final KboHitRepository kboHitRepository;
     private final KboPitchRepository kboPitchRepository;
+    private final FantasyPlayerRepository fantasyPlayerRepository;
 
     private static final Set<String> PITCHER_POSITIONS = Set.of("SP", "RP", "CL");
     private static final int REQUIRED_BATTERS = 9;
@@ -53,7 +60,6 @@ public class FantasyKboService {
 
         List<DraftPickSnapshot> draftPicks = draftPickSnapshotRepository.findByFantasyGameSeq(gameSeq);
 
-        Map<Long, List<Long>> participantToPlayerIds = new HashMap<>();
         Map<Long, Long> playerToParticipantId = new HashMap<>();
         Map<Long, Integer> batterCountByParticipant = new HashMap<>();
         Map<Long, Integer> pitcherCountByParticipant = new HashMap<>();
@@ -64,11 +70,9 @@ public class FantasyKboService {
 
             if (pId != null && pick.getPlayerId() != null) {
                 Long participantUserId = pick.getPlayerId();
-                participantToPlayerIds.computeIfAbsent(participantUserId, k -> new ArrayList<>()).add(pId);
                 playerToParticipantId.put(pId, participantUserId);
 
-                String pos = pick.getAssignedPosition();
-                if (PITCHER_POSITIONS.contains(pos)) {
+                if (PITCHER_POSITIONS.contains(pick.getAssignedPosition())) {
                     pitcherCountByParticipant.merge(participantUserId, 1, Integer::sum);
                 } else {
                     batterCountByParticipant.merge(participantUserId, 1, Integer::sum);
@@ -89,7 +93,7 @@ public class FantasyKboService {
 
         Map<Long, ParticipantKboStatsDto> resultMap = new HashMap<>();
         for (FantasyParticipant p : participants) {
-            Long userId = p.getPlayerId(); // user id
+            Long userId = p.getPlayerId();
             resultMap.put(userId, ParticipantKboStatsDto.builder()
                     .participantSeq(p.getSeq())
                     .playerId(userId)
@@ -98,9 +102,8 @@ public class FantasyKboService {
         }
 
         for (KboParticipantStatsInterface hs : hitStats) {
-            Long userId = playerToParticipantId.get(hs.getPlayerId());
-            if (userId != null && resultMap.containsKey(userId)) {
-                ParticipantKboStatsDto dto = resultMap.get(userId);
+            ParticipantKboStatsDto dto = resultMap.get(playerToParticipantId.get(hs.getPlayerId()));
+            if (dto != null) {
                 dto.setPa(dto.getPa() + safelyGet(hs.getPa()));
                 dto.setAb(dto.getAb() + safelyGet(hs.getAb()));
                 dto.setHit(dto.getHit() + safelyGet(hs.getHit()));
@@ -113,9 +116,8 @@ public class FantasyKboService {
         }
 
         for (KboParticipantStatsInterface ps : pitchStats) {
-            Long userId = playerToParticipantId.get(ps.getPlayerId());
-            if (userId != null && resultMap.containsKey(userId)) {
-                ParticipantKboStatsDto dto = resultMap.get(userId);
+            ParticipantKboStatsDto dto = resultMap.get(playerToParticipantId.get(ps.getPlayerId()));
+            if (dto != null) {
                 dto.setWin(dto.getWin() + safelyGet(ps.getWin()));
                 dto.setLose(dto.getLose() + safelyGet(ps.getLose()));
                 dto.setSave(dto.getSave() + safelyGet(ps.getSave()));
@@ -138,19 +140,16 @@ public class FantasyKboService {
             int missingBatters = Math.max(0, REQUIRED_BATTERS - batterCountByParticipant.getOrDefault(userId, 0));
             int missingPitchers = Math.max(0, REQUIRED_PITCHERS - pitcherCountByParticipant.getOrDefault(userId, 0));
 
-            // Ghost batter: 12 AB, 12 SO, 0 H, 0 SB, 0 RBI
             if (missingBatters > 0) {
                 dto.setAb(dto.getAb() + (long) missingBatters * 12);
                 dto.setSo(dto.getSo() + (long) missingBatters * 12);
             }
 
-            // Ghost pitcher: 9 ER, 9 pHit, 0 inning, 0 SO, 0 BB
             if (missingPitchers > 0) {
                 dto.setEr(dto.getEr() + (long) missingPitchers * 9);
                 dto.setPHit(dto.getPHit() + (long) missingPitchers * 9);
             }
 
-            // Minimum PA: 1 missing PA → +1 AB, +1 SO
             long missingPa = Math.max(0L, MIN_PA - dto.getPa());
             if (missingPa > 0) {
                 dto.setPa(dto.getPa() + missingPa);
@@ -158,26 +157,17 @@ public class FantasyKboService {
                 dto.setSo(dto.getSo() + missingPa);
             }
 
-            // Minimum innings (stored as outs): 1 missing inning → +1 ER, +1 pHit
             long missingInnings = Math.max(0L, MIN_INNINGS - dto.getInning() / 3);
             if (missingInnings > 0) {
                 dto.setEr(dto.getEr() + missingInnings);
                 dto.setPHit(dto.getPHit() + missingInnings);
             }
-        }
 
-        for (ParticipantKboStatsDto dto : resultMap.values()) {
-            if (dto.getInning() > 0) {
-                long full = dto.getInning() / 3;
-                long remainder = dto.getInning() % 3;
-                if (remainder == 0) {
-                    dto.setFormattedInning(String.valueOf(full));
-                } else {
-                    dto.setFormattedInning(full + " " + remainder + "/3");
-                }
-            } else {
-                dto.setFormattedInning("0");
-            }
+            long full = dto.getInning() / 3;
+            long remainder = dto.getInning() % 3;
+            dto.setFormattedInning(dto.getInning() == 0 ? "0"
+                    : remainder == 0 ? String.valueOf(full)
+                    : full + " " + remainder + "/3");
         }
 
         return new ArrayList<>(resultMap.values());
@@ -194,5 +184,160 @@ public class FantasyKboService {
 
     private long safelyGet(Long val) {
         return val == null ? 0L : val;
+    }
+
+    public MyRosterStatDto getMyRosterStats(Long gameSeq, Long playerId, LocalDate startDt, LocalDate endDt) {
+        List<DraftPick> myPicks = draftPickRepository.findByFantasyGameSeqAndPlayerId(gameSeq, playerId);
+
+        if (myPicks.isEmpty()) {
+            return MyRosterStatDto.builder()
+                    .hitters(Collections.emptyList())
+                    .pitchers(Collections.emptyList())
+                    .hitterTotal(MyRosterStatDto.HitterStat.builder().avg(".000").build())
+                    .pitcherTotal(MyRosterStatDto.PitcherStat.builder().formattedInning("0").era("-.--").whip("-.--").build())
+                    .build();
+        }
+
+        List<Long> allSeqs = myPicks.stream()
+                .map(DraftPick::getFantasyPlayerSeq)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+
+        Map<Long, FantasyPlayer> playerMap = fantasyPlayerRepository.findAllById(allSeqs)
+                .stream().collect(Collectors.toMap(FantasyPlayer::getSeq, p -> p));
+
+        Map<Long, String> assignedPosMap = myPicks.stream()
+                .filter(p -> p.getFantasyPlayerSeq() != null)
+                .collect(Collectors.toMap(
+                        DraftPick::getFantasyPlayerSeq,
+                        DraftPick::getAssignedPosition,
+                        (a, b) -> a));
+
+        List<Long> hitterSeqs = allSeqs.stream()
+                .filter(seq -> {
+                    FantasyPlayer fp = playerMap.get(seq);
+                    return fp != null && !PITCHER_POSITIONS.contains(fp.getPosition());
+                })
+                .collect(Collectors.toList());
+
+        List<Long> pitcherSeqs = allSeqs.stream()
+                .filter(seq -> {
+                    FantasyPlayer fp = playerMap.get(seq);
+                    return fp != null && PITCHER_POSITIONS.contains(fp.getPosition());
+                })
+                .collect(Collectors.toList());
+
+        Long startIdx = toStartIdx(startDt);
+        Long endIdx = toEndIdx(endDt);
+
+        Map<Long, KboParticipantStatsInterface> hitStatsMap = hitterSeqs.isEmpty()
+                ? Collections.emptyMap()
+                : kboHitRepository.getAggregatedHitStats(startIdx, endIdx, hitterSeqs)
+                        .stream().collect(Collectors.toMap(KboParticipantStatsInterface::getPlayerId, s -> s));
+
+        Map<Long, KboParticipantStatsInterface> pitchStatsMap = pitcherSeqs.isEmpty()
+                ? Collections.emptyMap()
+                : kboPitchRepository.getAggregatedPitchStats(startIdx, endIdx, pitcherSeqs)
+                        .stream().collect(Collectors.toMap(KboParticipantStatsInterface::getPlayerId, s -> s));
+
+        List<MyRosterStatDto.HitterStat> hitters = hitterSeqs.stream().map(seq -> {
+            FantasyPlayer fp = playerMap.get(seq);
+            KboParticipantStatsInterface s = hitStatsMap.get(seq);
+            long ab = s != null ? safelyGet(s.getAb()) : 0L;
+            long hit = s != null ? safelyGet(s.getHit()) : 0L;
+            return MyRosterStatDto.HitterStat.builder()
+                    .fantasyPlayerSeq(seq)
+                    .playerName(fp != null ? fp.getName() : "Unknown")
+                    .kboTeam(fp != null ? fp.getTeam() : "")
+                    .assignedPosition(assignedPosMap.getOrDefault(seq, ""))
+                    .pa(s != null ? safelyGet(s.getPa()) : 0L)
+                    .ab(ab)
+                    .hit(hit)
+                    .hr(s != null ? safelyGet(s.getHr()) : 0L)
+                    .rbi(s != null ? safelyGet(s.getRbi()) : 0L)
+                    .run(s != null ? safelyGet(s.getRun()) : 0L)
+                    .sb(s != null ? safelyGet(s.getSb()) : 0L)
+                    .so(s != null ? safelyGet(s.getSo()) : 0L)
+                    .avg(ab == 0 ? ".000" : String.format(".%03d", (int) (hit * 1000 / ab)))
+                    .build();
+        }).collect(Collectors.toList());
+
+        List<MyRosterStatDto.PitcherStat> pitchers = pitcherSeqs.stream().map(seq -> {
+            FantasyPlayer fp = playerMap.get(seq);
+            KboParticipantStatsInterface s = pitchStatsMap.get(seq);
+            long inning = s != null ? safelyGet(s.getInning()) : 0L;
+            long er = s != null ? safelyGet(s.getEr()) : 0L;
+            long bb = s != null ? safelyGet(s.getBb()) : 0L;
+            long pHit = s != null ? safelyGet(s.getPHit()) : 0L;
+            return MyRosterStatDto.PitcherStat.builder()
+                    .fantasyPlayerSeq(seq)
+                    .playerName(fp != null ? fp.getName() : "Unknown")
+                    .kboTeam(fp != null ? fp.getTeam() : "")
+                    .assignedPosition(assignedPosMap.getOrDefault(seq, ""))
+                    .win(s != null ? safelyGet(s.getWin()) : 0L)
+                    .lose(s != null ? safelyGet(s.getLose()) : 0L)
+                    .save(s != null ? safelyGet(s.getSave()) : 0L)
+                    .inning(inning)
+                    .formattedInning(formatInning(inning))
+                    .er(er)
+                    .bb(bb)
+                    .pHit(pHit)
+                    .pSo(s != null ? safelyGet(s.getPSo()) : 0L)
+                    .hbp(s != null ? safelyGet(s.getHbp()) : 0L)
+                    .era(inning == 0 ? "-.--" : String.format("%.2f", (double) er * 27 / inning))
+                    .whip(inning == 0 ? "-.--" : String.format("%.2f", (double) (bb + pHit) * 3 / inning))
+                    .build();
+        }).collect(Collectors.toList());
+
+        return MyRosterStatDto.builder()
+                .hitters(hitters)
+                .pitchers(pitchers)
+                .hitterTotal(buildHitterTotal(hitters))
+                .pitcherTotal(buildPitcherTotal(pitchers))
+                .build();
+    }
+
+    private String formatInning(long outs) {
+        long full = outs / 3;
+        long remainder = outs % 3;
+        return outs == 0 ? "0" : remainder == 0 ? String.valueOf(full) : full + " " + remainder + "/3";
+    }
+
+    private MyRosterStatDto.HitterStat buildHitterTotal(List<MyRosterStatDto.HitterStat> hitters) {
+        long ab = hitters.stream().mapToLong(MyRosterStatDto.HitterStat::getAb).sum();
+        long hit = hitters.stream().mapToLong(MyRosterStatDto.HitterStat::getHit).sum();
+        return MyRosterStatDto.HitterStat.builder()
+                .pa(hitters.stream().mapToLong(MyRosterStatDto.HitterStat::getPa).sum())
+                .ab(ab)
+                .hit(hit)
+                .hr(hitters.stream().mapToLong(MyRosterStatDto.HitterStat::getHr).sum())
+                .rbi(hitters.stream().mapToLong(MyRosterStatDto.HitterStat::getRbi).sum())
+                .run(hitters.stream().mapToLong(MyRosterStatDto.HitterStat::getRun).sum())
+                .sb(hitters.stream().mapToLong(MyRosterStatDto.HitterStat::getSb).sum())
+                .so(hitters.stream().mapToLong(MyRosterStatDto.HitterStat::getSo).sum())
+                .avg(ab == 0 ? ".000" : String.format(".%03d", (int) (hit * 1000 / ab)))
+                .build();
+    }
+
+    private MyRosterStatDto.PitcherStat buildPitcherTotal(List<MyRosterStatDto.PitcherStat> pitchers) {
+        long inning = pitchers.stream().mapToLong(MyRosterStatDto.PitcherStat::getInning).sum();
+        long er = pitchers.stream().mapToLong(MyRosterStatDto.PitcherStat::getEr).sum();
+        long bb = pitchers.stream().mapToLong(MyRosterStatDto.PitcherStat::getBb).sum();
+        long pHit = pitchers.stream().mapToLong(MyRosterStatDto.PitcherStat::getPHit).sum();
+        return MyRosterStatDto.PitcherStat.builder()
+                .win(pitchers.stream().mapToLong(MyRosterStatDto.PitcherStat::getWin).sum())
+                .lose(pitchers.stream().mapToLong(MyRosterStatDto.PitcherStat::getLose).sum())
+                .save(pitchers.stream().mapToLong(MyRosterStatDto.PitcherStat::getSave).sum())
+                .inning(inning)
+                .formattedInning(formatInning(inning))
+                .er(er)
+                .bb(bb)
+                .pHit(pHit)
+                .pSo(pitchers.stream().mapToLong(MyRosterStatDto.PitcherStat::getPSo).sum())
+                .hbp(pitchers.stream().mapToLong(MyRosterStatDto.PitcherStat::getHbp).sum())
+                .era(inning == 0 ? "-.--" : String.format("%.2f", (double) er * 27 / inning))
+                .whip(inning == 0 ? "-.--" : String.format("%.2f", (double) (bb + pHit) * 3 / inning))
+                .build();
     }
 }
