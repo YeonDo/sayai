@@ -60,6 +60,7 @@ REQUESTED → APPROVED  (타 팀이 클레임)
 **실행 주기**: 30분마다 (10:00~23:30 KST)  
 **대상**: status=REQUESTED이고 createdAt 기준 30분 이상 경과한 웨이버
 
+
 #### 3-A. 클레임 있음 → CLAIM 처리 (`processWaiver`, CLAIM)
 
 `ft_waiver`에 클레임이 존재하고, 그 중 `ft_games_waiver`에 등록된 유효한 참가자가 있는 경우 낙찰 처리.  

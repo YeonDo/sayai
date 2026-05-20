@@ -424,9 +424,6 @@ public class FantasyRosterService {
                 }
             }
 
-            // Check Salary Cap
-            validateTradeSalaryCap(tx.getFantasyGameSeq(), tx.getRequesterId(), tx.getTargetId(), givingSeqs, receivingSeqs);
-
             // Check Roster Size
             validateTradeRosterSize(tx.getFantasyGameSeq(), tx.getRequesterId(), tx.getTargetId(), givingSeqs, receivingSeqs);
 
