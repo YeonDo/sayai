@@ -20,6 +20,7 @@ public class MyRosterStatDto {
         private Long fantasyPlayerSeq;
         private String playerName;
         private String kboTeam;
+        private String position;
         private String assignedPosition;
         private long pa;
         private long ab;
@@ -38,6 +39,7 @@ public class MyRosterStatDto {
         private Long fantasyPlayerSeq;
         private String playerName;
         private String kboTeam;
+        private String position;
         private String assignedPosition;
         private long win;
         private long lose;

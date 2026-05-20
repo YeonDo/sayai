@@ -175,7 +175,8 @@
 | `fantasyPlayerSeq` | `Long` | ft_players 식별자 |
 | `playerName` | `String` | 선수 이름 |
 | `kboTeam` | `String` | KBO 소속팀 |
-| `assignedPosition` | `String` | 배치 포지션 (예: `1B`, `BENCH`) |
+| `position` | `String` | 실제 포지션 (`ft_players.position`, 예: `1B`, `OF`) |
+| `assignedPosition` | `String` | 판타지 배치 슬롯 (예: `1B`, `BENCH`) |
 | `pa` | `long` | 타석 |
 | `ab` | `long` | 타수 |
 | `hit` | `long` | 안타 |
@@ -192,7 +193,8 @@
 | `fantasyPlayerSeq` | `Long` | ft_players 식별자 |
 | `playerName` | `String` | 선수 이름 |
 | `kboTeam` | `String` | KBO 소속팀 |
-| `assignedPosition` | `String` | 배치 포지션 (예: `SP`, `BENCH`) |
+| `position` | `String` | 실제 포지션 (`ft_players.position`, 예: `SP`, `RP`) |
+| `assignedPosition` | `String` | 판타지 배치 슬롯 (예: `SP`, `BENCH`) |
 | `win` | `long` | 승 |
 | `lose` | `long` | 패 |
 | `save` | `long` | 세이브 |
