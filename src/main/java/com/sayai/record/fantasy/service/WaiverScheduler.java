@@ -74,7 +74,6 @@ public class WaiverScheduler {
         log.info("Trade processing completed. Processed {} trades.", processed);
     }
 
-    @Transactional
     public void processWaivers() {
         log.info("Starting scheduled waiver processing...");
 

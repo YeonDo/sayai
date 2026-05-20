@@ -482,6 +482,25 @@ public class FantasyDraftService {
             }
         }
 
+        // Foreigner limit check
+        Set<Long> rosterSeqs = myPicks.stream()
+                .map(DraftPick::getFantasyPlayerSeq)
+                .filter(java.util.Objects::nonNull)
+                .collect(Collectors.toSet());
+        List<FantasyPlayer> rosterPlayers = fantasyPlayerRepository.findAllById(rosterSeqs);
+        long type1Count = rosterPlayers.stream()
+                .filter(p -> p.getForeignerType() == FantasyPlayer.ForeignerType.TYPE_1)
+                .count();
+        long type2Count = rosterPlayers.stream()
+                .filter(p -> p.getForeignerType() == FantasyPlayer.ForeignerType.TYPE_2)
+                .count();
+        if (type1Count > 3) {
+            throw new IllegalStateException("외국인 용병 제한 3명을 넘게 선발할 수 없습니다.");
+        }
+        if (type2Count > 1) {
+            throw new IllegalStateException("아시아 쿼터 제한 1명을 넘게 선발할 수 없습니다.");
+        }
+
         // Check validation first
         if (updateDto.getEntries() != null) {
             Map<String, Integer> positionCounts = new java.util.HashMap<>();

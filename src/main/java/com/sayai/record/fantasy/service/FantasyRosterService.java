@@ -647,7 +647,7 @@ public class FantasyRosterService {
             fcmService.sendTopicMessage(
                     "user_" + requesterId + "_game_" + gameSeq,
                     "트레이드 취소 - 샐러리캡 초과",
-                    String.format("%s팀의 트레이드가 샐러리캡 초과로 취소되었습니다. (현재: %d / 제한: %d)", teamName, requesterCost, game.getSalaryCap())
+                    String.format("%s팀의 트레이드가 샐러리캡 초과로 지연되었습니다. (현재: %d / 제한: %d)", teamName, requesterCost, game.getSalaryCap())
             );
         }
         if (targetExceeded) {
@@ -655,7 +655,7 @@ public class FantasyRosterService {
             fcmService.sendTopicMessage(
                     "user_" + targetId + "_game_" + gameSeq,
                     "트레이드 취소 - 샐러리캡 초과",
-                    String.format("%s팀의 트레이드가 샐러리캡 초과로 취소되었습니다. (현재: %d / 제한: %d)", teamName, targetCost, game.getSalaryCap())
+                    String.format("%s팀의 트레이드가 샐러리캡 초과로 지연되었습니다. (현재: %d / 제한: %d)", teamName, targetCost, game.getSalaryCap())
             );
         }
 
@@ -682,7 +682,7 @@ public class FantasyRosterService {
             fcmService.sendTopicMessage(
                     "user_" + requesterId + "_game_" + gameSeq,
                     "트레이드 취소 - 로스터 초과",
-                    String.format("%s팀의 트레이드가 로스터 초과로 취소되었습니다. (트레이드 후 %d명 / 제한: %d명)", teamName, requesterAfter, limit)
+                    String.format("%s팀의 트레이드가 로스터 초과로 지연되었습니다. (트레이드 후 %d명 / 제한: %d명)", teamName, requesterAfter, limit)
             );
         }
         if (targetExceeded) {
@@ -691,7 +691,7 @@ public class FantasyRosterService {
             fcmService.sendTopicMessage(
                     "user_" + targetId + "_game_" + gameSeq,
                     "트레이드 취소 - 로스터 초과",
-                    String.format("%s팀의 트레이드가 로스터 초과로 취소되었습니다. (트레이드 후 %d명 / 제한: %d명)", teamName, targetAfter, limit)
+                    String.format("%s팀의 트레이드가 로스터 초과로 지연되었습니다. (트레이드 후 %d명 / 제한: %d명)", teamName, targetAfter, limit)
             );
         }
 

@@ -186,6 +186,7 @@
 | `isParty` | `Boolean` | 내가 트레이드 당사자인지 여부 |
 | `canRespond` | `Boolean` | 내가 수락/거절 가능 여부 (`SUGGESTED` 상태이고 내가 상대팀인 경우만 `true`) |
 | `createdAt` | `LocalDateTime` | 트레이드 제안 시각 |
+| `updatedAt` | `LocalDateTime` | 트레이드 마지막 변경 시각 |
 
 **myVote / isParty 조합**
 | `isParty` | `myVote` | 의미 |
