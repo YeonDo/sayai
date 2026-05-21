@@ -35,6 +35,7 @@ out/
 
 ### Claude ###
 .claude/task/
+.omc/
 
 ### QueryDSL ###
 src/main/generated/

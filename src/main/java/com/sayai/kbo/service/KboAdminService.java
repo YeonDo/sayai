@@ -7,7 +7,10 @@ import com.sayai.kbo.repository.*;
 import com.sayai.record.fantasy.entity.FantasyPlayer;
 import com.sayai.record.fantasy.repository.FantasyPlayerRepository;
 import lombok.RequiredArgsConstructor;
-import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,11 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -31,7 +30,6 @@ public class KboAdminService {
     private final KboHitterStatsRepository kboHitterStatsRepository;
     private final KboPitcherStatsRepository kboPitcherStatsRepository;
     private final FantasyPlayerRepository fantasyPlayerRepository;
-    private final PRankService pRankService;
 
     private String getTeamCode(String teamName) {
         if (teamName == null) return "99";
@@ -123,7 +121,6 @@ public class KboAdminService {
         int season = (int) (newGameId / 10_000_000_000L);
         updateHitterStats(allHitters, season);
         updatePitcherStats(allPitchers, season);
-        pRankService.updatePRank(season);
 
         return KboGameUploadResponse.builder()
                 .game(game)
