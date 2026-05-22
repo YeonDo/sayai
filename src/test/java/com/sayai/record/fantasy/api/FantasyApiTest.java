@@ -48,7 +48,7 @@ public class FantasyApiTest {
                     .password("pass")
                     .name("Test User")
                     .role(Member.Role.USER)
-                    .playerId(1L)
+                    .memberId(1L)
                     .build();
             memberRepository.save(member);
         }

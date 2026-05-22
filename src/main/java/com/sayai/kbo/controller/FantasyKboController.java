@@ -40,6 +40,6 @@ public class FantasyKboController {
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
-        return ResponseEntity.ok(fantasyKboService.getMyRosterStats(gameSeq, userDetails.getPlayerId(), startDt, endDt));
+        return ResponseEntity.ok(fantasyKboService.getMyRosterStats(gameSeq, userDetails.getMemberId(), startDt, endDt));
     }
 }

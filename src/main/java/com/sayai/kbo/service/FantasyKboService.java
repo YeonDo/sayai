@@ -66,10 +66,10 @@ public class FantasyKboService {
 
         for (DraftPickSnapshot pick : draftPicks) {
             Long pId = pick.getFantasyPlayerSeq();
-            if (pId == null) pId = pick.getPlayerId();
+            if (pId == null) pId = pick.getMemberId();
 
-            if (pId != null && pick.getPlayerId() != null) {
-                Long participantUserId = pick.getPlayerId();
+            if (pId != null && pick.getMemberId() != null) {
+                Long participantUserId = pick.getMemberId();
                 playerToParticipantId.put(pId, participantUserId);
 
                 if (PITCHER_POSITIONS.contains(pick.getAssignedPosition())) {
@@ -93,10 +93,10 @@ public class FantasyKboService {
 
         Map<Long, ParticipantKboStatsDto> resultMap = new HashMap<>();
         for (FantasyParticipant p : participants) {
-            Long userId = p.getPlayerId();
+            Long userId = p.getMemberId();
             resultMap.put(userId, ParticipantKboStatsDto.builder()
                     .participantSeq(p.getSeq())
-                    .playerId(userId)
+                    .memberId(userId)
                     .teamName(p.getTeamName())
                     .build());
         }
@@ -133,7 +133,7 @@ public class FantasyKboService {
         }
 
         for (FantasyParticipant p : participants) {
-            Long userId = p.getPlayerId();
+            Long userId = p.getMemberId();
             ParticipantKboStatsDto dto = resultMap.get(userId);
             if (dto == null) continue;
 
@@ -176,7 +176,7 @@ public class FantasyKboService {
     private List<ParticipantKboStatsDto> createEmptyResponses(List<FantasyParticipant> participants) {
         return participants.stream().map(p -> ParticipantKboStatsDto.builder()
                 .participantSeq(p.getSeq())
-                .playerId(p.getPlayerId())
+                .memberId(p.getMemberId())
                 .teamName(p.getTeamName())
                 .formattedInning("0")
                 .build()).collect(Collectors.toList());
@@ -187,7 +187,7 @@ public class FantasyKboService {
     }
 
     public MyRosterStatDto getMyRosterStats(Long gameSeq, Long playerId, LocalDate startDt, LocalDate endDt) {
-        List<DraftPick> myPicks = draftPickRepository.findByFantasyGameSeqAndPlayerId(gameSeq, playerId);
+        List<DraftPick> myPicks = draftPickRepository.findByFantasyGameSeqAndMemberId(gameSeq, playerId);
 
         if (myPicks.isEmpty()) {
             return MyRosterStatDto.builder()
@@ -260,7 +260,7 @@ public class FantasyKboService {
                     .run(s != null ? safelyGet(s.getRun()) : 0L)
                     .sb(s != null ? safelyGet(s.getSb()) : 0L)
                     .so(s != null ? safelyGet(s.getSo()) : 0L)
-                    .avg(ab == 0 ? ".000" : String.format(".%03d", (int) (hit * 1000 / ab)))
+                    .avg(ab == 0 ? ".000" : hit >= ab ? "1.000" : String.format(".%03d", (int) (hit * 1000 / ab)))
                     .build();
         }).collect(Collectors.toList());
 
@@ -318,7 +318,7 @@ public class FantasyKboService {
                 .run(hitters.stream().mapToLong(MyRosterStatDto.HitterStat::getRun).sum())
                 .sb(hitters.stream().mapToLong(MyRosterStatDto.HitterStat::getSb).sum())
                 .so(hitters.stream().mapToLong(MyRosterStatDto.HitterStat::getSo).sum())
-                .avg(ab == 0 ? ".000" : String.format(".%03d", (int) (hit * 1000 / ab)))
+                .avg(ab == 0 ? ".000" : hit >= ab ? "1.000" : String.format(".%03d", (int) (hit * 1000 / ab)))
                 .build();
     }
 

@@ -28,17 +28,17 @@ public class FantasyScoringService {
         // 1. Bulk Fetch Existing Scores
         Map<Long, FantasyRotisserieScore> existingScores = scoreRepository.findByFantasyGameSeqAndRound(gameSeq, round)
                 .stream()
-                .collect(Collectors.toMap(FantasyRotisserieScore::getPlayerId, Function.identity()));
+                .collect(Collectors.toMap(FantasyRotisserieScore::getMemberId, Function.identity()));
 
         List<FantasyRotisserieScore> entities = new ArrayList<>();
 
         for (FantasyScoreDto dto : inputScores) {
-            FantasyRotisserieScore entity = existingScores.get(dto.getPlayerId());
+            FantasyRotisserieScore entity = existingScores.get(dto.getMemberId());
 
             if (entity == null) {
                 entity = FantasyRotisserieScore.builder()
                         .fantasyGameSeq(gameSeq)
-                        .playerId(dto.getPlayerId())
+                        .memberId(dto.getMemberId())
                         .round(round)
                         .build();
             }
@@ -175,7 +175,7 @@ public class FantasyScoringService {
         return FantasyScoreDto.builder()
                 .seq(entity.getSeq())
                 .fantasyGameSeq(entity.getFantasyGameSeq())
-                .playerId(entity.getPlayerId())
+                .memberId(entity.getMemberId())
                 .round(entity.getRound())
                 .avg(entity.getAvg())
                 .rbi(entity.getRbi())

@@ -10,6 +10,7 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -43,7 +44,7 @@ public class AuthController {
                     .secure(true)
                     .path("/")
                     .maxAge(21600) // 6 hours
-                    .sameSite("Strict")
+                    .sameSite("None")
                     .build();
 
             response.addHeader("Set-Cookie", cookie.toString());
@@ -74,8 +75,23 @@ public class AuthController {
     @PostMapping("/signup")
     public ResponseEntity<String> signup(@RequestBody SignupRequest request) {
         try {
-            authService.signup(request.getUserId(), request.getPassword(), request.getName(), request.getPlayerId());
+            authService.signup(request.getUserId(), request.getPassword(), request.getName(), request.getMemberId());
             return ResponseEntity.ok("User registered successfully");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PatchMapping("/me/name")
+    public ResponseEntity<String> changeName(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody ChangeNameRequest request) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
+        try {
+            authService.changeName(userDetails.getMemberId(), request.getName());
+            return ResponseEntity.ok("Name changed successfully");
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -89,7 +105,7 @@ public class AuthController {
             return ResponseEntity.status(401).build();
         }
         try {
-            authService.changePassword(userDetails.getPlayerId(), request.getCurrentPassword(), request.getNewPassword());
+            authService.changePassword(userDetails.getMemberId(), request.getCurrentPassword(), request.getNewPassword());
             return ResponseEntity.ok("Password changed successfully");
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -103,7 +119,13 @@ public class AuthController {
         }
         boolean isAdmin = userDetails.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-        return ResponseEntity.ok(new UserInfo(userDetails.getPlayerId(), userDetails.getUsername(), userDetails.getName(), isAdmin));
+        boolean kakaoOnly = userDetails.getUsername().startsWith("kakao_");
+        return ResponseEntity.ok(new UserInfo(userDetails.getMemberId(), userDetails.getUsername(), userDetails.getName(), isAdmin, kakaoOnly));
+    }
+
+    @Data
+    public static class ChangeNameRequest {
+        private String name;
     }
 
     @Data
@@ -123,7 +145,7 @@ public class AuthController {
         private String userId;
         private String password;
         private String name;
-        private Long playerId;
+        private Long memberId;
     }
 
     @Data
@@ -135,9 +157,10 @@ public class AuthController {
     @Data
     @AllArgsConstructor
     public static class UserInfo {
-        private Long playerId;
+        private Long memberId;
         private String userId;
         private String name;
         private boolean admin;
+        private boolean kakaoOnly;
     }
 }

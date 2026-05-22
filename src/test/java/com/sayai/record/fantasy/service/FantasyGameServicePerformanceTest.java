@@ -83,7 +83,7 @@ class FantasyGameServicePerformanceTest {
             for (int j = 0; j < participantsPerGame; j++) {
                 FantasyParticipant participant = FantasyParticipant.builder()
                         .fantasyGameSeq(game.getSeq())
-                        .playerId((long) (j + 1000))
+                        .memberId((long) (j + 1000))
                         .teamName("Team " + j)
                         .build();
                 participants.add(participant);

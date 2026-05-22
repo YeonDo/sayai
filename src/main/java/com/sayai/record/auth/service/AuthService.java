@@ -25,7 +25,7 @@ public class AuthService {
             throw new IllegalArgumentException("Invalid userId or password");
         }
 
-        return jwtTokenProvider.createToken(member.getPlayerId(), member.getUserId(), member.getRole(), member.getName());
+        return jwtTokenProvider.createToken(member.getMemberId(), member.getUserId(), member.getRole(), member.getName());
     }
 
     @Transactional(readOnly = true)
@@ -36,7 +36,7 @@ public class AuthService {
     }
 
     @Transactional
-    public void signup(String userId, String password, String name, Long playerId) {
+    public void signup(String userId, String password, String name, Long memberId) {
         if (memberRepository.findByUserId(userId).isPresent()) {
             throw new IllegalArgumentException("User ID already exists");
         }
@@ -45,7 +45,7 @@ public class AuthService {
                 .userId(userId)
                 .password(passwordEncoder.encode(password))
                 .name(name)
-                .playerId(playerId)
+                .memberId(memberId)
                 .role(Member.Role.USER) // Default role
                 .build();
 
@@ -53,7 +53,20 @@ public class AuthService {
     }
 
     @Transactional
-    public void changePassword(Long playerId, String currentPassword, String newPassword) {
+    public void changeName(Long memberId, String name) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("Name cannot be empty");
+        }
+        if (!name.matches("^[가-힣a-zA-Z0-9]{2,10}$")) {
+            throw new IllegalArgumentException("Name must be 2-10 characters using Korean, English, or numbers");
+        }
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        member.setName(name);
+    }
+
+    @Transactional
+    public void changePassword(Long memberId, String currentPassword, String newPassword) {
         if (currentPassword == null || currentPassword.isBlank() || newPassword == null || newPassword.isBlank()) {
             throw new IllegalArgumentException("Password cannot be empty");
         }
@@ -62,7 +75,7 @@ public class AuthService {
             throw new IllegalArgumentException("Password must be at least 8 characters long and contain both letters and numbers");
         }
 
-        Member member = memberRepository.findById(playerId)
+        Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         if (!passwordEncoder.matches(currentPassword, member.getPassword())) {

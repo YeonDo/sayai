@@ -57,7 +57,7 @@ class AuthServicePasswordTest {
     @Test
     void changePassword_shouldSucceed_whenPasswordsAreValid() {
         Member member = Member.builder()
-                .playerId(1L)
+                .memberId(1L)
                 .password("encodedOldPass")
                 .role(Member.Role.USER)
                 .build();

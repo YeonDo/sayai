@@ -55,7 +55,7 @@ public class FantasyGameService {
                 .collect(Collectors.groupingBy(FantasyParticipant::getFantasyGameSeq, Collectors.counting()));
 
         Map<Long, FantasyParticipant> userParticipation = participants.stream()
-                .filter(p -> p.getPlayerId().equals(userId))
+                .filter(p -> p.getMemberId().equals(userId))
                 .collect(Collectors.toMap(FantasyParticipant::getFantasyGameSeq, Function.identity(), (existing, replacement) -> existing));
 
         return games.stream().map(game -> {
@@ -74,7 +74,7 @@ public class FantasyGameService {
     @Transactional(readOnly = true)
     public List<FantasyGameDto> getMyGames(Long userId, FantasyGame.GameStatus status, FantasyGame.RuleType type) {
         // Find games where user participated
-        List<FantasyParticipant> myParticipations = fantasyParticipantRepository.findByPlayerId(userId);
+        List<FantasyParticipant> myParticipations = fantasyParticipantRepository.findByMemberId(userId);
 
         List<Long> gameSeqs = myParticipations.stream()
                 .map(FantasyParticipant::getFantasyGameSeq)
@@ -95,7 +95,7 @@ public class FantasyGameService {
 
     @Transactional(readOnly = true)
     public Long findDraftingGameId(Long userId) {
-        List<FantasyParticipant> myParticipations = fantasyParticipantRepository.findByPlayerId(userId);
+        List<FantasyParticipant> myParticipations = fantasyParticipantRepository.findByMemberId(userId);
 
         List<Long> gameSeqs = myParticipations.stream()
                 .map(FantasyParticipant::getFantasyGameSeq)
@@ -172,7 +172,7 @@ public class FantasyGameService {
                 int waiverOrderNum = n - order + 1;
                 waiverOrders.add(FantasyWaiverOrder.builder()
                         .gameSeq(gameSeq)
-                        .playerId(p.getPlayerId())
+                        .memberId(p.getMemberId())
                         .orderNum(waiverOrderNum)
                         .build());
                 order++;
@@ -194,7 +194,7 @@ public class FantasyGameService {
         List<ParticipantRosterDto> orderList = participants.stream()
             .sorted(Comparator.comparingInt(FantasyParticipant::getDraftOrder))
             .map(p -> ParticipantRosterDto.builder()
-                .participantId(p.getPlayerId())
+                .participantId(p.getMemberId())
                 .teamName(p.getTeamName())
                 .preferredTeam(p.getPreferredTeam())
                 .draftOrder(p.getDraftOrder())
@@ -227,11 +227,11 @@ public class FantasyGameService {
 
         List<FantasyParticipant> participants = fantasyParticipantRepository.findByFantasyGameSeq(gameSeq);
         Map<Long, String> teamNames = participants.stream()
-                .collect(Collectors.toMap(FantasyParticipant::getPlayerId, FantasyParticipant::getTeamName, (a, b) -> a));
+                .collect(Collectors.toMap(FantasyParticipant::getMemberId, FantasyParticipant::getTeamName, (a, b) -> a));
 
         return picks.stream().map(pick -> {
             FantasyPlayer player = players.get(pick.getFantasyPlayerSeq());
-            String teamName = teamNames.getOrDefault(pick.getPlayerId(), "Unknown");
+            String teamName = teamNames.getOrDefault(pick.getMemberId(), "Unknown");
             return DraftLogDto.builder()
                     .pickNumber(pick.getPickNumber())
                     .playerName(player != null ? player.getName() : "Unknown")
@@ -277,7 +277,7 @@ public class FantasyGameService {
         Map<Long, FantasyPlayer> players = fantasyPlayerRepository.findAllById(playerSeqs).stream()
                 .collect(Collectors.toMap(FantasyPlayer::getSeq, Function.identity()));
 
-        Map<Long, List<DraftPick>> picksByPart = allPicks.stream().collect(Collectors.groupingBy(DraftPick::getPlayerId));
+        Map<Long, List<DraftPick>> picksByPart = allPicks.stream().collect(Collectors.groupingBy(DraftPick::getMemberId));
 
         List<DraftPickSnapshot> snapshotsToSave = new ArrayList<>();
 
@@ -289,14 +289,14 @@ public class FantasyGameService {
         for (FantasyParticipant p : participants) {
             teamNames.add(p.getTeamName());
 
-            List<DraftPick> picks = picksByPart.getOrDefault(p.getPlayerId(), Collections.emptyList());
+            List<DraftPick> picks = picksByPart.getOrDefault(p.getMemberId(), Collections.emptyList());
             List<DraftPick> validPicks = picks.stream()
                     .filter(pick -> pick.getAssignedPosition() != null && !"BENCH".equalsIgnoreCase(pick.getAssignedPosition()))
                     .collect(Collectors.toList());
 
             for (DraftPick pick : validPicks) {
                 DraftPickSnapshot snapshot = DraftPickSnapshot.builder()
-                        .playerId(pick.getPlayerId())
+                        .memberId(pick.getMemberId())
                         .fantasyPlayerSeq(pick.getFantasyPlayerSeq())
                         .fantasyGameSeq(pick.getFantasyGameSeq())
                         .pickNumber(pick.getPickNumber())
@@ -379,7 +379,7 @@ public class FantasyGameService {
         // Fetch all picks
         List<DraftPick> allPicks = draftPickRepository.findByFantasyGameSeq(gameSeq);
         Map<Long, List<DraftPick>> picksByParticipant = allPicks.stream()
-                .collect(Collectors.groupingBy(DraftPick::getPlayerId));
+                .collect(Collectors.groupingBy(DraftPick::getMemberId));
 
         // Fetch all relevant fantasy players
         Set<Long> fantasyPlayerSeqs = allPicks.stream()
@@ -404,7 +404,7 @@ public class FantasyGameService {
         }
 
         List<ParticipantRosterDto> rosterDtos = participants.stream().map(p -> {
-            List<DraftPick> myPicks = picksByParticipant.getOrDefault(p.getPlayerId(), Collections.emptyList());
+            List<DraftPick> myPicks = picksByParticipant.getOrDefault(p.getMemberId(), Collections.emptyList());
             List<FantasyPlayerDto> roster = myPicks.stream()
                     .map(pick -> {
                         FantasyPlayer fp = fantasyPlayers.get(pick.getFantasyPlayerSeq());
@@ -417,7 +417,7 @@ public class FantasyGameService {
                     .collect(Collectors.toList());
 
             return ParticipantRosterDto.builder()
-                    .participantId(p.getPlayerId())
+                    .participantId(p.getMemberId())
                     .teamName(p.getTeamName())
                     .preferredTeam(p.getPreferredTeam())
                     .draftOrder(p.getDraftOrder())

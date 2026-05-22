@@ -10,7 +10,7 @@ import lombok.*;
 public class FantasyScoreDto {
     private Long seq;
     private Long fantasyGameSeq;
-    private Long playerId;
+    private Long memberId;
     private Integer round;
 
     // Batter Stats

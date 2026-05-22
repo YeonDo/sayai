@@ -8,12 +8,12 @@ import java.util.Collection;
 
 @Getter
 public class CustomUserDetails extends User {
-    private final Long playerId;
+    private final Long memberId;
     private final String name;
 
-    public CustomUserDetails(String username, String password, Collection<? extends GrantedAuthority> authorities, Long playerId, String name) {
+    public CustomUserDetails(String username, String password, Collection<? extends GrantedAuthority> authorities, Long memberId, String name) {
         super(username, password, authorities);
-        this.playerId = playerId;
+        this.memberId = memberId;
         this.name = name;
     }
 }

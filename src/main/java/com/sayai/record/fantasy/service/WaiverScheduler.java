@@ -101,7 +101,7 @@ public class WaiverScheduler {
                         List<FantasyWaiverOrder> orders = waiverOrderRepository.findByGameSeqOrderByOrderNumAsc(key);
                         java.util.Map<Long, FantasyWaiverOrder> map = new java.util.HashMap<>();
                         for (FantasyWaiverOrder order : orders) {
-                            map.put(order.getPlayerId(), order);
+                            map.put(order.getMemberId(), order);
                         }
                         return map;
                     });

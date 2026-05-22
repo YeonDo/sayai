@@ -19,12 +19,12 @@ class FantasyEntityTest {
     @Test
     void testDraftPickBuilder() {
         DraftPick pick = DraftPick.builder()
-                .playerId(100L)
+                .memberId(100L)
                 .fantasyPlayerSeq(1L)
                 .fantasyGameSeq(5L)
                 .build();
 
-        assertThat(pick.getPlayerId()).isEqualTo(100L);
+        assertThat(pick.getMemberId()).isEqualTo(100L);
         assertThat(pick.getFantasyPlayerSeq()).isEqualTo(1L);
         assertThat(pick.getFantasyGameSeq()).isEqualTo(5L);
     }

@@ -35,7 +35,7 @@ public class AuthServiceBenchmarkTest {
             cacheManager.getCache("members").clear();
         }
         Member member = Member.builder()
-                .playerId(1L)
+                .memberId(1L)
                 .userId("testuser")
                 .password(passwordEncoder.encode("oldPass123"))
                 .name("Test User")

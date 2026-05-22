@@ -52,16 +52,16 @@ public class FantasyLogController {
 
         // Batch fetch participants
         Map<Long, String> participantTeamNames = fantasyParticipantRepository.findByFantasyGameSeq(gameSeq).stream()
-                .collect(Collectors.toMap(FantasyParticipant::getPlayerId,
+                .collect(Collectors.toMap(FantasyParticipant::getMemberId,
                         p -> p.getTeamName() != null ? p.getTeamName() : "Unknown Team"));
 
         Set<Long> pickerIds = picks.stream()
-                .map(DraftPick::getPlayerId)
+                .map(DraftPick::getMemberId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
         Map<Long, String> memberNames = memberRepository.findAllById(pickerIds).stream()
-                .collect(Collectors.toMap(Member::getPlayerId, Member::getName));
+                .collect(Collectors.toMap(Member::getMemberId, Member::getName));
 
         List<DraftLogDto> dtos = picks.stream().map(pick -> {
             FantasyPlayer p = playerMap.get(pick.getFantasyPlayerSeq());
@@ -73,8 +73,8 @@ public class FantasyLogController {
                 pPos = p.getPosition();
             }
 
-            String partName = participantTeamNames.getOrDefault(pick.getPlayerId(),
-                    memberNames.getOrDefault(pick.getPlayerId(), String.valueOf(pick.getPlayerId())));
+            String partName = participantTeamNames.getOrDefault(pick.getMemberId(),
+                    memberNames.getOrDefault(pick.getMemberId(), String.valueOf(pick.getMemberId())));
 
             return DraftLogDto.builder()
                     .pickNumber(pick.getPickNumber())
@@ -114,14 +114,14 @@ public class FantasyLogController {
         // However, if user left, might be tricky. But usually they persist.
         // Let's fetch all participants for this game.
         Map<Long, String> participantTeamNames = fantasyParticipantRepository.findByFantasyGameSeq(gameSeq).stream()
-                .collect(Collectors.toMap(FantasyParticipant::getPlayerId,
+                .collect(Collectors.toMap(FantasyParticipant::getMemberId,
                         p -> p.getTeamName() != null ? p.getTeamName() : "Unknown Team"));
 
         // If team name missing from Participant table (e.g. log from before join? Unlikely), fallback to User Name.
         // Or just show ID. Let's try to fetch Member names too for fallback.
         Set<Long> participantIds = logs.stream().map(RosterLog::getParticipantId).filter(Objects::nonNull).collect(Collectors.toSet());
         Map<Long, String> memberNames = memberRepository.findAllById(participantIds).stream()
-                .collect(Collectors.toMap(Member::getPlayerId, Member::getName));
+                .collect(Collectors.toMap(Member::getMemberId, Member::getName));
 
         List<RosterLogDto> dtos = logs.stream().map(log -> {
             FantasyPlayer p = playerMap.get(log.getFantasyPlayerSeq());

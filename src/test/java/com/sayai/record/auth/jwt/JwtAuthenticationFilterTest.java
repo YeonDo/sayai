@@ -48,14 +48,14 @@ class JwtAuthenticationFilterTest {
         String token = "valid-token";
         String userId = "testUser";
         String role = "USER";
-        Long playerId = 123L;
+        Long memberId = 123L;
 
         when(jwtTokenProvider.resolveToken(request)).thenReturn(token);
         when(jwtTokenProvider.validateToken(token)).thenReturn(true);
         String name = "Test Name";
         when(jwtTokenProvider.getUserId(token)).thenReturn(userId);
         when(jwtTokenProvider.getRole(token)).thenReturn(role);
-        when(jwtTokenProvider.getPlayerId(token)).thenReturn(playerId);
+        when(jwtTokenProvider.getMemberId(token)).thenReturn(memberId);
         when(jwtTokenProvider.getName(token)).thenReturn(name);
 
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
@@ -67,7 +67,7 @@ class JwtAuthenticationFilterTest {
         assertTrue(principal instanceof CustomUserDetails);
         CustomUserDetails userDetails = (CustomUserDetails) principal;
         assertEquals(userId, userDetails.getUsername());
-        assertEquals(playerId, userDetails.getPlayerId());
+        assertEquals(memberId, userDetails.getMemberId());
         assertEquals(name, userDetails.getName());
     }
 

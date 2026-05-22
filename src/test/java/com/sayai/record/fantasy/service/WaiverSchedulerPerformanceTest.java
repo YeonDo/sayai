@@ -67,7 +67,7 @@ public class WaiverSchedulerPerformanceTest {
 
             FantasyWaiverOrder order = instantiate(FantasyWaiverOrder.class);
             ReflectionTestUtils.setField(order, "orderNum", (int) i);
-            ReflectionTestUtils.setField(order, "playerId", i);
+            ReflectionTestUtils.setField(order, "memberId", i);
             ReflectionTestUtils.setField(order, "gameSeq", 1L);
             mockOrders.add(order);
         }

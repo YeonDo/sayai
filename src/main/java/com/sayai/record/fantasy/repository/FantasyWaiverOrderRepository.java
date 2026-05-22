@@ -10,7 +10,7 @@ import java.util.Optional;
 import java.util.List;
 
 public interface FantasyWaiverOrderRepository extends JpaRepository<FantasyWaiverOrder, Long> {
-    Optional<FantasyWaiverOrder> findByGameSeqAndPlayerId(Long gameSeq, Long playerId);
+    Optional<FantasyWaiverOrder> findByGameSeqAndMemberId(Long gameSeq, Long memberId);
 
     List<FantasyWaiverOrder> findByGameSeqOrderByOrderNumAsc(Long gameSeq);
 

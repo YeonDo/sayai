@@ -11,7 +11,9 @@
       "Bash(cp /Users/yeondo/IdeaProjects/sayai/src/main/resources/static/firebase-messaging-sw.js /Users/yeondo/IdeaProjects/sayai-frontend/public/firebase-messaging-sw.js)",
       "Bash(cp /Users/yeondo/IdeaProjects/sayai/src/main/resources/static/manifest.json /Users/yeondo/IdeaProjects/sayai-frontend/public/manifest.json)",
       "Bash(cp /Users/yeondo/IdeaProjects/sayai/src/main/resources/static/favicon.png /Users/yeondo/IdeaProjects/sayai-frontend/public/favicon.png)",
-      "Bash(./gradlew compileJava)"
+      "Bash(./gradlew compileJava)",
+      "mcp__plugin_oh-my-claudecode_t__lsp_document_symbols",
+      "Bash(./gradlew compileJava -x test)"
     ]
   }
 }

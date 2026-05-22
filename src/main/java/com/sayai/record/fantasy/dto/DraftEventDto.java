@@ -12,7 +12,7 @@ import java.util.List;
 public class DraftEventDto {
     private String type; // "PICK" or "JOIN" or "STATUS" or "START"
     private Long fantasyGameSeq;
-    private Long playerId;
+    private Long memberId;
     private Long fantasyPlayerSeq;
     private String playerName;
     private String playerTeam;

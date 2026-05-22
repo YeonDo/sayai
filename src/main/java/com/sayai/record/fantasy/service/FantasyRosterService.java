@@ -45,12 +45,12 @@ public class FantasyRosterService {
             return new ArrayList<>();
         }
 
-        Set<Long> playerIds = orders.stream().map(FantasyWaiverOrder::getPlayerId).collect(Collectors.toSet());
-        java.util.Map<Long, String> teamMap = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerIdIn(gameSeq, playerIds)
-                .stream().collect(Collectors.toMap(FantasyParticipant::getPlayerId, FantasyParticipant::getTeamName, (a, b) -> a));
+        Set<Long> memberIds = orders.stream().map(FantasyWaiverOrder::getMemberId).collect(Collectors.toSet());
+        java.util.Map<Long, String> teamMap = fantasyParticipantRepository.findByFantasyGameSeqAndMemberIdIn(gameSeq, memberIds)
+                .stream().collect(Collectors.toMap(FantasyParticipant::getMemberId, FantasyParticipant::getTeamName, (a, b) -> a));
 
         return orders.stream().map(o -> com.sayai.record.fantasy.dto.WaiverOrderDto.builder()
-                .teamName(teamMap.getOrDefault(o.getPlayerId(), "Unknown Team"))
+                .teamName(teamMap.getOrDefault(o.getMemberId(), "Unknown Team"))
                 .orderNum(o.getOrderNum())
                 .build()).collect(Collectors.toList());
     }
@@ -69,8 +69,8 @@ public class FantasyRosterService {
                 .collect(Collectors.toSet());
         List<Long> transactionSeqs = waivers.stream().map(RosterTransaction::getSeq).collect(Collectors.toList());
 
-        java.util.Map<Long, String> requesterTeamMap = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerIdIn(gameSeq, requesterIds)
-                .stream().collect(Collectors.toMap(FantasyParticipant::getPlayerId, FantasyParticipant::getTeamName, (a, b) -> a));
+        java.util.Map<Long, String> requesterTeamMap = fantasyParticipantRepository.findByFantasyGameSeqAndMemberIdIn(gameSeq, requesterIds)
+                .stream().collect(Collectors.toMap(FantasyParticipant::getMemberId, FantasyParticipant::getTeamName, (a, b) -> a));
 
         java.util.Map<Long, FantasyPlayer> playerMap = fantasyPlayerRepository.findAllById(playerSeqs)
                 .stream().collect(Collectors.toMap(FantasyPlayer::getSeq, p -> p));
@@ -117,7 +117,7 @@ public class FantasyRosterService {
             throw new IllegalArgumentException("Cannot claim your own waived player");
         }
 
-        waiverOrderRepository.findByGameSeqAndPlayerId(gameSeq, claimerId)
+        waiverOrderRepository.findByGameSeqAndMemberId(gameSeq, claimerId)
                 .orElseThrow(() -> new IllegalArgumentException("User not participating in this game"));
 
         if (waiverClaimRepository.existsById(new FantasyWaiverClaimId(transactionSeq, claimerId))) {
@@ -135,7 +135,7 @@ public class FantasyRosterService {
         DraftPick pick = draftPickRepository.findByFantasyGameSeqAndFantasyPlayerSeq(gameSeq, fantasyPlayerSeq)
                 .orElseThrow(() -> new IllegalArgumentException("Player not found in game"));
 
-        if (!pick.getPlayerId().equals(requesterId)) {
+        if (!pick.getMemberId().equals(requesterId)) {
              throw new IllegalArgumentException("Player does not belong to you");
         }
 
@@ -162,7 +162,7 @@ public class FantasyRosterService {
         logAction(gameSeq, requesterId, fantasyPlayerSeq, RosterLog.LogActionType.WAIVER_RELEASE, player.getName() + " - Waiver Requested");
 
         // Send FCM message
-        FantasyParticipant requester = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(gameSeq, requesterId).orElse(null);
+        FantasyParticipant requester = fantasyParticipantRepository.findByFantasyGameSeqAndMemberId(gameSeq, requesterId).orElse(null);
         String teamName = requester != null && requester.getTeamName() != null ? requester.getTeamName() : "Unknown Team";
         String body = String.format("%s팀에서 웨이버를 신청했습니다: %s (%s, %s)",
                 teamName, player.getName(), player.getTeam(), player.getPosition());
@@ -192,7 +192,7 @@ public class FantasyRosterService {
                 throw new IllegalArgumentException("Target Participant ID required for CLAIM");
             }
             // Move to Target
-            pick.setPlayerId(targetParticipantId);
+            pick.setMemberId(targetParticipantId);
             pick.setPickStatus(DraftPick.PickStatus.NORMAL);
             pick.setAssignedPosition("BENCH"); // Reset position to Bench for new owner
             draftPickRepository.save(pick);
@@ -200,7 +200,7 @@ public class FantasyRosterService {
             tx.setStatus(RosterTransaction.TransactionStatus.APPROVED);
             tx.setTargetId(targetParticipantId);
 
-            FantasyParticipant targetName = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(tx.getFantasyGameSeq(), targetParticipantId).orElseGet(null);
+            FantasyParticipant targetName = fantasyParticipantRepository.findByFantasyGameSeqAndMemberId(tx.getFantasyGameSeq(), targetParticipantId).orElseGet(null);
             String targetTeamName = targetName.getTeamName();
 
             logAction(tx.getFantasyGameSeq(), targetParticipantId, playerSeq, RosterLog.LogActionType.WAIVER_CLAIM, player.getName() + " - Claimed by " + targetTeamName);
@@ -254,8 +254,8 @@ public class FantasyRosterService {
                 .build();
         rosterTransactionRepository.save(tx);
 
-        FantasyParticipant requester = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(gameSeq, requesterId).orElse(null);
-        FantasyParticipant target = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(gameSeq, targetId).orElse(null);
+        FantasyParticipant requester = fantasyParticipantRepository.findByFantasyGameSeqAndMemberId(gameSeq, requesterId).orElse(null);
+        FantasyParticipant target = fantasyParticipantRepository.findByFantasyGameSeqAndMemberId(gameSeq, targetId).orElse(null);
         String requesterTeam = requester != null ? requester.getTeamName() : "Unknown";
         String targetTeam = target != null ? target.getTeamName() : "Unknown";
 
@@ -293,8 +293,8 @@ public class FantasyRosterService {
             throw new IllegalArgumentException("Requester cannot accept their own trade");
         }
 
-        FantasyParticipant requester = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(tx.getFantasyGameSeq(), tx.getRequesterId()).orElse(null);
-        FantasyParticipant target = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(tx.getFantasyGameSeq(), tx.getTargetId()).orElse(null);
+        FantasyParticipant requester = fantasyParticipantRepository.findByFantasyGameSeqAndMemberId(tx.getFantasyGameSeq(), tx.getRequesterId()).orElse(null);
+        FantasyParticipant target = fantasyParticipantRepository.findByFantasyGameSeqAndMemberId(tx.getFantasyGameSeq(), tx.getTargetId()).orElse(null);
         String requesterTeam = requester != null ? requester.getTeamName() : "Unknown";
         String targetTeam = target != null ? target.getTeamName() : "Unknown";
 
@@ -353,7 +353,7 @@ public class FantasyRosterService {
     }
 
     private List<DraftPick> validateTradePlayers(Long gameSeq, Long ownerId, List<Long> playerSeqs) {
-        List<DraftPick> picks = draftPickRepository.findByFantasyGameSeqAndPlayerId(gameSeq, ownerId);
+        List<DraftPick> picks = draftPickRepository.findByFantasyGameSeqAndMemberId(gameSeq, ownerId);
         List<DraftPick> targetPicks = picks.stream()
                 .filter(p -> playerSeqs.contains(p.getFantasyPlayerSeq()))
                 .collect(Collectors.toList());
@@ -405,7 +405,7 @@ public class FantasyRosterService {
 
         if ("APPROVE".equalsIgnoreCase(decision)) {
             for (DraftPick p : receivingPicks) {
-                if (!p.getPlayerId().equals(tx.getTargetId())) {
+                if (!p.getMemberId().equals(tx.getTargetId())) {
                      throw new IllegalStateException("Player " + p.getFantasyPlayerSeq() + " ownership changed");
                 }
                 if (p.getPickStatus() != DraftPick.PickStatus.TRADE_PENDING) {
@@ -414,7 +414,7 @@ public class FantasyRosterService {
             }
             // Giving picks should be TRADE_PENDING and owned by requester
             for (DraftPick p : givingPicks) {
-                if (!p.getPlayerId().equals(tx.getRequesterId())) {
+                if (!p.getMemberId().equals(tx.getRequesterId())) {
                      throw new IllegalStateException("Giving Player ownership mismatch");
                 }
                 if (p.getPickStatus() != DraftPick.PickStatus.TRADE_PENDING) {
@@ -429,12 +429,12 @@ public class FantasyRosterService {
 
             // Swap
             for (DraftPick p : givingPicks) {
-                p.setPlayerId(tx.getTargetId());
+                p.setMemberId(tx.getTargetId());
                 p.setPickStatus(DraftPick.PickStatus.NORMAL);
                 p.setAssignedPosition("BENCH");
             }
             for (DraftPick p : receivingPicks) {
-                p.setPlayerId(tx.getRequesterId());
+                p.setMemberId(tx.getRequesterId());
                 p.setPickStatus(DraftPick.PickStatus.NORMAL);
                 p.setAssignedPosition("BENCH");
             }
@@ -446,8 +446,8 @@ public class FantasyRosterService {
             String receivingNames = fantasyPlayerRepository.findAllById(receivingSeqs).stream().map(FantasyPlayer::getName).collect(Collectors.joining(", "));
             logAction(tx.getFantasyGameSeq(), tx.getRequesterId(), null, RosterLog.LogActionType.TRADE_SUCCESS, "Trade Approved (Swapped " + givingNames + " <-> " + receivingNames + ")");
 
-            FantasyParticipant requesterInfo = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(tx.getFantasyGameSeq(), tx.getRequesterId()).orElse(null);
-            FantasyParticipant targetInfo = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(tx.getFantasyGameSeq(), tx.getTargetId()).orElse(null);
+            FantasyParticipant requesterInfo = fantasyParticipantRepository.findByFantasyGameSeqAndMemberId(tx.getFantasyGameSeq(), tx.getRequesterId()).orElse(null);
+            FantasyParticipant targetInfo = fantasyParticipantRepository.findByFantasyGameSeqAndMemberId(tx.getFantasyGameSeq(), tx.getTargetId()).orElse(null);
             String reqTeam = requesterInfo != null ? requesterInfo.getTeamName() : "Unknown";
             String tgtTeam = targetInfo != null ? targetInfo.getTeamName() : "Unknown";
             fcmService.sendTopicMessage("game_" + tx.getFantasyGameSeq(), "트레이드 승인",
@@ -467,7 +467,7 @@ public class FantasyRosterService {
             logAction(tx.getFantasyGameSeq(), tx.getRequesterId(), null, RosterLog.LogActionType.TRADE_REJECT, "Trade Rejected");
 
             String givingNamesRej = fantasyPlayerRepository.findAllById(givingSeqs).stream().map(FantasyPlayer::getName).collect(Collectors.joining(", "));
-            FantasyParticipant requesterInfoRej = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(tx.getFantasyGameSeq(), tx.getRequesterId()).orElse(null);
+            FantasyParticipant requesterInfoRej = fantasyParticipantRepository.findByFantasyGameSeqAndMemberId(tx.getFantasyGameSeq(), tx.getRequesterId()).orElse(null);
             String reqTeamRej = requesterInfoRej != null ? requesterInfoRej.getTeamName() : "Unknown";
             fcmService.sendTopicMessage("game_" + tx.getFantasyGameSeq(), "트레이드 기각",
                     String.format("%s팀의 트레이드 신청이 기각되었습니다. (주는 선수: %s)", reqTeamRej, givingNamesRej));
@@ -506,8 +506,8 @@ public class FantasyRosterService {
         Set<Long> allParticipantIds = trades.stream()
                 .flatMap(tx -> java.util.stream.Stream.of(tx.getRequesterId(), tx.getTargetId()))
                 .collect(Collectors.toSet());
-        Map<Long, String> teamNameMap = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerIdIn(gameSeq, allParticipantIds)
-                .stream().collect(Collectors.toMap(FantasyParticipant::getPlayerId, FantasyParticipant::getTeamName, (a, b) -> a));
+        Map<Long, String> teamNameMap = fantasyParticipantRepository.findByFantasyGameSeqAndMemberIdIn(gameSeq, allParticipantIds)
+                .stream().collect(Collectors.toMap(FantasyParticipant::getMemberId, FantasyParticipant::getTeamName, (a, b) -> a));
 
         Set<Long> allPlayerSeqs = trades.stream()
                 .flatMap(tx -> java.util.stream.Stream.concat(
@@ -532,7 +532,7 @@ public class FantasyRosterService {
             Boolean myVote = null;
             if (viewerPlayerId != null && !isParty) {
                 myVote = votes.stream()
-                        .filter(v -> v.getPlayerId().equals(viewerPlayerId))
+                        .filter(v -> v.getMemberId().equals(viewerPlayerId))
                         .map(TradeBoard::getVoteAgree)
                         .findFirst()
                         .orElse(null);
@@ -587,10 +587,10 @@ public class FantasyRosterService {
             throw new IllegalArgumentException("Trade parties cannot vote");
         }
 
-        fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(gameSeq, voterId)
+        fantasyParticipantRepository.findByFantasyGameSeqAndMemberId(gameSeq, voterId)
                 .orElseThrow(() -> new IllegalArgumentException("Not a participant of this game"));
 
-        Optional<TradeBoard> existingVote = tradeBoardRepository.findByTradeSeqAndPlayerId(transactionSeq, voterId);
+        Optional<TradeBoard> existingVote = tradeBoardRepository.findByTradeSeqAndMemberId(transactionSeq, voterId);
         if (existingVote.isPresent()) {
             TradeBoard vote = existingVote.get();
             if (vote.getVotedAt().isAfter(LocalDateTime.now().minusMinutes(1))) {
@@ -602,7 +602,7 @@ public class FantasyRosterService {
         } else {
             tradeBoardRepository.save(TradeBoard.builder()
                     .tradeSeq(transactionSeq)
-                    .playerId(voterId)
+                    .memberId(voterId)
                     .voteAgree(voteAgree)
                     .votedAt(LocalDateTime.now())
                     .build());
@@ -628,14 +628,14 @@ public class FantasyRosterService {
         FantasyGame game = fantasyGameRepository.findById(gameSeq).orElseThrow();
         if (game.getSalaryCap() == null || game.getSalaryCap() <= 0) return;
 
-        List<DraftPick> requesterPicks = draftPickRepository.findByFantasyGameSeqAndPlayerId(gameSeq, requesterId);
-        List<DraftPick> targetPicks = draftPickRepository.findByFantasyGameSeqAndPlayerId(gameSeq, targetId);
+        List<DraftPick> requesterPicks = draftPickRepository.findByFantasyGameSeqAndMemberId(gameSeq, requesterId);
+        List<DraftPick> targetPicks = draftPickRepository.findByFantasyGameSeqAndMemberId(gameSeq, targetId);
 
-        FantasyParticipant requesterParticipant = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(gameSeq, requesterId).orElse(null);
+        FantasyParticipant requesterParticipant = fantasyParticipantRepository.findByFantasyGameSeqAndMemberId(gameSeq, requesterId).orElse(null);
         int requesterCost = calculateTeamCostAfterTrade(game, requesterParticipant, requesterPicks, givingSeqs, receivingSeqs);
         boolean requesterExceeded = requesterCost > game.getSalaryCap();
 
-        FantasyParticipant targetParticipant = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(gameSeq, targetId).orElse(null);
+        FantasyParticipant targetParticipant = fantasyParticipantRepository.findByFantasyGameSeqAndMemberId(gameSeq, targetId).orElse(null);
         int targetCost = calculateTeamCostAfterTrade(game, targetParticipant, targetPicks, receivingSeqs, givingSeqs);
         boolean targetExceeded = targetCost > game.getSalaryCap();
 
@@ -664,17 +664,17 @@ public class FantasyRosterService {
     private void validateTradeRosterSize(Long gameSeq, Long requesterId, Long targetId, List<Long> givingSeqs, List<Long> receivingSeqs) {
         int limit = 21;
 
-        int requesterSize = draftPickRepository.findByFantasyGameSeqAndPlayerId(gameSeq, requesterId).size();
+        int requesterSize = draftPickRepository.findByFantasyGameSeqAndMemberId(gameSeq, requesterId).size();
         int requesterAfter = requesterSize - givingSeqs.size() + receivingSeqs.size();
 
-        int targetSize = draftPickRepository.findByFantasyGameSeqAndPlayerId(gameSeq, targetId).size();
+        int targetSize = draftPickRepository.findByFantasyGameSeqAndMemberId(gameSeq, targetId).size();
         int targetAfter = targetSize - receivingSeqs.size() + givingSeqs.size();
 
         boolean requesterExceeded = requesterAfter > limit;
         boolean targetExceeded = targetAfter > limit;
 
         if (requesterExceeded) {
-            FantasyParticipant p = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(gameSeq, requesterId).orElse(null);
+            FantasyParticipant p = fantasyParticipantRepository.findByFantasyGameSeqAndMemberId(gameSeq, requesterId).orElse(null);
             String teamName = p != null ? p.getTeamName() : "Unknown";
             fcmService.sendTopicMessage(
                     "user_" + requesterId + "_game_" + gameSeq,
@@ -683,7 +683,7 @@ public class FantasyRosterService {
             );
         }
         if (targetExceeded) {
-            FantasyParticipant p = fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(gameSeq, targetId).orElse(null);
+            FantasyParticipant p = fantasyParticipantRepository.findByFantasyGameSeqAndMemberId(gameSeq, targetId).orElse(null);
             String teamName = p != null ? p.getTeamName() : "Unknown";
             fcmService.sendTopicMessage(
                     "user_" + targetId + "_game_" + gameSeq,

@@ -35,7 +35,7 @@ public class FantasyGameController {
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
-        return ResponseEntity.ok(fantasyGameService.getDashboardGames(userDetails.getPlayerId()));
+        return ResponseEntity.ok(fantasyGameService.getDashboardGames(userDetails.getMemberId()));
     }
 
     @GetMapping("/my-games")
@@ -45,7 +45,7 @@ public class FantasyGameController {
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
-        return ResponseEntity.ok(fantasyGameService.getMyGames(userDetails.getPlayerId(), status, type));
+        return ResponseEntity.ok(fantasyGameService.getMyGames(userDetails.getMemberId(), status, type));
     }
 
 
@@ -74,17 +74,17 @@ public class FantasyGameController {
     public ResponseEntity<List<ParticipantDto>> getGameParticipants(@PathVariable(name = "gameSeq") Long gameSeq) {
         List<FantasyParticipant> participants = fantasyParticipantRepository.findByFantasyGameSeq(gameSeq);
 
-        java.util.Set<Long> playerIds = participants.stream()
-                .map(FantasyParticipant::getPlayerId)
+        java.util.Set<Long> memberIds = participants.stream()
+                .map(FantasyParticipant::getMemberId)
                 .filter(java.util.Objects::nonNull)
                 .collect(Collectors.toSet());
 
-        Map<Long, String> memberNames = memberRepository.findAllById(playerIds).stream()
-                .collect(Collectors.toMap(Member::getPlayerId, m -> m.getName() != null ? m.getName() : "Unknown"));
+        Map<Long, String> memberNames = memberRepository.findAllById(memberIds).stream()
+                .collect(Collectors.toMap(Member::getMemberId, m -> m.getName() != null ? m.getName() : "Unknown"));
 
         List<ParticipantDto> dtos = participants.stream().map(p -> {
-            String userName = memberNames.getOrDefault(p.getPlayerId(), "Unknown");
-            return new ParticipantDto(p.getSeq(), p.getPlayerId(), userName, p.getTeamName(), p.getPreferredTeam());
+            String userName = memberNames.getOrDefault(p.getMemberId(), "Unknown");
+            return new ParticipantDto(p.getSeq(), p.getMemberId(), userName, p.getTeamName(), p.getPreferredTeam());
         }).collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
     }
@@ -93,14 +93,14 @@ public class FantasyGameController {
     @Data
     public static class ParticipantDto {
         private Long seq;
-        private Long playerId;
+        private Long memberId;
         private String userName;
         private String teamName;
         private String preferredTeam;
 
-        public ParticipantDto(Long seq, Long playerId, String userName, String teamName, String preferredTeam) {
+        public ParticipantDto(Long seq, Long memberId, String userName, String teamName, String preferredTeam) {
             this.seq = seq;
-            this.playerId = playerId;
+            this.memberId = memberId;
             this.userName = userName;
             this.teamName = teamName;
             this.preferredTeam = preferredTeam;

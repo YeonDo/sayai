@@ -10,6 +10,6 @@ import java.util.Optional;
 @Repository
 public interface TradeBoardRepository extends JpaRepository<TradeBoard, Long> {
     List<TradeBoard> findByTradeSeq(Long tradeSeq);
-    Optional<TradeBoard> findByTradeSeqAndPlayerId(Long tradeSeq, Long playerId);
+    Optional<TradeBoard> findByTradeSeqAndMemberId(Long tradeSeq, Long memberId);
     List<TradeBoard> findByTradeSeqIn(List<Long> tradeSeqs);
 }

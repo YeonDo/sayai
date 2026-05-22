@@ -26,7 +26,7 @@ class AuthControllerPasswordTest {
     @Test
     void changePassword_shouldCallServiceAndReturnOk() {
         CustomUserDetails userDetails = mock(CustomUserDetails.class);
-        when(userDetails.getPlayerId()).thenReturn(100L);
+        when(userDetails.getMemberId()).thenReturn(100L);
 
         AuthController.ChangePasswordRequest request = new AuthController.ChangePasswordRequest();
         request.setCurrentPassword("oldPass");

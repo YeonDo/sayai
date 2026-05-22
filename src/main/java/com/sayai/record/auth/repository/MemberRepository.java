@@ -11,17 +11,19 @@ import java.util.Optional;
 public interface MemberRepository extends JpaRepository<Member, Long> {
     Optional<Member> findByUserId(String userId);
 
-    boolean existsByPlayerIdOrUserId(Long playerId, String userId);
+    Optional<Member> findTopByOrderByMemberIdDesc();
+
+    boolean existsByMemberIdOrUserId(Long memberId, String userId);
 
     @Cacheable(value = "members", key = "#id")
     Optional<Member> findById(Long id);
 
-    @CachePut(value = "members", key = "#result.playerId")
+    @CachePut(value = "members", key = "#result.memberId")
     Member save(Member member);
 
     @CacheEvict(value = "members", key = "#id")
     void deleteById(Long id);
 
-    @CacheEvict(value = "members", key = "#member.playerId")
+    @CacheEvict(value = "members", key = "#member.memberId")
     void delete(Member member);
 }

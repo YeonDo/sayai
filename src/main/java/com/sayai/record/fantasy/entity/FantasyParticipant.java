@@ -20,7 +20,8 @@ public class FantasyParticipant {
     @Column(name = "fantasy_game_seq")
     private Long fantasyGameSeq;
 
-    private Long playerId;
+    @Column(name = "member_id")
+    private Long memberId;
 
     private String teamName;
 

@@ -34,7 +34,7 @@ public class FantasyScoringServiceTest {
         for (long i = 1; i <= playerCount; i++) {
             initialScores.add(FantasyRotisserieScore.builder()
                     .fantasyGameSeq(gameSeq)
-                    .playerId(i)
+                    .memberId(i)
                     .round(round)
                     .avg(0.250)
                     .hr(0)
@@ -49,7 +49,7 @@ public class FantasyScoringServiceTest {
         for (long i = 1; i <= playerCount; i++) {
             inputScores.add(FantasyScoreDto.builder()
                     .fantasyGameSeq(gameSeq)
-                    .playerId(i)
+                    .memberId(i)
                     .round(round)
                     .avg(0.300) // Changed value
                     .hr(1)
@@ -84,7 +84,7 @@ public class FantasyScoringServiceTest {
         for (long i = 1; i <= playerCount; i++) {
             initialScores.add(FantasyRotisserieScore.builder()
                     .fantasyGameSeq(gameSeq)
-                    .playerId(i)
+                    .memberId(i)
                     .round(round)
                     .build());
         }
@@ -97,17 +97,17 @@ public class FantasyScoringServiceTest {
         // Player 3: Null (AVG null)
         List<FantasyScoreDto> inputScores = new ArrayList<>();
 
-        inputScores.add(FantasyScoreDto.builder().fantasyGameSeq(gameSeq).playerId(1L).round(round)
+        inputScores.add(FantasyScoreDto.builder().fantasyGameSeq(gameSeq).memberId(1L).round(round)
                 .avg(0.350).rbi(10).hr(5).soBatter(10).sb(5)
                 .wins(1).era(2.00).soPitcher(10).whip(1.00).saves(1)
                 .build());
 
-        inputScores.add(FantasyScoreDto.builder().fantasyGameSeq(gameSeq).playerId(2L).round(round)
+        inputScores.add(FantasyScoreDto.builder().fantasyGameSeq(gameSeq).memberId(2L).round(round)
                 .avg(0.250).rbi(5).hr(2).soBatter(20).sb(2) // soBatter higher (worse)
                 .wins(0).era(4.00).soPitcher(5).whip(1.50).saves(0)
                 .build());
 
-        inputScores.add(FantasyScoreDto.builder().fantasyGameSeq(gameSeq).playerId(3L).round(round)
+        inputScores.add(FantasyScoreDto.builder().fantasyGameSeq(gameSeq).memberId(3L).round(round)
                 .avg(null).rbi(null).hr(null).soBatter(null).sb(null)
                 .wins(null).era(null).soPitcher(null).whip(null).saves(null)
                 .build());
@@ -119,9 +119,9 @@ public class FantasyScoringServiceTest {
         List<FantasyRotisserieScore> scores = scoreRepository.findByFantasyGameSeqAndRound(gameSeq, round);
 
         // Find by playerId
-        FantasyRotisserieScore p1 = scores.stream().filter(s -> s.getPlayerId() == 1L).findFirst().orElseThrow();
-        FantasyRotisserieScore p2 = scores.stream().filter(s -> s.getPlayerId() == 2L).findFirst().orElseThrow();
-        FantasyRotisserieScore p3 = scores.stream().filter(s -> s.getPlayerId() == 3L).findFirst().orElseThrow();
+        FantasyRotisserieScore p1 = scores.stream().filter(s -> s.getMemberId() == 1L).findFirst().orElseThrow();
+        FantasyRotisserieScore p2 = scores.stream().filter(s -> s.getMemberId() == 2L).findFirst().orElseThrow();
+        FantasyRotisserieScore p3 = scores.stream().filter(s -> s.getMemberId() == 3L).findFirst().orElseThrow();
 
         // Check AVG
         // P1: Rank 1, Points (3-1+1)*10 = 30

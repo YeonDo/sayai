@@ -72,12 +72,12 @@ class FantasyDraftServiceAutoPickTest {
 
         // Mock Participants
         FantasyParticipant p = FantasyParticipant.builder()
-                .playerId(playerId)
+                .memberId(playerId)
                 .draftOrder(1)
                 .preferredTeam("KIA")
                 .build();
         when(fantasyParticipantRepository.findByFantasyGameSeq(gameSeq)).thenReturn(Collections.singletonList(p));
-        when(fantasyParticipantRepository.findByFantasyGameSeqAndPlayerId(gameSeq, playerId)).thenReturn(Optional.of(p));
+        when(fantasyParticipantRepository.findByFantasyGameSeqAndMemberId(gameSeq, playerId)).thenReturn(Optional.of(p));
 
         // Mock Players
         // P1: Samsung (Should be picked if rule disabled, but not if enabled and pref is KIA)
@@ -102,7 +102,7 @@ class FantasyDraftServiceAutoPickTest {
         // Mock DraftPickRepository.exists to return false (not picked yet)
         when(draftPickRepository.existsByFantasyGameSeqAndFantasyPlayerSeq(anyLong(), anyLong())).thenReturn(false);
         // Mock User Picks in draftPlayer
-        when(draftPickRepository.findByFantasyGameSeqAndPlayerId(anyLong(), anyLong())).thenReturn(Collections.emptyList());
+        when(draftPickRepository.findByFantasyGameSeqAndMemberId(anyLong(), anyLong())).thenReturn(Collections.emptyList());
 
         // Act
         fantasyDraftService.autoPick(gameSeq);

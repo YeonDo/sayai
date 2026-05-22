@@ -10,7 +10,7 @@ import jakarta.persistence.*;
 @AllArgsConstructor
 @Builder
 @Table(name = "ft_score_rotisserie", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"fantasy_game_seq", "player_id", "round"})
+        @UniqueConstraint(columnNames = {"fantasy_game_seq", "member_id", "round"})
 })
 @Entity
 public class FantasyRotisserieScore {
@@ -22,8 +22,8 @@ public class FantasyRotisserieScore {
     @Column(name = "fantasy_game_seq", nullable = false)
     private Long fantasyGameSeq;
 
-    @Column(name = "player_id", nullable = false)
-    private Long playerId;
+    @Column(name = "member_id", nullable = false)
+    private Long memberId;
 
     @Column(nullable = false)
     private Integer round;

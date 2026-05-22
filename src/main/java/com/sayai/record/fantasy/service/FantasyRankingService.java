@@ -66,16 +66,16 @@ public class FantasyRankingService {
 
         // Group by PlayerId
         Map<Long, List<FantasyRotisserieScore>> scoresByPlayer = scores.stream()
-                .collect(Collectors.groupingBy(FantasyRotisserieScore::getPlayerId));
+                .collect(Collectors.groupingBy(FantasyRotisserieScore::getMemberId));
 
         List<ParticipantStatsDto> statsList = new ArrayList<>();
 
         for (FantasyParticipant fp : participants) {
             ParticipantStatsDto dto = new ParticipantStatsDto();
-            dto.setParticipantId(fp.getPlayerId());
+            dto.setParticipantId(fp.getMemberId());
             dto.setTeamName(fp.getTeamName());
 
-            List<FantasyRotisserieScore> myScores = scoresByPlayer.getOrDefault(fp.getPlayerId(), Collections.emptyList());
+            List<FantasyRotisserieScore> myScores = scoresByPlayer.getOrDefault(fp.getMemberId(), Collections.emptyList());
 
             if (myScores.isEmpty()) {
                 dto.setTotalPoints(0.0);
@@ -155,7 +155,7 @@ public class FantasyRankingService {
         // 2. Get All Picks for the game
         List<DraftPick> allPicks = draftPickRepository.findByFantasyGameSeq(gameSeq);
         Map<Long, List<DraftPick>> picksByParticipant = allPicks.stream()
-                .collect(Collectors.groupingBy(DraftPick::getPlayerId));
+                .collect(Collectors.groupingBy(DraftPick::getMemberId));
 
         // 3. Pre-fetch Fantasy Players to minimize queries (Optional optimization, but good practice)
         // Since we iterate participants, we can just do it inside loop or bulk fetch.
@@ -197,11 +197,11 @@ public class FantasyRankingService {
 
         for (FantasyParticipant fp : participants) {
             ParticipantStatsDto dto = new ParticipantStatsDto();
-            dto.setParticipantId(fp.getPlayerId());
+            dto.setParticipantId(fp.getMemberId());
             dto.setTeamName(fp.getTeamName());
             dto.setOwnerName(null); // Can fetch Member name if needed
 
-            List<DraftPick> picks = picksByParticipant.getOrDefault(fp.getPlayerId(), Collections.emptyList());
+            List<DraftPick> picks = picksByParticipant.getOrDefault(fp.getMemberId(), Collections.emptyList());
 
             // Aggregators
             long totalHits = 0;
@@ -278,7 +278,7 @@ public class FantasyRankingService {
         return FantasyScoreDto.builder()
                 .seq(entity.getSeq())
                 .fantasyGameSeq(entity.getFantasyGameSeq())
-                .playerId(entity.getPlayerId())
+                .memberId(entity.getMemberId())
                 .round(entity.getRound())
                 .avg(entity.getAvg())
                 .rbi(entity.getRbi())

@@ -44,7 +44,7 @@ public class FantasyDraftController {
         }
         try {
             // Ignore request.playerId if passed, use authenticated ID
-            fantasyDraftService.joinGame(gameSeq, userDetails.getPlayerId(), request.getPreferredTeam(), request.getTeamName());
+            fantasyDraftService.joinGame(gameSeq, userDetails.getMemberId(), request.getPreferredTeam(), request.getTeamName());
             return ResponseEntity.ok("Joined successfully");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -58,9 +58,9 @@ public class FantasyDraftController {
             return ResponseEntity.status(401).build();
         }
         try {
-            if (!userDetails.getPlayerId().equals(request.getPlayerId())) {
+            if (!userDetails.getMemberId().equals(request.getMemberId())) {
                  // Or just override
-                 request.setPlayerId(userDetails.getPlayerId());
+                 request.setMemberId(userDetails.getMemberId());
             }
             fantasyDraftService.draftPlayer(request);
             return ResponseEntity.ok("Draft successful");
@@ -85,7 +85,7 @@ public class FantasyDraftController {
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
-        return ResponseEntity.ok(fantasyDraftService.getPickedPlayers(gameSeq, userDetails.getPlayerId()));
+        return ResponseEntity.ok(fantasyDraftService.getPickedPlayers(gameSeq, userDetails.getMemberId()));
     }
 
     @PostMapping("/games/{gameSeq}/my-team/save")
@@ -96,7 +96,7 @@ public class FantasyDraftController {
             return ResponseEntity.status(401).build();
         }
         try {
-            fantasyDraftService.updateRoster(gameSeq, userDetails.getPlayerId(), request);
+            fantasyDraftService.updateRoster(gameSeq, userDetails.getMemberId(), request);
             return ResponseEntity.ok("Roster saved");
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Save failed: " + e.getMessage());
@@ -107,7 +107,7 @@ public class FantasyDraftController {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class JoinRequest {
-        private Long playerId; // Optional now
+        private Long memberId; // Optional now
         private String preferredTeam;
         private String teamName;
     }

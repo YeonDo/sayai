@@ -19,8 +19,8 @@ public class FantasyWaiverOrder {
     @Column(name = "game_seq", nullable = false)
     private Long gameSeq;
 
-    @Column(name = "player_id", nullable = false)
-    private Long playerId;
+    @Column(name = "member_id", nullable = false)
+    private Long memberId;
 
     @Column(name = "order_num", nullable = false)
     private Integer orderNum;

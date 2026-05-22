@@ -37,13 +37,13 @@ class FantasyDraftServiceRosterTest {
         FantasyGame game = FantasyGame.builder().status(FantasyGame.GameStatus.DRAFTING).build(); // Allowed now
 
         // Existing picks: SP, SP (total 2 SPs)
-        DraftPick pick1 = DraftPick.builder().fantasyPlayerSeq(1L).playerId(playerId).assignedPosition("SP").build();
-        DraftPick pick2 = DraftPick.builder().fantasyPlayerSeq(2L).playerId(playerId).assignedPosition("SP").build();
+        DraftPick pick1 = DraftPick.builder().fantasyPlayerSeq(1L).memberId(playerId).assignedPosition("SP").build();
+        DraftPick pick2 = DraftPick.builder().fantasyPlayerSeq(2L).memberId(playerId).assignedPosition("SP").build();
         // New assignment: another SP (total 3 SPs -> allowed, limit 4)
-        DraftPick pick3 = DraftPick.builder().fantasyPlayerSeq(3L).playerId(playerId).assignedPosition(null).build(); // Unassigned initially
+        DraftPick pick3 = DraftPick.builder().fantasyPlayerSeq(3L).memberId(playerId).assignedPosition(null).build(); // Unassigned initially
 
         when(fantasyGameRepository.findById(gameSeq)).thenReturn(Optional.of(game));
-        when(draftPickRepository.findByFantasyGameSeqAndPlayerId(gameSeq, playerId))
+        when(draftPickRepository.findByFantasyGameSeqAndMemberId(gameSeq, playerId))
                 .thenReturn(List.of(pick1, pick2, pick3));
 
         RosterUpdateDto dto = new RosterUpdateDto();
@@ -60,16 +60,16 @@ class FantasyDraftServiceRosterTest {
         FantasyGame game = FantasyGame.builder().status(FantasyGame.GameStatus.ONGOING).build();
 
         // Existing picks: 4 SPs already
-        DraftPick pick1 = DraftPick.builder().fantasyPlayerSeq(1L).playerId(playerId).assignedPosition("SP").build();
-        DraftPick pick2 = DraftPick.builder().fantasyPlayerSeq(2L).playerId(playerId).assignedPosition("SP").build();
-        DraftPick pick3 = DraftPick.builder().fantasyPlayerSeq(3L).playerId(playerId).assignedPosition("SP").build();
-        DraftPick pick4 = DraftPick.builder().fantasyPlayerSeq(4L).playerId(playerId).assignedPosition("SP").build();
+        DraftPick pick1 = DraftPick.builder().fantasyPlayerSeq(1L).memberId(playerId).assignedPosition("SP").build();
+        DraftPick pick2 = DraftPick.builder().fantasyPlayerSeq(2L).memberId(playerId).assignedPosition("SP").build();
+        DraftPick pick3 = DraftPick.builder().fantasyPlayerSeq(3L).memberId(playerId).assignedPosition("SP").build();
+        DraftPick pick4 = DraftPick.builder().fantasyPlayerSeq(4L).memberId(playerId).assignedPosition("SP").build();
 
         // Attempt to set 5th SP
-        DraftPick pick5 = DraftPick.builder().fantasyPlayerSeq(5L).playerId(playerId).assignedPosition(null).build();
+        DraftPick pick5 = DraftPick.builder().fantasyPlayerSeq(5L).memberId(playerId).assignedPosition(null).build();
 
         when(fantasyGameRepository.findById(gameSeq)).thenReturn(Optional.of(game));
-        when(draftPickRepository.findByFantasyGameSeqAndPlayerId(gameSeq, playerId))
+        when(draftPickRepository.findByFantasyGameSeqAndMemberId(gameSeq, playerId))
                 .thenReturn(List.of(pick1, pick2, pick3, pick4, pick5));
 
         RosterUpdateDto dto = new RosterUpdateDto();

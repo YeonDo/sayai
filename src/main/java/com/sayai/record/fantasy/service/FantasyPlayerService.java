@@ -42,7 +42,7 @@ public class FantasyPlayerService {
             if (pick == null) continue;
 
             FantasyParticipant participant = fantasyParticipantRepository
-                    .findByFantasyGameSeqAndPlayerId(gameSeq, pick.getPlayerId())
+                    .findByFantasyGameSeqAndMemberId(gameSeq, pick.getMemberId())
                     .orElse(null);
             if (participant != null) {
                 return participant.getTeamName();

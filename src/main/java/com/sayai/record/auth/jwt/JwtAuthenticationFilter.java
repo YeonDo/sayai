@@ -30,14 +30,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 Claims claims = jwtTokenProvider.getClaims(token);
                 String userId = claims.getSubject();
                 String role = claims.get("role", String.class);
-                Long playerId = claims.get("playerId", Long.class);
+                Long memberId = claims.get("memberId", Long.class);
                 String name = claims.get("name", String.class);
 
                 UserDetails userDetails = new CustomUserDetails(
                         userId,
                         "",
                         Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role)),
-                        playerId,
+                        memberId,
                         name != null ? name : "Unknown"
                 );
 

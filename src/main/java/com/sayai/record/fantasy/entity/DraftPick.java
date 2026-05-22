@@ -19,7 +19,8 @@ public class DraftPick {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long seq;
 
-    private Long playerId;
+    @Column(name = "member_id")
+    private Long memberId;
 
     @Column(name = "fantasy_player_seq")
     private Long fantasyPlayerSeq;

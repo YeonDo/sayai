@@ -51,7 +51,7 @@ class FantasyGameServiceTest {
 
         FantasyParticipant participant = FantasyParticipant.builder()
                 .fantasyGameSeq(gameSeq)
-                .playerId(100L)
+                .memberId(100L)
                 .teamName("MyTeam")
                 .build();
         when(fantasyParticipantRepository.findByFantasyGameSeq(gameSeq)).thenReturn(Collections.singletonList(participant));
@@ -62,9 +62,9 @@ class FantasyGameServiceTest {
 
         when(fantasyPlayerRepository.findAllById(org.mockito.ArgumentMatchers.any())).thenReturn(Arrays.asList(p1, p2, p3));
 
-        DraftPick pick1 = DraftPick.builder().fantasyGameSeq(gameSeq).playerId(100L).fantasyPlayerSeq(1L).assignedPosition("C").build();
-        DraftPick pick2 = DraftPick.builder().fantasyGameSeq(gameSeq).playerId(100L).fantasyPlayerSeq(2L).assignedPosition("BENCH").build();
-        DraftPick pick3 = DraftPick.builder().fantasyGameSeq(gameSeq).playerId(100L).fantasyPlayerSeq(3L).assignedPosition(null).build();
+        DraftPick pick1 = DraftPick.builder().fantasyGameSeq(gameSeq).memberId(100L).fantasyPlayerSeq(1L).assignedPosition("C").build();
+        DraftPick pick2 = DraftPick.builder().fantasyGameSeq(gameSeq).memberId(100L).fantasyPlayerSeq(2L).assignedPosition("BENCH").build();
+        DraftPick pick3 = DraftPick.builder().fantasyGameSeq(gameSeq).memberId(100L).fantasyPlayerSeq(3L).assignedPosition(null).build();
 
         when(draftPickRepository.findByFantasyGameSeq(gameSeq)).thenReturn(Arrays.asList(pick1, pick2, pick3));
 

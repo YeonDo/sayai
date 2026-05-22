@@ -7,7 +7,7 @@ import lombok.Data;
 @Builder
 public class ParticipantKboStatsDto {
     private Long participantSeq;
-    private Long playerId; // User's ID
+    private Long memberId; // User's ID
     private String teamName;
 
     // Hitter Aggregated Stats

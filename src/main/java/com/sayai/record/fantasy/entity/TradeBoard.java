@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-@Table(name = "ft_trade_board", uniqueConstraints = @UniqueConstraint(columnNames = {"trade_seq", "player_id"}))
+@Table(name = "ft_trade_board", uniqueConstraints = @UniqueConstraint(columnNames = {"trade_seq", "member_id"}))
 @Entity
 public class TradeBoard {
 
@@ -21,8 +21,8 @@ public class TradeBoard {
     @Column(name = "trade_seq", nullable = false)
     private Long tradeSeq;
 
-    @Column(name = "player_id", nullable = false)
-    private Long playerId;
+    @Column(name = "member_id", nullable = false)
+    private Long memberId;
 
     @Column(name = "vote_agree", nullable = false)
     private Boolean voteAgree;

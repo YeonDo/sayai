@@ -58,7 +58,7 @@ class AdminControllerTest {
     @Test
     void listUsers_shouldReturnMemberDtos() {
         Member member = Member.builder()
-                .playerId(1L)
+                .memberId(1L)
                 .userId("testuser")
                 .name("Test User")
                 .role(Member.Role.USER)
@@ -71,7 +71,7 @@ class AdminControllerTest {
 
         assertThat(response.getBody()).hasSize(1);
         AdminController.MemberDto dto = response.getBody().get(0);
-        assertThat(dto.getPlayerId()).isEqualTo(1L);
+        assertThat(dto.getMemberId()).isEqualTo(1L);
         assertThat(dto.getUserId()).isEqualTo("testuser");
         assertThat(dto.getName()).isEqualTo("Test User");
         assertThat(dto.getRole()).isEqualTo(Member.Role.USER);
@@ -97,7 +97,7 @@ class AdminControllerTest {
     @Test
     void createUser_shouldCreateUser_whenValidationPasses() {
         AdminController.UserCreateRequest req = new AdminController.UserCreateRequest();
-        req.setPlayerId(10L);
+        req.setMemberId(10L);
         req.setUserId("newUser");
         req.setName("New User");
         req.setPassword("pass");
@@ -105,7 +105,7 @@ class AdminControllerTest {
         BindingResult bindingResult = mock(BindingResult.class);
         when(bindingResult.hasErrors()).thenReturn(false);
 
-        when(memberRepository.existsByPlayerIdOrUserId(10L, "newUser")).thenReturn(false);
+        when(memberRepository.existsByMemberIdOrUserId(10L, "newUser")).thenReturn(false);
         when(passwordEncoder.encode("pass")).thenReturn("encoded");
 
         ResponseEntity<String> response = adminController.createUser(req, bindingResult);

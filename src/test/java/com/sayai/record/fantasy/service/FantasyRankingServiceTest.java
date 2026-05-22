@@ -72,21 +72,21 @@ class FantasyRankingServiceTest {
         // Mock Participant
         FantasyParticipant participant = FantasyParticipant.builder()
                 .fantasyGameSeq(gameSeq)
-                .playerId(participantId)
+                .memberId(participantId)
                 .teamName("My Team")
                 .build();
         when(participantRepository.findByFantasyGameSeq(gameSeq)).thenReturn(List.of(participant));
 
         // Mock Scores (2 rounds)
         FantasyRotisserieScore s1 = FantasyRotisserieScore.builder()
-                .fantasyGameSeq(gameSeq).playerId(participantId).round(1)
+                .fantasyGameSeq(gameSeq).memberId(participantId).round(1)
                 .avg(0.300).hr(1).rbi(2).soBatter(2).sb(0)
                 .wins(1).soPitcher(5).era(6.0).whip(1.0).saves(0)
                 .totalPoints(50.0)
                 .build();
 
         FantasyRotisserieScore s2 = FantasyRotisserieScore.builder()
-                .fantasyGameSeq(gameSeq).playerId(participantId).round(2)
+                .fantasyGameSeq(gameSeq).memberId(participantId).round(2)
                 .avg(0.400).hr(2).rbi(3).soBatter(1).sb(1)
                 .wins(0).soPitcher(2).era(2.0).whip(0.5).saves(1)
                 .totalPoints(60.0)

@@ -34,9 +34,9 @@ public class JwtTokenProvider {
         this.secretKey = Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String createToken(Long playerId, String userId, Member.Role role, String name) {
+    public String createToken(Long memberId, String userId, Member.Role role, String name) {
         Claims claims = Jwts.claims().setSubject(userId);
-        claims.put("playerId", playerId);
+        claims.put("memberId", memberId);
         claims.put("role", role.name());
         claims.put("name", name);
 
@@ -84,8 +84,8 @@ public class JwtTokenProvider {
         return getClaims(token).getSubject();
     }
 
-    public Long getPlayerId(String token) {
-        return getClaims(token).get("playerId", Long.class);
+    public Long getMemberId(String token) {
+        return getClaims(token).get("memberId", Long.class);
     }
 
     public String getRole(String token) {

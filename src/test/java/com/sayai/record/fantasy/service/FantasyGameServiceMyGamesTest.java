@@ -44,9 +44,9 @@ class FantasyGameServiceMyGamesTest {
         Long gameSeq1 = 1L;
         Long gameSeq2 = 2L;
 
-        FantasyParticipant p1 = FantasyParticipant.builder().fantasyGameSeq(gameSeq1).playerId(userId).build();
-        FantasyParticipant p2 = FantasyParticipant.builder().fantasyGameSeq(gameSeq2).playerId(userId).build();
-        when(fantasyParticipantRepository.findByPlayerId(userId)).thenReturn(Arrays.asList(p1, p2));
+        FantasyParticipant p1 = FantasyParticipant.builder().fantasyGameSeq(gameSeq1).memberId(userId).build();
+        FantasyParticipant p2 = FantasyParticipant.builder().fantasyGameSeq(gameSeq2).memberId(userId).build();
+        when(fantasyParticipantRepository.findByMemberId(userId)).thenReturn(Arrays.asList(p1, p2));
 
         FantasyGame g1 = FantasyGame.builder().seq(gameSeq1).status(FantasyGame.GameStatus.ONGOING).title("Game1").build();
         FantasyGame g2 = FantasyGame.builder().seq(gameSeq2).status(FantasyGame.GameStatus.FINISHED).title("Game2").build();
@@ -63,9 +63,9 @@ class FantasyGameServiceMyGamesTest {
         Long gameSeq1 = 1L;
         Long gameSeq2 = 2L;
 
-        FantasyParticipant p1 = FantasyParticipant.builder().fantasyGameSeq(gameSeq1).playerId(userId).build();
-        FantasyParticipant p2 = FantasyParticipant.builder().fantasyGameSeq(gameSeq2).playerId(userId).build();
-        when(fantasyParticipantRepository.findByPlayerId(userId)).thenReturn(Arrays.asList(p1, p2));
+        FantasyParticipant p1 = FantasyParticipant.builder().fantasyGameSeq(gameSeq1).memberId(userId).build();
+        FantasyParticipant p2 = FantasyParticipant.builder().fantasyGameSeq(gameSeq2).memberId(userId).build();
+        when(fantasyParticipantRepository.findByMemberId(userId)).thenReturn(Arrays.asList(p1, p2));
 
         FantasyGame g1 = FantasyGame.builder().seq(gameSeq1).status(FantasyGame.GameStatus.ONGOING).title("Game1").build();
         FantasyGame g2 = FantasyGame.builder().seq(gameSeq2).status(FantasyGame.GameStatus.FINISHED).title("Game2").build();

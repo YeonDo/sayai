@@ -22,7 +22,7 @@ public class AdminControllerPerfTest {
     @Test
     public void testExistsAndFindPerformance() {
         Member member = Member.builder()
-                .playerId(99999L)
+                .memberId(99999L)
                 .userId("testuser999")
                 .password("password")
                 .name("Test User")
@@ -34,7 +34,7 @@ public class AdminControllerPerfTest {
         stopWatch.start();
 
         for (int i = 0; i < 1000; i++) {
-            assertTrue(memberRepository.existsByPlayerIdOrUserId(99999L, "testuser999"));
+            assertTrue(memberRepository.existsByMemberIdOrUserId(99999L, "testuser999"));
         }
 
         stopWatch.stop();

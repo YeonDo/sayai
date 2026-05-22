@@ -93,17 +93,17 @@ public class AdminController {
     public ResponseEntity<List<ParticipantDto>> getGameParticipants(@PathVariable(name = "gameSeq") Long gameSeq) {
         List<FantasyParticipant> participants = fantasyParticipantRepository.findByFantasyGameSeq(gameSeq);
 
-        java.util.Set<Long> playerIds = participants.stream()
-                .map(FantasyParticipant::getPlayerId)
+        java.util.Set<Long> memberIds = participants.stream()
+                .map(FantasyParticipant::getMemberId)
                 .filter(java.util.Objects::nonNull)
                 .collect(Collectors.toSet());
 
-        Map<Long, String> memberNames = memberRepository.findAllById(playerIds).stream()
-                .collect(Collectors.toMap(Member::getPlayerId, m -> m.getName() != null ? m.getName() : "Unknown"));
+        Map<Long, String> memberNames = memberRepository.findAllById(memberIds).stream()
+                .collect(Collectors.toMap(Member::getMemberId, m -> m.getName() != null ? m.getName() : "Unknown"));
 
         List<ParticipantDto> dtos = participants.stream().map(p -> {
-            String userName = memberNames.getOrDefault(p.getPlayerId(), "Unknown");
-            return new ParticipantDto(p.getSeq(), p.getPlayerId(), userName, p.getTeamName(), p.getPreferredTeam());
+            String userName = memberNames.getOrDefault(p.getMemberId(), "Unknown");
+            return new ParticipantDto(p.getSeq(), p.getMemberId(), userName, p.getTeamName(), p.getPreferredTeam());
         }).collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
     }
@@ -155,14 +155,14 @@ public class AdminController {
 
             List<Long> playerIdsToFetch = participants.stream()
                     .filter(p -> p.getTeamName() == null || p.getTeamName().trim().isEmpty())
-                    .map(FantasyParticipant::getPlayerId)
+                    .map(FantasyParticipant::getMemberId)
                     .distinct()
                     .collect(Collectors.toList());
 
             Map<Long, String> memberNames = new HashMap<>();
             if (!playerIdsToFetch.isEmpty()) {
                 memberRepository.findAllById(playerIdsToFetch).forEach(m -> {
-                    memberNames.put(m.getPlayerId(), m.getName() != null ? m.getName() : "Unknown");
+                    memberNames.put(m.getMemberId(), m.getName() != null ? m.getName() : "Unknown");
                 });
             }
 
@@ -170,8 +170,8 @@ public class AdminController {
             Map<String, Long> teamToPlayerId = participants.stream()
                     .collect(Collectors.toMap(
                             p -> p.getTeamName() != null && !p.getTeamName().trim().isEmpty() ? p.getTeamName().trim() :
-                                 memberNames.getOrDefault(p.getPlayerId(), "Unknown"),
-                            FantasyParticipant::getPlayerId,
+                                 memberNames.getOrDefault(p.getMemberId(), "Unknown"),
+                            FantasyParticipant::getMemberId,
                             (existing, replacement) -> existing
                     ));
 
@@ -187,21 +187,21 @@ public class AdminController {
                 if (teamName == null || teamName.trim().isEmpty()) continue;
                 teamName = teamName.trim();
 
-                Long playerId = teamToPlayerId.get(teamName);
-                if (playerId == null) {
+                Long memberId = teamToPlayerId.get(teamName);
+                if (memberId == null) {
                     // Try to match just the prefix in case it's 'TeamName (UserName)'
                     for (Map.Entry<String, Long> entry : teamToPlayerId.entrySet()) {
                         if (teamName.startsWith(entry.getKey())) {
-                            playerId = entry.getValue();
+                            memberId = entry.getValue();
                             break;
                         }
                     }
                 }
 
-                if (playerId != null) {
+                if (memberId != null) {
                     FantasyScoreDto dto = FantasyScoreDto.builder()
                             .fantasyGameSeq(gameSeq)
-                            .playerId(playerId)
+                            .memberId(memberId)
                             .round(round)
                             .build();
 
@@ -243,7 +243,7 @@ public class AdminController {
 
             return FantasyScoreDto.builder()
                     .fantasyGameSeq(gameSeq)
-                    .playerId(stat.getPlayerId())
+                    .memberId(stat.getMemberId())
                     .round(round)
                     .avg(avg)
                     .hr((int) stat.getHr())
@@ -282,15 +282,15 @@ public class AdminController {
             return ResponseEntity.badRequest().body(errorMessage);
         }
 
-        if (memberRepository.existsByPlayerIdOrUserId(request.getPlayerId(), request.getUserId())) {
-            if (memberRepository.existsById(request.getPlayerId())) {
-                return ResponseEntity.badRequest().body("Player ID already exists");
+        if (memberRepository.existsByMemberIdOrUserId(request.getMemberId(), request.getUserId())) {
+            if (memberRepository.existsById(request.getMemberId())) {
+                return ResponseEntity.badRequest().body("Member ID already exists");
             }
             return ResponseEntity.badRequest().body("User ID already exists");
         }
 
         Member member = Member.builder()
-                .playerId(request.getPlayerId())
+                .memberId(request.getMemberId())
                 .userId(request.getUserId())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .name(request.getName())
@@ -301,10 +301,10 @@ public class AdminController {
         return ResponseEntity.ok("User created");
     }
 
-    @PutMapping("/users/{playerId}")
-    public ResponseEntity<String> updateUser(@PathVariable(name = "playerId") Long playerId,
+    @PutMapping("/users/{memberId}")
+    public ResponseEntity<String> updateUser(@PathVariable(name = "memberId") Long memberId,
                                              @RequestBody UserUpdateRequest request) {
-        Member member = memberRepository.findById(playerId)
+        Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         if (request.getUserId() != null && !request.getUserId().isEmpty()) {
@@ -359,14 +359,14 @@ public class AdminController {
     @Data
     public static class ParticipantDto {
         private Long seq;
-        private Long playerId;
+        private Long memberId;
         private String userName;
         private String teamName;
         private String preferredTeam;
 
-        public ParticipantDto(Long seq, Long playerId, String userName, String teamName, String preferredTeam) {
+        public ParticipantDto(Long seq, Long memberId, String userName, String teamName, String preferredTeam) {
             this.seq = seq;
-            this.playerId = playerId;
+            this.memberId = memberId;
             this.userName = userName;
             this.teamName = teamName;
             this.preferredTeam = preferredTeam;
@@ -375,8 +375,8 @@ public class AdminController {
 
     @Data
     public static class UserCreateRequest {
-        @NotNull(message = "Player ID is required")
-        private Long playerId;
+        @NotNull(message = "Member ID is required")
+        private Long memberId;
 
         @NotBlank(message = "User ID is required")
         private String userId;
@@ -398,13 +398,13 @@ public class AdminController {
 
     @Data
     public static class MemberDto {
-        private Long playerId;
+        private Long memberId;
         private String userId;
         private String name;
         private Member.Role role;
 
         public MemberDto(Member member) {
-            this.playerId = member.getPlayerId();
+            this.memberId = member.getMemberId();
             this.userId = member.getUserId();
             this.name = member.getName();
             this.role = member.getRole();

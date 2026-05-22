@@ -27,7 +27,7 @@ public class FantasyRosterController {
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
-        fantasyRosterService.requestWaiver(request.getGameSeq(), userDetails.getPlayerId(), request.getFantasyPlayerSeq());
+        fantasyRosterService.requestWaiver(request.getGameSeq(), userDetails.getMemberId(), request.getFantasyPlayerSeq());
         return ResponseEntity.ok("Waiver requested");
     }
 
@@ -39,7 +39,7 @@ public class FantasyRosterController {
         }
         fantasyRosterService.requestTrade(
                 request.getGameSeq(),
-                userDetails.getPlayerId(),
+                userDetails.getMemberId(),
                 request.getTargetId(),
                 request.getGivingPlayerSeqs(),
                 request.getReceivingPlayerSeqs(),
@@ -56,7 +56,7 @@ public class FantasyRosterController {
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
-        fantasyRosterService.respondToTrade(transactionSeq, userDetails.getPlayerId(), request.isAccept());
+        fantasyRosterService.respondToTrade(transactionSeq, userDetails.getMemberId(), request.isAccept());
         return ResponseEntity.ok(request.isAccept() ? "Trade accepted" : "Trade rejected");
     }
 
@@ -77,14 +77,14 @@ public class FantasyRosterController {
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
-        fantasyRosterService.claimWaiver(gameSeq, transactionSeq, userDetails.getPlayerId());
+        fantasyRosterService.claimWaiver(gameSeq, transactionSeq, userDetails.getMemberId());
         return ResponseEntity.ok("Waiver claim successful");
     }
 
     @GetMapping("/games/{gameSeq}/trades")
     public ResponseEntity<List<TradeBoardDto>> getTradeBoard(@AuthenticationPrincipal CustomUserDetails userDetails,
                                                              @PathVariable(name = "gameSeq") Long gameSeq) {
-        Long viewerPlayerId = userDetails != null ? userDetails.getPlayerId() : null;
+        Long viewerPlayerId = userDetails != null ? userDetails.getMemberId() : null;
         return ResponseEntity.ok(fantasyRosterService.getTradeBoardList(gameSeq, viewerPlayerId));
     }
 
@@ -96,7 +96,7 @@ public class FantasyRosterController {
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
-        fantasyRosterService.voteOnTrade(gameSeq, transactionSeq, userDetails.getPlayerId(), request.isVoteAgree());
+        fantasyRosterService.voteOnTrade(gameSeq, transactionSeq, userDetails.getMemberId(), request.isVoteAgree());
         return ResponseEntity.ok("Vote registered");
     }
 

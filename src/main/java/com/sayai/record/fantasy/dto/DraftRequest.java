@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class DraftRequest {
     private Long fantasyGameSeq;
-    private Long playerId;
+    private Long memberId;
     private Long fantasyPlayerSeq;
     @Builder.Default
     private boolean isAutoPick = false;
