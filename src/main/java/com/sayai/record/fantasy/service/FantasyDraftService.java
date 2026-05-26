@@ -47,6 +47,7 @@ public class FantasyDraftService {
     private final ObjectProvider<DraftScheduler> draftSchedulerProvider;
     private final KboHitterStatsRepository kboHitterStatsRepository;
     private final KboPitcherStatsRepository kboPitcherStatsRepository;
+    private final com.sayai.record.fantasy.service.rules.Rule1Validator rule1Validator;
 
     private static final Set<String> PITCHER_POSITIONS = Set.of("SP", "RP", "CL");
 
@@ -499,6 +500,11 @@ public class FantasyDraftService {
         }
         if (type2Count > 1) {
             throw new IllegalStateException("아시아 쿼터 제한 1명을 넘게 선발할 수 없습니다.");
+        }
+
+        // Team restriction check
+        if (Boolean.TRUE.equals(game.getUseTeamRestriction())) {
+            rule1Validator.validateFinalTeamCoverage(rosterPlayers);
         }
 
         // Check validation first

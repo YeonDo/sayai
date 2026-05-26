@@ -152,6 +152,24 @@ public class Rule1Validator implements DraftRuleValidator {
         }
     }
 
+    public void validateFinalTeamCoverage(List<FantasyPlayer> team) {
+        Set<String> coveredTeams = team.stream()
+                .map(FantasyPlayer::getTeam)
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(KBO_TEAMS::contains)
+                .collect(Collectors.toSet());
+
+        Set<String> missingTeams = new HashSet<>(KBO_TEAMS);
+        missingTeams.removeAll(coveredTeams);
+
+        if (!missingTeams.isEmpty()) {
+            List<String> sorted = new ArrayList<>(missingTeams);
+            Collections.sort(sorted);
+            throw new IllegalStateException("10개 구단에서 각각 한명씩 뽑아야합니다. 빠진 팀: [" + String.join(", ", sorted) + "]");
+        }
+    }
+
     protected void validateForeignerLimits(List<FantasyPlayer> team) {
         long type1Count = team.stream().filter(p -> {
             FantasyPlayer.ForeignerType type = Optional.ofNullable(p.getForeignerType()).orElse(FantasyPlayer.ForeignerType.NONE);

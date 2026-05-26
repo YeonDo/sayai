@@ -140,20 +140,15 @@ public class KakaoOAuthService {
     }
 
     private UserSocialAccount createMemberAndSocial(String kakaoId, String nickname) {
-        Long newMemberId = memberRepository.findTopByOrderByMemberIdDesc()
-                .map(m -> m.getMemberId() + 1)
-                .orElse(1L);
-
         Member member = Member.builder()
-                .memberId(newMemberId)
-                .userId("kakao_" + newMemberId)
+                .userId("kakao_" + UUID.randomUUID().toString().replace("-", "").substring(0, 8))
                 .name(nickname)
                 .password(UUID.randomUUID().toString())
                 .role(Member.Role.USER)
                 .build();
         memberRepository.save(member);
 
-        log.info("[KAKAO] new member created memberId={} userId={}", newMemberId, member.getUserId());
+        log.info("[KAKAO] new member created memberId={} userId={}", member.getMemberId(), member.getUserId());
 
         return socialAccountRepository.save(
                 UserSocialAccount.builder()
