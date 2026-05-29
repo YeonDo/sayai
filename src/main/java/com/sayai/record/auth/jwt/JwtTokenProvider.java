@@ -35,6 +35,9 @@ public class JwtTokenProvider {
     }
 
     public String createToken(Long memberId, String userId, Member.Role role, String name) {
+        if (role == Member.Role.BOT) {
+            throw new IllegalStateException("봇 계정에는 JWT 토큰을 발급할 수 없습니다.");
+        }
         Claims claims = Jwts.claims().setSubject(userId);
         claims.put("memberId", memberId);
         claims.put("role", role.name());

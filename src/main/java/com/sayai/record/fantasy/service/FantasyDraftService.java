@@ -4,25 +4,16 @@ import com.sayai.kbo.model.KboHitterStats;
 import com.sayai.kbo.model.KboPitcherStats;
 import com.sayai.kbo.repository.KboHitterStatsRepository;
 import com.sayai.kbo.repository.KboPitcherStatsRepository;
-import com.sayai.record.fantasy.dto.DraftEventDto;
 import com.sayai.record.fantasy.dto.DraftRequest;
 import com.sayai.record.fantasy.dto.FantasyPlayerDto;
 import com.sayai.record.fantasy.dto.RosterUpdateDto;
 import com.sayai.record.fantasy.entity.*;
 import com.sayai.record.fantasy.repository.*;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -32,7 +23,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class FantasyDraftService {
@@ -43,8 +33,7 @@ public class FantasyDraftService {
     private final FantasyParticipantRepository fantasyParticipantRepository;
     private final RosterLogRepository rosterLogRepository;
     private final DraftValidator draftValidator;
-    private final SimpMessagingTemplate messagingTemplate;
-    private final ObjectProvider<DraftScheduler> draftSchedulerProvider;
+    private final DraftPickExecutor draftPickExecutor;
     private final KboHitterStatsRepository kboHitterStatsRepository;
     private final KboPitcherStatsRepository kboPitcherStatsRepository;
     private final com.sayai.record.fantasy.service.rules.Rule1Validator rule1Validator;
@@ -60,7 +49,6 @@ public class FantasyDraftService {
             throw new IllegalStateException("Cannot join game. Status is " + game.getStatus());
         }
 
-        // Check if already joined
         if (fantasyParticipantRepository.findByFantasyGameSeqAndMemberId(gameSeq, playerId).isPresent()) {
             throw new IllegalStateException("이미 참여 신청을 완료했습니다");
         }
@@ -87,13 +75,10 @@ public class FantasyDraftService {
             try {
                 fType = FantasyPlayer.ForeignerType.valueOf(foreignerType);
             } catch (IllegalArgumentException e) {
-                // Invalid enum value, ignore or treat as null
+                // Invalid enum value, treat as null
             }
         }
 
-        // 1. Get all picks for this game
-        // Players in WAIVER_REQ or TRADE_PENDING still have DraftPick records,
-        // so they are correctly excluded from available players by this logic.
         Set<Long> pickedPlayerSeqs;
         if (gameSeq == null || gameSeq == 0L) {
             pickedPlayerSeqs = Collections.emptySet();
@@ -104,10 +89,8 @@ public class FantasyDraftService {
                     .collect(Collectors.toSet());
         }
 
-        // 2. Get filtered players from DB
         List<FantasyPlayer> filteredPlayers = fantasyPlayerRepository.findPlayers(team, position, search, fType);
 
-        // Sort
         if (sort != null) {
             if ("cost_desc".equals(sort)) {
                 filteredPlayers.sort((p1, p2) -> {
@@ -128,7 +111,6 @@ public class FantasyDraftService {
                 .filter(p -> !pickedPlayerSeqs.contains(p.getSeq()))
                 .collect(Collectors.toList());
 
-        // Bulk fetch current-season stats (2 queries total regardless of player count)
         int currentSeason = LocalDate.now().getYear();
         Set<Long> playerSeqs = availablePlayers.stream().map(FantasyPlayer::getSeq).collect(Collectors.toSet());
 
@@ -164,7 +146,6 @@ public class FantasyDraftService {
 
     @Transactional
     public void draftPlayer(DraftRequest request) {
-        // 1. Check Game Status
         FantasyGame game = fantasyGameRepository.findById(request.getFantasyGameSeq())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid Game Seq"));
 
@@ -175,208 +156,67 @@ public class FantasyDraftService {
             throw new IllegalStateException("Drafting or FA signing is not active (Status: " + game.getStatus() + ")");
         }
 
-        int pickNumber = 0;
-        NextPickInfo nextPick = null;
-
+        DraftPickExecutor.NextPickInfo nextPick = null;
         if (isDrafting) {
-            // Check Turn
-            nextPick = getNextPickInfo(game);
+            nextPick = draftPickExecutor.getNextPickInfo(game);
             if (!nextPick.pickerId.equals(request.getMemberId())) {
                 throw new IllegalStateException("당신의 차례가 아닙니다: " + nextPick.pickerId);
             }
-            long count = draftPickRepository.countByFantasyGameSeq(request.getFantasyGameSeq());
-            pickNumber = (int) count + 1;
-        } else {
-            // FA Logic
-            long count = draftPickRepository.countByFantasyGameSeq(request.getFantasyGameSeq());
-            pickNumber = (int) count + 1;
         }
 
-        // 2. Check availability
         boolean isPicked = draftPickRepository.existsByFantasyGameSeqAndFantasyPlayerSeq(
-                request.getFantasyGameSeq(),
-                request.getFantasyPlayerSeq()
-        );
+                request.getFantasyGameSeq(), request.getFantasyPlayerSeq());
         if (isPicked) {
             throw new IllegalStateException("이미 뽑힌 선수입니다");
         }
 
-        // 3. Validate Rules
         FantasyPlayer targetPlayer = fantasyPlayerRepository.findById(request.getFantasyPlayerSeq())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid Player Seq"));
 
-        // Get Current Picks for this user
         List<DraftPick> userPicks = draftPickRepository.findByFantasyGameSeqAndMemberId(
                 request.getFantasyGameSeq(), request.getMemberId());
-
-        Set<Long> pickedSeqs = userPicks.stream()
-                .map(DraftPick::getFantasyPlayerSeq)
-                .collect(Collectors.toSet());
+        Set<Long> pickedSeqs = userPicks.stream().map(DraftPick::getFantasyPlayerSeq).collect(Collectors.toSet());
         List<FantasyPlayer> currentTeam = fantasyPlayerRepository.findAllById(pickedSeqs);
 
-        // Roster Size Check for FA
         if (isFA) {
-            // Max 21 allowed for FA
             int limit = 21;
             if (userPicks.size() >= limit) {
                 throw new IllegalStateException("Roster full (Max " + limit + ")");
             }
         }
 
-        // Get Participant Info
         FantasyParticipant participant = fantasyParticipantRepository.findByFantasyGameSeqAndMemberId(
-                request.getFantasyGameSeq(), request.getMemberId())
-                .orElse(null);
+                request.getFantasyGameSeq(), request.getMemberId()).orElse(null);
 
-        // Salary Cap Check
         if (game.getSalaryCap() != null && game.getSalaryCap() > 0) {
             List<FantasyPlayer> hypotheticalTeam = new java.util.ArrayList<>(currentTeam);
             hypotheticalTeam.add(targetPlayer);
-            int projectedCost = com.sayai.record.fantasy.util.SalaryCapCalculator.calculateTeamCost(game, participant, hypotheticalTeam).getTotalCost();
-
+            int projectedCost = com.sayai.record.fantasy.util.SalaryCapCalculator
+                    .calculateTeamCost(game, participant, hypotheticalTeam).getTotalCost();
             if (projectedCost > game.getSalaryCap()) {
                 throw new IllegalStateException("샐캡 초과: " + projectedCost + " / " + game.getSalaryCap());
             }
         }
 
-        // Validate draft rules (Composition, etc) ONLY for DRAFTING
         if (isDrafting) {
-             draftValidator.validate(game, targetPlayer, currentTeam, participant);
+            draftValidator.validate(game, targetPlayer, currentTeam, participant);
         }
 
-        // 4. Save Pick
-        // Auto-Assign Position Logic
-        String assignedPos = determineInitialPosition(userPicks, targetPlayer);
-
-        DraftPick pick = DraftPick.builder()
-                .fantasyGameSeq(request.getFantasyGameSeq())
-                .memberId(request.getMemberId())
-                .fantasyPlayerSeq(request.getFantasyPlayerSeq())
-                .pickNumber(pickNumber)
-                .assignedPosition(assignedPos)
-                .pickStatus(DraftPick.PickStatus.NORMAL)
-                .build();
-
-        draftPickRepository.save(pick);
-
-        // Log to RosterLog
-        RosterLog.LogActionType actionType = isDrafting ? RosterLog.LogActionType.DRAFT_PICK : RosterLog.LogActionType.FA_ADD;
-        String logDetails = isDrafting ? "Draft Pick #" + pickNumber + (request.isAutoPick() ? " (Auto)" : "") : targetPlayer.getName() + " - Signed via FA";
-
-        RosterLog logEntry = RosterLog.builder()
-                .fantasyGameSeq(request.getFantasyGameSeq())
-                .participantId(request.getMemberId())
-                .fantasyPlayerSeq(request.getFantasyPlayerSeq())
-                .actionType(actionType)
-                .details(logDetails)
-                .build();
-        rosterLogRepository.save(logEntry);
-
-
-        if (isDrafting) {
-            // Update Deadline for NEXT pick
-            if (game.getDraftTimeLimit() != null && game.getDraftTimeLimit() > 0) {
-                game.setNextPickDeadline(LocalDateTime.now().plusMinutes(game.getDraftTimeLimit()));
-            }
-
-            // Get NEXT Pick Info
-             NextPickInfo nextNext = getNextPickInfo(game);
-
-            // Check for Draft Completion
-            long totalPicks = draftPickRepository.countByFantasyGameSeq(request.getFantasyGameSeq());
-            List<FantasyParticipant> participants = fantasyParticipantRepository.findByFantasyGameSeq(request.getFantasyGameSeq());
-
-            int totalPlayersPerParticipant = draftValidator.getTotalPlayerCount(game.getRuleType());
-
-            boolean isFinished = false;
-            if (!participants.isEmpty() && totalPicks >= participants.size() * (long)totalPlayersPerParticipant) {
-                game.setStatus(FantasyGame.GameStatus.ONGOING);
-                game.setNextPickDeadline(null);
-                fantasyGameRepository.save(game); // Ensure status persist
-                isFinished = true;
-                if (TransactionSynchronizationManager.isActualTransactionActive()) {
-                    TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                        @Override
-                        public void afterCommit() {
-                            draftSchedulerProvider.getObject().removeActiveGame(request.getFantasyGameSeq());
-                        }
-                    });
-                } else {
-                    draftSchedulerProvider.getObject().removeActiveGame(request.getFantasyGameSeq());
-                }
-            }
-
-            // Broadcast Event
-            DraftEventDto event = DraftEventDto.builder()
-                    .type(isFinished ? "FINISH" : "PICK")
-                    .fantasyGameSeq(request.getFantasyGameSeq())
-                    .memberId(request.getMemberId())
-                    .fantasyPlayerSeq(request.getFantasyPlayerSeq())
-                    .playerName(targetPlayer.getName())
-                    .playerTeam(targetPlayer.getTeam())
-                    .pickNumber(pickNumber)
-                    .message(isFinished ? "Draft Completed!" : "Player " + request.getMemberId() + " picked " + targetPlayer.getName() + " (Pick #" + pickNumber + ")")
-                    .nextPickerId(isFinished ? null : nextNext.pickerId)
-                    .nextPickDeadline(game.getNextPickDeadline() != null ? game.getNextPickDeadline().atZone(ZoneId.of("UTC")) : null)
-                    .round(isFinished ? null : nextNext.round)
-                    .pickInRound(isFinished ? null : nextNext.pickInRound)
-                    .build();
-
-            messagingTemplate.convertAndSend("/topic/draft/" + request.getFantasyGameSeq(), event);
-        } else {
-            // FA Event: Do not broadcast WebSocket message as requested
-        }
-    }
-
-    public static class NextPickInfo {
-        public Long pickerId;
-        public int round;
-        public int pickInRound;
-    }
-
-    public NextPickInfo getNextPickInfo(FantasyGame game) {
-        long totalPicks = draftPickRepository.countByFantasyGameSeq(game.getSeq());
-        List<FantasyParticipant> participants = fantasyParticipantRepository.findByFantasyGameSeq(game.getSeq());
-        participants.sort(Comparator.comparingInt(FantasyParticipant::getDraftOrder));
-        int n = participants.size();
-        if (n == 0) throw new IllegalStateException("No participants");
-
-        int round = (int) (totalPicks / n) + 1;
-        int index = (int) (totalPicks % n); // 0 to n-1
-
-        int draftOrderIndex; // 1-based draftOrder
-        if (round % 2 != 0) { // Odd
-            draftOrderIndex = index + 1;
-        } else { // Even (Snake)
-            draftOrderIndex = n - index;
-        }
-
-        // Find participant with this draftOrder
-        // Since list is sorted by draftOrder, index is draftOrderIndex - 1
-        FantasyParticipant nextPicker = participants.get(draftOrderIndex - 1);
-
-        NextPickInfo info = new NextPickInfo();
-        info.pickerId = nextPicker.getMemberId();
-        info.round = round;
-        info.pickInRound = index + 1;
-        return info;
+        draftPickExecutor.commitPick(game, request, targetPlayer, isDrafting, nextPick);
     }
 
     @Transactional(readOnly = true)
     public com.sayai.record.fantasy.dto.MyPicksResponseDto getPickedPlayers(Long gameSeq, Long playerId) {
-        // Fetch picks
         List<DraftPick> picks = draftPickRepository.findByFantasyGameSeqAndMemberId(gameSeq, playerId).stream()
                 .filter(pick -> pick.getPickStatus() != DraftPick.PickStatus.WAIVER_REQ)
                 .collect(Collectors.toList());
 
-        // Map Player Seq to DraftPick for easy access
         Map<Long, DraftPick> pickMap = picks.stream()
                 .collect(Collectors.toMap(DraftPick::getFantasyPlayerSeq, Function.identity()));
 
         Set<Long> pickedSeqs = pickMap.keySet();
         List<FantasyPlayer> players = fantasyPlayerRepository.findAllById(pickedSeqs);
 
-        // Fetch participant and game to calculate current cost with potential discount
         FantasyGame game = fantasyGameRepository.findById(gameSeq)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid game"));
         FantasyParticipant participant = fantasyParticipantRepository.findByFantasyGameSeqAndMemberId(gameSeq, playerId)
@@ -411,50 +251,9 @@ public class FantasyDraftService {
                 .collect(Collectors.toList());
 
         int currentCost = (capResult != null) ? capResult.getTotalCost() :
-            players.stream().mapToInt(p -> p.getCost() == null ? 0 : p.getCost()).sum();
+                players.stream().mapToInt(p -> p.getCost() == null ? 0 : p.getCost()).sum();
 
         return new com.sayai.record.fantasy.dto.MyPicksResponseDto(dtoList, currentCost);
-    }
-
-    private String determineInitialPosition(List<DraftPick> existingPicks, FantasyPlayer newPlayer) {
-        Map<String, Long> occupiedCounts = existingPicks.stream()
-                .filter(p -> p.getAssignedPosition() != null)
-                .collect(Collectors.groupingBy(DraftPick::getAssignedPosition, Collectors.counting()));
-
-        String positionStr = newPlayer.getPosition() != null ? newPlayer.getPosition() : "";
-        if (positionStr.trim().isEmpty()) {
-            return "BENCH";
-        }
-
-        String[] positions = positionStr.split(",");
-        String primaryPos = positions[0].trim();
-
-        if (isPitcher(primaryPos)) {
-            long spCount = occupiedCounts.getOrDefault("SP", 0L);
-            long rpCount = occupiedCounts.getOrDefault("RP", 0L);
-            long clCount = occupiedCounts.getOrDefault("CL", 0L);
-
-            if (primaryPos.equals("SP")) return spCount < 4 ? "SP" : "BENCH";
-            if (primaryPos.equals("RP")) return rpCount < 4 ? "RP" : "BENCH";
-            if (primaryPos.equals("CL")) return clCount < 1 ? "CL" : "BENCH";
-            return "BENCH";
-        } else {
-            // Batter Logic: 주포지션 → 부포지션 → DH → BENCH
-            for (String p : positions) {
-                String pos = p.trim();
-                if (!pos.isEmpty() && occupiedCounts.getOrDefault(pos, 0L) == 0) {
-                    return pos;
-                }
-            }
-            if (occupiedCounts.getOrDefault("DH", 0L) == 0) {
-                return "DH";
-            }
-            return "BENCH";
-        }
-    }
-
-    private boolean isPitcher(String pos) {
-        return pos.equals("SP") || pos.equals("RP") || pos.equals("CL");
     }
 
     @Transactional
@@ -483,10 +282,9 @@ public class FantasyDraftService {
             }
         }
 
-        // Foreigner limit check
         Set<Long> rosterSeqs = myPicks.stream()
                 .map(DraftPick::getFantasyPlayerSeq)
-                .filter(java.util.Objects::nonNull)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
         List<FantasyPlayer> rosterPlayers = fantasyPlayerRepository.findAllById(rosterSeqs);
         long type1Count = rosterPlayers.stream()
@@ -502,33 +300,28 @@ public class FantasyDraftService {
             throw new IllegalStateException("아시아 쿼터 제한 1명을 넘게 선발할 수 없습니다.");
         }
 
-        // Team restriction check
         if (Boolean.TRUE.equals(game.getUseTeamRestriction())) {
             rule1Validator.validateFinalTeamCoverage(rosterPlayers);
         }
 
-        // Check validation first
         if (updateDto.getEntries() != null) {
             Map<String, Integer> positionCounts = new java.util.HashMap<>();
 
-            // Helper to increment and check
             java.util.function.BiConsumer<String, String> checkLimit = (pos, source) -> {
                 if ("BENCH".equals(pos)) return;
-
                 int count = positionCounts.getOrDefault(pos, 0) + 1;
                 positionCounts.put(pos, count);
-
                 int limit;
                 if ("SP".equals(pos) || "RP".equals(pos)) limit = 4;
                 else limit = 1;
-
                 if (count > limit) {
                     throw new IllegalArgumentException("Position limit exceeded for " + pos + " (Max " + limit + ")");
                 }
             };
 
-            // Populate with existing positions NOT being updated
-            Set<Long> updatingSeqs = updateDto.getEntries().stream().map(RosterUpdateDto.RosterEntry::getFantasyPlayerSeq).collect(Collectors.toSet());
+            Set<Long> updatingSeqs = updateDto.getEntries().stream()
+                    .map(RosterUpdateDto.RosterEntry::getFantasyPlayerSeq)
+                    .collect(Collectors.toSet());
             for (DraftPick pick : myPicks) {
                 if (!updatingSeqs.contains(pick.getFantasyPlayerSeq()) && pick.getAssignedPosition() != null) {
                     checkLimit.accept(pick.getAssignedPosition(), "Existing");
@@ -541,7 +334,6 @@ public class FantasyDraftService {
                 }
             }
 
-            // Apply updates
             for (RosterUpdateDto.RosterEntry entry : updateDto.getEntries()) {
                 DraftPick pick = pickMap.get(entry.getFantasyPlayerSeq());
                 if (pick != null) {
@@ -554,114 +346,5 @@ public class FantasyDraftService {
             }
         }
         draftPickRepository.saveAll(myPicks);
-    }
-
-    @Async
-    public void autoPickAsync(Long gameSeq) {
-        try {
-            autoPick(gameSeq);
-        } catch (Exception e) {
-            log.error("Error in autoPick for game {}: {}", gameSeq, e.getMessage());
-        }
-    }
-
-    @Transactional
-    public void autoPick(Long gameSeq) {
-        FantasyGame game = fantasyGameRepository.findById(gameSeq)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid Game Seq"));
-
-        if (game.getStatus() != FantasyGame.GameStatus.DRAFTING) {
-            return;
-        }
-
-        // Validate deadline again to avoid race conditions
-        if (game.getNextPickDeadline() != null && game.getNextPickDeadline().isAfter(LocalDateTime.now())) {
-            return;
-        }
-
-        NextPickInfo nextPick = getNextPickInfo(game);
-        Long playerId = nextPick.pickerId;
-
-        // Fetch needed data
-        List<DraftPick> picks = draftPickRepository.findByFantasyGameSeq(gameSeq);
-        Set<Long> pickedPlayerSeqs = picks.stream()
-                .map(DraftPick::getFantasyPlayerSeq)
-                .collect(Collectors.toSet());
-
-        List<FantasyPlayer> available;
-        if (pickedPlayerSeqs.isEmpty()) {
-            available = fantasyPlayerRepository.findAllActivePlayers();
-        } else {
-            available = fantasyPlayerRepository.findBySeqNotIn(pickedPlayerSeqs);
-        }
-
-        FantasyParticipant participant = fantasyParticipantRepository.findByFantasyGameSeqAndMemberId(gameSeq, playerId).orElse(null);
-        if (participant == null) participant = FantasyParticipant.builder().memberId(playerId).build();
-
-        List<FantasyPlayer> candidates = available;
-
-        // First Pick Rule for Auto Pick (applies to both Rule 1 and Rule 2 if enabled)
-        if (Boolean.TRUE.equals(game.getUseFirstPickRule()) && nextPick.round == 1) {
-             String pref = participant.getPreferredTeam();
-             if (pref != null) {
-                 String prefLower = pref.trim().toLowerCase();
-                 candidates = available.stream().filter(p ->
-                     p.getTeam().toLowerCase().contains(prefLower) ||
-                     prefLower.contains(p.getTeam().toLowerCase())
-                 ).collect(Collectors.toList());
-             }
-        }
-
-        Collections.shuffle(candidates);
-
-        // Prepare current team for validation
-        List<DraftPick> userPicks = picks.stream().filter(p -> p.getMemberId().equals(playerId)).collect(Collectors.toList());
-        Set<Long> userPickedSeqs = userPicks.stream().map(DraftPick::getFantasyPlayerSeq).collect(Collectors.toSet());
-
-        List<FantasyPlayer> currentTeam;
-        if (userPickedSeqs.isEmpty()) {
-            currentTeam = Collections.emptyList();
-        } else {
-            currentTeam = fantasyPlayerRepository.findAllById(userPickedSeqs);
-        }
-
-        int currentCost = 0;
-        if (game.getSalaryCap() != null && game.getSalaryCap() > 0) {
-            currentCost = com.sayai.record.fantasy.util.SalaryCapCalculator.calculateTeamCost(game, participant, currentTeam).getTotalCost();
-        }
-
-        FantasyPlayer selected = null;
-        for (FantasyPlayer p : candidates) {
-            try {
-                // Salary Cap Check
-                if (game.getSalaryCap() != null && game.getSalaryCap() > 0) {
-                    List<FantasyPlayer> hypotheticalTeam = new java.util.ArrayList<>(currentTeam);
-                    hypotheticalTeam.add(p);
-                    int projectedCost = com.sayai.record.fantasy.util.SalaryCapCalculator.calculateTeamCost(game, participant, hypotheticalTeam).getTotalCost();
-
-                    if (projectedCost > game.getSalaryCap()) {
-                        continue;
-                    }
-                }
-
-                draftValidator.validate(game, p, currentTeam, participant);
-                selected = p;
-                break;
-            } catch (Exception e) {
-                // Invalid, try next
-            }
-        }
-
-        if (selected != null) {
-            DraftRequest req = new DraftRequest();
-            req.setFantasyGameSeq(gameSeq);
-            req.setFantasyPlayerSeq(selected.getSeq());
-            req.setMemberId(playerId);
-            req.setAutoPick(true);
-            draftPlayer(req);
-        } else {
-            // Log or handle no valid pick found
-            log.error("AutoPick failed: No valid player found for game {} user {}", gameSeq, playerId);
-        }
     }
 }

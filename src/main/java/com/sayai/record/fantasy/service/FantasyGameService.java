@@ -7,13 +7,17 @@ import com.sayai.record.fantasy.entity.FantasyParticipant;
 import com.sayai.record.fantasy.entity.DraftPickSnapshot;
 import com.sayai.record.fantasy.entity.FantasyPlayer;
 import com.sayai.record.fantasy.entity.FantasyWaiverOrder;
+import com.sayai.record.auth.entity.Member;
+import com.sayai.record.auth.repository.MemberRepository;
 import com.sayai.record.fantasy.repository.DraftPickRepository;
 import com.sayai.record.fantasy.repository.DraftPickSnapshotRepository;
 import com.sayai.record.fantasy.repository.FantasyGameRepository;
 import com.sayai.record.fantasy.repository.FantasyParticipantRepository;
 import com.sayai.record.fantasy.repository.FantasyPlayerRepository;
 import com.sayai.record.fantasy.repository.FantasyWaiverOrderRepository;
+import com.sayai.record.fantasy.event.BotPickNeededEvent;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,7 +42,10 @@ public class FantasyGameService {
     private final FantasyWaiverOrderRepository waiverOrderRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final FantasyDraftService fantasyDraftService;
+    private final DraftPickExecutor draftPickExecutor;
     private final DraftScheduler draftScheduler;
+    private final MemberRepository memberRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
     public List<FantasyGameDto> getDashboardGames(Long userId) {
@@ -111,7 +118,7 @@ public class FantasyGameService {
     @Transactional
     public FantasyGame createGame(String title, FantasyGame.RuleType ruleType, FantasyGame.ScoringType scoringType,
                                   String scoringSettings, Integer maxParticipants, java.time.LocalDateTime draftDate, String gameDuration, Integer draftTimeLimit,
-                                  Boolean useFirstPickRule, Integer salaryCap, Boolean useTeamRestriction, Integer rounds) {
+                                  Boolean useFirstPickRule, Integer salaryCap, Boolean useTeamRestriction, Integer rounds, Integer botCount) {
         FantasyGame game = FantasyGame.builder()
                 .title(title)
                 .ruleType(ruleType)
@@ -125,6 +132,7 @@ public class FantasyGameService {
                 .salaryCap(salaryCap)
                 .useTeamRestriction(useTeamRestriction)
                 .rounds(rounds)
+                .botCount(botCount != null ? botCount : 0)
                 .status(FantasyGame.GameStatus.WAITING)
                 .build();
         return fantasyGameRepository.save(game);
@@ -152,7 +160,61 @@ public class FantasyGameService {
             throw new IllegalStateException("Game must be in WAITING status to start.");
         }
 
-        List<FantasyParticipant> participants = fantasyParticipantRepository.findByFantasyGameSeq(gameSeq);
+        int botCount = game.getBotCount() != null ? game.getBotCount() : 0;
+        if (botCount > 0 && (game.getDraftTimeLimit() == null || game.getDraftTimeLimit() == 0)) {
+            throw new IllegalStateException("봇이 포함된 게임은 드래프트 시간 제한이 필요합니다.");
+        }
+
+        List<FantasyParticipant> allParticipants = new ArrayList<>(fantasyParticipantRepository.findByFantasyGameSeq(gameSeq));
+
+        // 기존 봇 참가자 추출 (재시작 시 teamName, draftOrder 보존용)
+        Map<Long, FantasyParticipant> existingBotsByMemberId = allParticipants.stream()
+                .filter(p -> Boolean.TRUE.equals(p.getIsBot()))
+                .collect(Collectors.toMap(FantasyParticipant::getMemberId, p -> p));
+
+        // 기존 봇 삭제 후 재삽입 (중복 방지)
+        if (!existingBotsByMemberId.isEmpty()) {
+            fantasyParticipantRepository.deleteAll(existingBotsByMemberId.values());
+            allParticipants.removeIf(p -> Boolean.TRUE.equals(p.getIsBot()));
+        }
+
+        List<FantasyParticipant> participants = allParticipants;
+
+        if (botCount > 0) {
+            List<Member> botPool = memberRepository.findAllByRole(Member.Role.BOT);
+            if (botPool.size() < botCount) {
+                throw new IllegalStateException("봇 풀이 부족합니다. 필요: " + botCount + ", 가용: " + botPool.size());
+            }
+            // 재시작이면 기존 teamName/draftOrder 복원, 최초 시작이면 새로 생성
+            boolean isRestart = !existingBotsByMemberId.isEmpty();
+            List<String> newTeamNames = BotTeamNameGenerator.generate(botCount);
+
+            List<String> kboTeams = List.of(
+                    "KIA", "LG", "KT", "SSG", "NC", "두산", "롯데", "삼성", "한화", "키움");
+            java.util.Random rng = new java.util.Random();
+
+            List<FantasyParticipant> botParticipants = new ArrayList<>();
+            for (int i = 0; i < botCount; i++) {
+                Member bot = botPool.get(i);
+                FantasyParticipant prev = existingBotsByMemberId.get(bot.getMemberId());
+                String botPreferredTeam = null;
+                if (Boolean.TRUE.equals(game.getUseFirstPickRule())) {
+                    botPreferredTeam = isRestart && prev != null && prev.getPreferredTeam() != null
+                            ? prev.getPreferredTeam()
+                            : kboTeams.get(rng.nextInt(kboTeams.size()));
+                }
+                botParticipants.add(FantasyParticipant.builder()
+                        .fantasyGameSeq(gameSeq)
+                        .memberId(bot.getMemberId())
+                        .teamName(prev != null ? prev.getTeamName() : newTeamNames.get(i))
+                        .draftOrder(prev != null ? prev.getDraftOrder() : null)
+                        .preferredTeam(botPreferredTeam)
+                        .isBot(true)
+                        .build());
+            }
+            participants.addAll(fantasyParticipantRepository.saveAll(botParticipants));
+        }
+
         if (participants.isEmpty()) {
             throw new IllegalStateException("Cannot start game with no participants.");
         }
@@ -169,12 +231,14 @@ public class FantasyGameService {
 
             for (FantasyParticipant p : participants) {
                 p.setDraftOrder(order);
-                int waiverOrderNum = n - order + 1;
-                waiverOrders.add(FantasyWaiverOrder.builder()
-                        .gameSeq(gameSeq)
-                        .memberId(p.getMemberId())
-                        .orderNum(waiverOrderNum)
-                        .build());
+                if (!Boolean.TRUE.equals(p.getIsBot())) {
+                    int waiverOrderNum = n - order + 1;
+                    waiverOrders.add(FantasyWaiverOrder.builder()
+                            .gameSeq(gameSeq)
+                            .memberId(p.getMemberId())
+                            .orderNum(waiverOrderNum)
+                            .build());
+                }
                 order++;
             }
             fantasyParticipantRepository.saveAll(participants);
@@ -198,10 +262,11 @@ public class FantasyGameService {
                 .teamName(p.getTeamName())
                 .preferredTeam(p.getPreferredTeam())
                 .draftOrder(p.getDraftOrder())
+                .isBot(p.getIsBot())
                 .build())
             .collect(Collectors.toList());
 
-        FantasyDraftService.NextPickInfo nextPick = fantasyDraftService.getNextPickInfo(game);
+        DraftPickExecutor.NextPickInfo nextPick = draftPickExecutor.getNextPickInfo(game);
 
         DraftEventDto event = DraftEventDto.builder()
                 .type("START")
@@ -209,12 +274,22 @@ public class FantasyGameService {
                 .message("Draft Started")
                 .draftOrder(orderList)
                 .nextPickerId(nextPick.pickerId)
+                .nextPickerIsBot(nextPick.isBot)
                 .nextPickDeadline(game.getNextPickDeadline() != null ? game.getNextPickDeadline().atZone(ZoneId.of("UTC")) : null)
                 .round(nextPick.round)
                 .pickInRound(nextPick.pickInRound)
                 .build();
 
         messagingTemplate.convertAndSend("/topic/draft/" + gameSeq, event);
+
+        if (nextPick.isBot) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    eventPublisher.publishEvent(new BotPickNeededEvent(gameSeq));
+                }
+            });
+        }
     }
 
     @Transactional(readOnly = true)
@@ -394,7 +469,7 @@ public class FantasyGameService {
         Integer pickInRound = null;
         if (game.getStatus() == FantasyGame.GameStatus.DRAFTING) {
              try {
-                 FantasyDraftService.NextPickInfo info = fantasyDraftService.getNextPickInfo(game);
+                 DraftPickExecutor.NextPickInfo info = draftPickExecutor.getNextPickInfo(game);
                  nextPickerId = info.pickerId;
                  round = info.round;
                  pickInRound = info.pickInRound;
@@ -421,6 +496,7 @@ public class FantasyGameService {
                     .teamName(p.getTeamName())
                     .preferredTeam(p.getPreferredTeam())
                     .draftOrder(p.getDraftOrder())
+                    .isBot(p.getIsBot())
                     .roster(roster)
                     .build();
         }).collect(Collectors.toList());
@@ -438,6 +514,7 @@ public class FantasyGameService {
                 .salaryCap(game.getSalaryCap())
                 .useTeamRestriction(game.getUseTeamRestriction())
                 .rounds(game.getRounds())
+                .botCount(game.getBotCount())
                 .participantCount(participants.size())
                 .maxParticipants(game.getMaxParticipants())
                 .nextPickerId(nextPickerId)

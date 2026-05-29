@@ -76,7 +76,8 @@ public class AdminController {
                 request.getUseFirstPickRule(),
                 request.getSalaryCap(),
                 request.getUseTeamRestriction(),
-                request.getRounds()
+                request.getRounds(),
+                request.getBotCount()
         );
 
         return ResponseEntity.ok(game);
@@ -103,7 +104,7 @@ public class AdminController {
 
         List<ParticipantDto> dtos = participants.stream().map(p -> {
             String userName = memberNames.getOrDefault(p.getMemberId(), "Unknown");
-            return new ParticipantDto(p.getSeq(), p.getMemberId(), userName, p.getTeamName(), p.getPreferredTeam());
+            return new ParticipantDto(p.getSeq(), p.getMemberId(), userName, p.getTeamName(), p.getPreferredTeam(), p.getIsBot());
         }).collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
     }
@@ -334,6 +335,10 @@ public class AdminController {
         Member member = memberRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
+        if (role == Member.Role.BOT || member.getRole() == Member.Role.BOT) {
+            throw new IllegalArgumentException("BOT role은 변경 불가합니다.");
+        }
+
         member.setRole(role);
         memberRepository.save(member);
 
@@ -354,6 +359,7 @@ public class AdminController {
         private Integer salaryCap;
         private Boolean useTeamRestriction;
         private Integer rounds;
+        private Integer botCount;
     }
 
     @Data
@@ -363,13 +369,15 @@ public class AdminController {
         private String userName;
         private String teamName;
         private String preferredTeam;
+        private Boolean isBot;
 
-        public ParticipantDto(Long seq, Long memberId, String userName, String teamName, String preferredTeam) {
+        public ParticipantDto(Long seq, Long memberId, String userName, String teamName, String preferredTeam, Boolean isBot) {
             this.seq = seq;
             this.memberId = memberId;
             this.userName = userName;
             this.teamName = teamName;
             this.preferredTeam = preferredTeam;
+            this.isBot = isBot;
         }
     }
 

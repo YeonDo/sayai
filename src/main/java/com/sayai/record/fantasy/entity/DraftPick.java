@@ -11,7 +11,8 @@ import java.time.ZoneId;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-@Table(name = "ft_draft_picks")
+@Table(name = "ft_draft_picks",
+        uniqueConstraints = @UniqueConstraint(name = "uk_game_pick", columnNames = {"fantasy_game_seq", "pick_number"}))
 @Entity
 public class DraftPick {
 

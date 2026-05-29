@@ -28,4 +28,8 @@ public class FantasyParticipant {
     private String preferredTeam;
 
     private Integer draftOrder;
+
+    @Column(name = "is_bot")
+    @Builder.Default
+    private Boolean isBot = false;
 }

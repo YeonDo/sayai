@@ -47,6 +47,9 @@ public class FantasyGame {
     private Integer salaryCap;
     private Boolean useTeamRestriction;
 
+    @Column(name = "bot_count")
+    private Integer botCount;
+
     private LocalDateTime createdAt;
 
     public void setStatus(GameStatus status) {
@@ -73,6 +76,9 @@ public class FantasyGame {
         }
         if (this.useTeamRestriction == null) {
             this.useTeamRestriction = false;
+        }
+        if (this.botCount == null) {
+            this.botCount = 0;
         }
     }
 

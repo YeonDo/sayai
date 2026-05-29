@@ -9,6 +9,7 @@ import com.sayai.record.fantasy.dto.FantasyGameDto;
 import com.sayai.record.fantasy.entity.FantasyGame;
 import com.sayai.record.fantasy.entity.FantasyParticipant;
 import com.sayai.record.fantasy.repository.FantasyParticipantRepository;
+import com.sayai.record.fantasy.service.BotTeamNameGenerator;
 import com.sayai.record.fantasy.service.FantasyGameService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -89,6 +90,16 @@ public class FantasyGameController {
         return ResponseEntity.ok(dtos);
     }
 
+
+    @GetMapping("/team-name/random")
+    public ResponseEntity<?> randomTeamNames(
+            @RequestParam(defaultValue = "1") int count) {
+        if (count < 1 || count > BotTeamNameGenerator.MAX_COUNT) {
+            return ResponseEntity.badRequest()
+                    .body("count는 1 이상 " + BotTeamNameGenerator.MAX_COUNT + " 이하여야 합니다.");
+        }
+        return ResponseEntity.ok(BotTeamNameGenerator.generate(count));
+    }
 
     @Data
     public static class ParticipantDto {

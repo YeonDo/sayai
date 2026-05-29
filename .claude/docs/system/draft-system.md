@@ -1,6 +1,6 @@
 # 드래프트 시스템
 
-> 참조 코드: `FantasyGameService.java`, `FantasyDraftService.java`, `DraftScheduler.java`
+> 참조 코드: `FantasyGameService.java`, `FantasyDraftService.java`, `DraftScheduler.java`, `BotPickTrigger.java`, `BotTeamNameGenerator.java`
 
 ---
 
@@ -27,6 +27,7 @@ Admin이 `FantasyGame` 생성 (status=`WAITING`).
 | `salaryCap` | 샐러리캡 한도 (null이면 미적용) |
 | `useTeamRestriction` | 팀 제한 규칙 적용 여부 |
 | `rounds` | 총 라운드 수 |
+| `botCount` | 봇 참가자 수 (0이면 미사용, 최대 `botPool` 크기까지) |
 
 ---
 
@@ -43,9 +44,22 @@ Admin이 `FantasyGame` 생성 (status=`WAITING`).
 **DB 변화**
 | 테이블 | 변화 |
 |--------|------|
-| `ft_participants` | 참가자 shuffle → `draftOrder` 1~n 배정 |
-| `ft_games_waiver` | `FantasyWaiverOrder` 생성 — 드래프트 역순으로 웨이버 우선순위 배정 |
+| `ft_participants` | 참가자 shuffle → `draftOrder` 1~n 배정; 봇 참가자 생성 후 포함하여 배정 |
+| `ft_games_waiver` | `FantasyWaiverOrder` 생성 — 드래프트 역순으로 웨이버 우선순위 배정 (**봇 제외**) |
 | `ft_games` | status → `DRAFTING`, `nextPickDeadline` = 현재 + draftTimeLimit |
+
+**봇 참가자 생성 (botCount > 0일 때)**
+- `botCount`만큼 BOT 계정(`member_id` 9001~9009 풀)을 `ft_participants`에 INSERT
+- 봇 팀명: `BotTeamNameGenerator`가 야구 테마 이름 랜덤 생성
+- `is_bot = 1` 플래그 설정
+- 봇은 웨이버 우선순위(`ft_games_waiver`) 생성 대상에서 제외
+
+**드래프트 재시작 시 봇 처리**
+
+status를 `WAITING`으로 원복 후 재시작하면:
+- 기존 봇 참가자의 `teamName`, `draftOrder`를 보존한 채 재삽입 (중복 방지)
+- 새 `teamName` 생성 없이 이전 데이터 그대로 유지
+- 사람 참가자는 `draftOrder`가 새로 shuffle되어 재배정됨
 
 **웨이버 우선순위 배정**
 ```
@@ -54,7 +68,7 @@ Admin이 `FantasyGame` 생성 (status=`WAITING`).
 ...
 드래프트 n순위 → 웨이버 orderNum = 1 (최우선)
 ```
-> 드래프트에서 먼저 뽑은 팀일수록 웨이버 우선순위가 낮음
+> 드래프트에서 먼저 뽑은 팀일수록 웨이버 우선순위가 낮음 / 봇은 웨이버 대상 아님
 
 **WebSocket 이벤트** (`/topic/draft/{gameSeq}`)
 ```json
@@ -66,11 +80,14 @@ Admin이 `FantasyGame` 생성 (status=`WAITING`).
   "nextPickerId": 42,
   "nextPickDeadline": "...",
   "round": 1,
-  "pickInRound": 1
+  "pickInRound": 1,
+  "nextPickerIsBot": false
 }
 ```
 
 **DraftScheduler**: 서버 시작 시 `DRAFTING` 상태 게임을 `activeGameSeqs`에 자동 등록. `startGame` 이후에도 등록.
+
+> 첫 번째 차례가 봇이면 START 이벤트 발송 직후 `afterCommit`으로 `BotPickTrigger.triggerBotPick()` 호출
 
 ---
 
@@ -110,7 +127,7 @@ index = totalPicks % n  // 0 ~ n-1
 |--------|------|
 | `ft_draft_picks` | INSERT — `pickNumber`, `assignedPosition` 자동 배정 |
 | `ft_roster_log` | INSERT — actionType=`DRAFT_PICK` 또는 `FA_ADD` |
-| `ft_games` | `nextPickDeadline` 갱신 (현재 + draftTimeLimit) |
+| `ft_games` | `nextPickDeadline` 갱신 — 다음 차례가 봇이면 `now + 5초`, 사람이면 `now + draftTimeLimit` |
 
 **포지션 자동 배정 (`determineInitialPosition`)**
 
@@ -136,9 +153,16 @@ index = totalPicks % n  // 0 ~ n-1
   "nextPickerId": 33,
   "nextPickDeadline": "...",
   "round": 2,
-  "pickInRound": 1
+  "pickInRound": 1,
+  "isBot": false,
+  "nextPickerIsBot": false
 }
 ```
+
+> `isBot`: 방금 픽한 참가자가 봇인지 여부. FE가 봇 픽 애니메이션을 구분할 때 사용.
+> `nextPickerIsBot`: 다음 차례 참가자가 봇인지 여부. 드래프트 완료 시 `null`.
+
+> 봇 픽 이후 `afterCommit`으로 `BotPickTrigger.triggerBotPick()` 재호출 → 연속 봇 턴 처리
 
 ---
 
@@ -161,8 +185,11 @@ totalPicks >= participants.size() * totalPlayerCount  →  status = ONGOING
 ## 7. 자동 픽 (`autoPick`) — 시간 초과 시
 
 **DraftScheduler**: 10초마다 만료된 드래프트 게임 확인
+
 ```
-nextPickDeadline < now → autoPick 실행
+nextPickDeadline < now → 현재 차례 확인
+  └─ isBot=true  → BotPickTrigger.triggerBotPick() 호출
+  └─ isBot=false → autoPick() 호출 (사람 시간 초과 처리)
 ```
 
 **autoPick 선수 선택 로직**
@@ -171,6 +198,25 @@ nextPickDeadline < now → autoPick 실행
 3. 후보 목록 shuffle
 4. 샐러리캡 + 드래프트 규칙 통과하는 첫 번째 선수 선택
 5. `draftPlayer` 호출 (autoPick=true로 로그 기록)
+
+**봇 자동 픽 흐름 (`BotPickTrigger`)**
+
+봇 차례 진입 경로는 두 가지:
+- **Path A**: `draftPlayer()` 완료 후 `afterCommit` 콜백
+- **Path B**: `DraftScheduler` 10초 주기 체크 (봇 deadline 5초 → fallback)
+
+```
+BotPickTrigger.triggerBotPick(gameSeq)
+  → inFlightGameSeqs 중복 방지 체크 (ConcurrentHashMap set)
+  → 1~3초 랜덤 딜레이 (자연스러운 픽 타이밍)
+  → fantasyDraftService.autoPick(gameSeq, skipDeadlineCheck=true)
+  → 픽 완료 → draftPlayer() 내부에서 다음 봇 여부 확인
+     └─ 다음도 봇 → afterCommit으로 triggerBotPick 재귀 호출
+     └─ 다음이 사람 → 종료, 사람 차례로 전환
+```
+
+> `skipDeadlineCheck=true`: 봇은 deadline 만료 여부와 무관하게 즉시 픽 처리
+> `inFlightGameSeqs`: 동일 게임에 대한 Path A + Path B 동시 진입 방지
 
 ---
 
@@ -238,3 +284,36 @@ nextPickDeadline < now → autoPick 실행
 |-----------|---------|
 | `DRAFT_PICK` | 드래프트 중 픽 |
 | `FA_ADD` | ONGOING 중 FA 영입 |
+
+---
+
+## 봇 참가자 시스템
+
+### BOT 계정 풀
+
+- `app_users`에 `member_id` 9001~9009, `role=BOT`인 계정 9개 사전 생성
+- 드래프트마다 새 계정을 만들지 않고 풀에서 재사용 (`is_bot=1`로 구분)
+- BOT 계정은 인증 불가 (JWT 발급, 로그인, 소셜 연결 모두 차단)
+- Admin UI에서 BOT role 변경 불가
+
+### BotTeamNameGenerator
+
+- 야구 테마 팀명 목록에서 `botCount`개를 무작위 선택
+- 드래프트 최초 시작 시에만 생성 (재시작 시 기존 이름 유지)
+
+### 봇 보호 규칙
+
+| 위치 | 보호 내용 |
+|------|----------|
+| `JwtTokenProvider.createToken()` | BOT role이면 예외 발생 |
+| `AuthService.login()` | BOT 계정 로그인 시 인증 실패 처리 |
+| `KakaoOAuthService.login()` / `linkAccount()` | BOT 계정 소셜 로그인/연결 차단 |
+| `AdminController.updateUserRole()` | BOT role 부여 및 BOT 계정 role 변경 불가 |
+
+### DB 스키마 변경
+
+```sql
+ALTER TABLE ft_games ADD COLUMN IF NOT EXISTS bot_count INT DEFAULT 0;
+ALTER TABLE ft_participants ADD COLUMN IF NOT EXISTS is_bot TINYINT(1) NOT NULL DEFAULT 0;
+ALTER TABLE ft_draft_picks ADD CONSTRAINT IF NOT EXISTS uk_game_pick UNIQUE (fantasy_game_seq, pick_number);
+```

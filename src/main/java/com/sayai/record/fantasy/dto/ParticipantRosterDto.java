@@ -18,5 +18,6 @@ public class ParticipantRosterDto {
     private String teamName;
     private String preferredTeam;
     private Integer draftOrder;
+    private Boolean isBot;
     private List<FantasyPlayerDto> roster;
 }

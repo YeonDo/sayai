@@ -73,6 +73,10 @@ public class KakaoOAuthService {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new IllegalArgumentException("Member not found"));
 
+        if (member.getRole() == Member.Role.BOT) {
+            throw new IllegalStateException("봇 계정에 소셜 계정을 연결할 수 없습니다.");
+        }
+
         socialAccountRepository.save(
                 UserSocialAccount.builder()
                         .member(member)
@@ -96,6 +100,9 @@ public class KakaoOAuthService {
                 .orElseGet(() -> createMemberAndSocial(kakaoId, userInfo.getNickname()));
 
         Member member = social.getMember();
+        if (member.getRole() == Member.Role.BOT) {
+            throw new IllegalStateException("봇 계정으로는 소셜 로그인할 수 없습니다.");
+        }
         String token = jwtTokenProvider.createToken(
                 member.getMemberId(), member.getUserId(), member.getRole(), member.getName());
         return new LoginResult(token, member.getName());

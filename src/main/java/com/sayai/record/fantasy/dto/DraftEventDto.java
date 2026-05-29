@@ -19,6 +19,9 @@ public class DraftEventDto {
     private Integer pickNumber;
     private String message;
 
+    private Boolean isBot;
+    private Boolean nextPickerIsBot;
+
     // Next Pick Info
     private Long nextPickerId;
     private ZonedDateTime nextPickDeadline;

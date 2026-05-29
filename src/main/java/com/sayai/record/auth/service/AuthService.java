@@ -21,6 +21,10 @@ public class AuthService {
         Member member = memberRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid userId or password"));
 
+        if (member.getRole() == Member.Role.BOT) {
+            throw new IllegalArgumentException("Invalid userId or password");
+        }
+
         if (!passwordEncoder.matches(password, member.getPassword())) {
             throw new IllegalArgumentException("Invalid userId or password");
         }

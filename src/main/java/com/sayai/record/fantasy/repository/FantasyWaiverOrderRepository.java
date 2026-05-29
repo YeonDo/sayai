@@ -16,4 +16,6 @@ public interface FantasyWaiverOrderRepository extends JpaRepository<FantasyWaive
 
     @Query("SELECT MAX(w.orderNum) FROM FantasyWaiverOrder w WHERE w.gameSeq = :gameSeq")
     Integer findMaxOrderNumByGameSeq(@Param("gameSeq") Long gameSeq);
+
+    void deleteByGameSeq(Long gameSeq);
 }

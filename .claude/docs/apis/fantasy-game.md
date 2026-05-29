@@ -62,6 +62,7 @@
 | `salaryCap` | `Integer` | 샐러리캡 한도 |
 | `useTeamRestriction` | `Boolean` | 팀 제한 사용 여부 |
 | `rounds` | `Integer` | 총 라운드 수 |
+| `botCount` | `Integer` | 봇 참가자 수 (0이면 미사용) |
 | `participantCount` | `Integer` | 현재 참가 인원 |
 | `maxParticipants` | `Integer` | 최대 참가 인원 |
 | `nextPickerId` | `Long` | 다음 픽 차례 참가자 ID (드래프트 중일 때) |
@@ -77,6 +78,7 @@
 | `teamName` | `String` | 팀 이름 |
 | `preferredTeam` | `String` | 선호 KBO 팀 |
 | `draftOrder` | `Integer` | 드래프트 순서 |
+| `isBot` | `Boolean` | 봇 참가자 여부 |
 | `roster` | `List<FantasyPlayerDto>` | 현재 로스터 |
 
 ---
@@ -93,6 +95,35 @@
 | `participantId` | `Long` | 참가자 ID |
 | `teamName` | `String` | 팀 이름 |
 | `draftOrder` | `Integer` | 드래프트 순서 |
+
+---
+
+### POST `/apis/v1/admin/games` 🔒 (Admin only)
+판타지 게임 생성.
+
+**Request Body**
+| 필드 | 타입 | 필수 | 설명 |
+|------|------|------|------|
+| `title` | `String` | 필수 | 게임 제목 |
+| `ruleType` | `String` | 필수 | 드래프트 규칙 (`RULE_1`, `RULE_2`) |
+| `scoringType` | `String` | 필수 | 스코어링 방식 (`POINT`, `ROTISSERIE`) |
+| `scoringSettings` | `String` | 선택 | 스코어링 상세 설정 (JSON 문자열) |
+| `maxParticipants` | `Integer` | 필수 | 최대 참가 인원 |
+| `draftDate` | `LocalDateTime` | 선택 | 드래프트 예정 일시 |
+| `gameDuration` | `String` | 선택 | 게임 기간 |
+| `draftTimeLimit` | `Integer` | 선택 | 1픽 제한 시간 (분, 기본값 10) |
+| `useFirstPickRule` | `Boolean` | 선택 | 1라운드 선호팀 우선 픽 규칙 적용 여부 |
+| `salaryCap` | `Integer` | 선택 | 샐러리캡 한도 (`null`이면 미적용) |
+| `useTeamRestriction` | `Boolean` | 선택 | 팀 제한 규칙 적용 여부 |
+| `rounds` | `Integer` | 필수 | 총 라운드 수 |
+| `botCount` | `Integer` | 선택 | 봇 참가자 수 (0~9, 기본값 0) |
+
+**Response** `200` — `FantasyGame` (생성된 게임 엔티티)
+
+**Error Cases**
+| 상황 | 상태코드 | 메시지 |
+|------|---------|--------|
+| `botCount` > 봇 풀 크기 | 500 | `"봇 풀이 부족합니다"` |
 
 ---
 
@@ -148,6 +179,24 @@
 | `endDt` | 필수 | 집계 종료일 (`yyyy-MM-dd`) |
 
 **Response** `200` — `List<ParticipantKboStatsDto>`
+
+---
+
+### GET `/apis/v1/admin/fantasy/games/{gameSeq}/participants` 🔒 (Admin only)
+게임 참가자 목록 조회 (Admin 전용, 봇 포함).
+
+**Path Parameters**: `gameSeq`
+
+**Response** `200` — `List<ParticipantDto>`
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| `seq` | `Long` | 참가자 seq |
+| `memberId` | `Long` | 회원 ID |
+| `userName` | `String` | 회원 이름 |
+| `teamName` | `String` | 팀 이름 |
+| `preferredTeam` | `String` | 선호 KBO 팀 |
+| `isBot` | `Boolean` | 봇 참가자 여부 |
 
 ---
 

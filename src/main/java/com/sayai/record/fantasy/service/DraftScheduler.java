@@ -1,10 +1,12 @@
 package com.sayai.record.fantasy.service;
 
 import com.sayai.record.fantasy.entity.FantasyGame;
+import com.sayai.record.fantasy.event.DraftFinishedEvent;
 import com.sayai.record.fantasy.repository.FantasyGameRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -20,7 +22,8 @@ import java.util.stream.Collectors;
 public class DraftScheduler {
 
     private final FantasyGameRepository fantasyGameRepository;
-    private final FantasyDraftService fantasyDraftService;
+    private final DraftPickExecutor draftPickExecutor;
+    private final DraftAutoPickService draftAutoPickService;
 
     private final Set<Long> activeGameSeqs = ConcurrentHashMap.newKeySet();
 
@@ -39,17 +42,22 @@ public class DraftScheduler {
         activeGameSeqs.remove(gameSeq);
     }
 
-    @Scheduled(fixedRate = 10000) // Check every 10 seconds
+    @EventListener
+    public void onDraftFinished(DraftFinishedEvent event) {
+        removeActiveGame(event.gameSeq());
+    }
+
+    @Scheduled(fixedRate = 10000)
     public void checkDraftTimeouts() {
         if (activeGameSeqs.isEmpty()) {
             return;
         }
 
-        // Find DRAFTING games with deadline < NOW and timeLimit > 0
-        List<FantasyGame> draftingGames = fantasyGameRepository.findExpiredDraftingGames(FantasyGame.GameStatus.DRAFTING, LocalDateTime.now());
+        List<FantasyGame> expiredGames = fantasyGameRepository.findExpiredDraftingGames(
+                FantasyGame.GameStatus.DRAFTING, LocalDateTime.now());
 
-        for (FantasyGame game : draftingGames) {
-            fantasyDraftService.autoPickAsync(game.getSeq());
+        for (FantasyGame game : expiredGames) {
+            draftAutoPickService.autoPickAsync(game.getSeq());
         }
     }
 }

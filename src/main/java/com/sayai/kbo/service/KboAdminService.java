@@ -155,6 +155,7 @@ public class KboAdminService {
                         .ab(newAb).pa(newPa).hit(newHit).hr(newHr)
                         .rbi(newRbi).so(newSo).sb(newSb).avg(newAvg)
                         .games(newGames)
+                        .pRank(stats.getPRank())
                         .build());
             } else {
                 KboHitterSeasonStatInterface seasonStats = kboHitRepository.getSeasonStatsByPlayerId(playerId, startIdx, endIdx);
@@ -207,6 +208,7 @@ public class KboAdminService {
                         .save(newSave).bb(newBb).phit(newPhit)
                         .era(newEra).whip(newWhip)
                         .games(newGames)
+                        .pRank(stats.getPRank())
                         .build());
             } else {
                 KboPitcherSeasonStatInterface seasonStats = kboPitchRepository.getSeasonStatsByPlayerId(playerId, startIdx, endIdx);

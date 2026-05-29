@@ -46,6 +46,7 @@ public class Member implements Serializable {
 
     public enum Role {
         USER,
-        ADMIN
+        ADMIN,
+        BOT
     }
 }
