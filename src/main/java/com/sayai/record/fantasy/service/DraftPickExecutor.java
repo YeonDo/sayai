@@ -194,7 +194,11 @@ public class DraftPickExecutor {
             long clCount = occupiedCounts.getOrDefault("CL", 0L);
 
             if (primaryPos.equals("SP")) return spCount < 4 ? "SP" : "BENCH";
-            if (primaryPos.equals("RP")) return rpCount < 4 ? "RP" : "BENCH";
+            if (primaryPos.equals("RP")) {
+                if (rpCount < 4) return "RP";
+                if (clCount < 1) return "CL";
+                return "BENCH";
+            }
             if (primaryPos.equals("CL")) return clCount < 1 ? "CL" : "BENCH";
             return "BENCH";
         } else {
