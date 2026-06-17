@@ -44,6 +44,7 @@ public class MyRosterStatDto {
         private long win;
         private long lose;
         private long save;
+        private long hold;
         private long inning;
         private String formattedInning;
         private long er;

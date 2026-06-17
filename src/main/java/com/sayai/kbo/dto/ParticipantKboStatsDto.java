@@ -24,6 +24,7 @@ public class ParticipantKboStatsDto {
     private long win;
     private long lose;
     private long save;
+    private long hold;
     private long inning; // Store as outs directly, convert to formatted string if necessary
     private String formattedInning;
     private long batter;

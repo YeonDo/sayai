@@ -183,6 +183,24 @@ public class FantasyDraftService {
             if (userPicks.size() >= limit) {
                 throw new IllegalStateException("Roster full (Max " + limit + ")");
             }
+
+            FantasyPlayer.ForeignerType targetType = targetPlayer.getForeignerType() != null
+                    ? targetPlayer.getForeignerType() : FantasyPlayer.ForeignerType.NONE;
+            if (targetType == FantasyPlayer.ForeignerType.TYPE_1) {
+                long type1Count = currentTeam.stream()
+                        .filter(p -> p.getForeignerType() == FantasyPlayer.ForeignerType.TYPE_1)
+                        .count();
+                if (type1Count >= 3) {
+                    throw new IllegalStateException("외국인 용병 제한 3명을 넘게 선발할 수 없습니다.");
+                }
+            } else if (targetType == FantasyPlayer.ForeignerType.TYPE_2) {
+                long type2Count = currentTeam.stream()
+                        .filter(p -> p.getForeignerType() == FantasyPlayer.ForeignerType.TYPE_2)
+                        .count();
+                if (type2Count >= 1) {
+                    throw new IllegalStateException("아시아 쿼터 제한 1명을 넘게 선발할 수 없습니다.");
+                }
+            }
         }
 
         FantasyParticipant participant = fantasyParticipantRepository.findByFantasyGameSeqAndMemberId(

@@ -7,6 +7,7 @@ public interface KboPitcherDailyStatInterface {
     Long getWin();
     Long getLose();
     Long getSave();
+    Long getHold();
     Long getEr();
     Long getBb();
     Long getHbp();

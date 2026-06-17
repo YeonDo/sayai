@@ -6,6 +6,7 @@ public interface KboHitterSeasonStatInterface {
     Long getAb();
     Long getHit();
     Long getRbi();
+    Long getRun();
     Long getSb();
     Long getSo();
     Long getHr();

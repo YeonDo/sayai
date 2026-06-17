@@ -16,6 +16,7 @@ import com.sayai.record.fantasy.repository.FantasyParticipantRepository;
 import com.sayai.record.fantasy.repository.FantasyPlayerRepository;
 import com.sayai.record.fantasy.repository.FantasyWaiverOrderRepository;
 import com.sayai.record.fantasy.event.BotPickNeededEvent;
+import com.sayai.record.firebase.FcmService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.messaging.simp.SimpMessagingTemplate;

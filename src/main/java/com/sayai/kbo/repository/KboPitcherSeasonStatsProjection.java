@@ -10,6 +10,7 @@ public interface KboPitcherSeasonStatsProjection {
     Integer getWin();
     Integer getSo();
     Integer getSave();
+    Integer getHold();
     Integer getBb();
     Integer getPhit();
     String getWhip();

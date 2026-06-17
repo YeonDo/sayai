@@ -39,6 +39,9 @@ public class KboPitcherStats {
     @Column(name = "save")
     private Integer save;
 
+    @Column(name = "hold")
+    private Integer hold;
+
     @Column(name = "bb")
     private Integer bb;
 

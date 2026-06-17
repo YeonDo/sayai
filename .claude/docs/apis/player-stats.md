@@ -30,6 +30,7 @@
 | `content[].battingAvg` | `Double` | 타율 |
 | `content[].homeruns` | `Integer` | 홈런 |
 | `content[].rbi` | `Integer` | 타점 |
+| `content[].runs` | `Integer` | 득점 |
 | `content[].sb` | `Integer` | 도루 |
 | `content[].strikeOut` | `Integer` | 삼진 |
 | `content[].games` | `Integer` | 출전 경기 수 |
@@ -57,6 +58,7 @@
 | `era` | `Double` | 평균자책점 |
 | `wins` | `Integer` | 승리 |
 | `saves` | `Integer` | 세이브 |
+| `holds` | `Integer` | 홀드 |
 | `whip` | `Double` | WHIP |
 | `stOut` | `Integer` | 삼진 |
 | `games` | `Integer` | 출전 경기 수 |
@@ -189,6 +191,7 @@
     "wins": 10,
     "loses": 5,
     "saves": 0,
+    "holds": 15,
     "era": 3.45,
     "whip": 1.12,
     "stOut": 130,
@@ -210,9 +213,10 @@
         "gameDate": "20240418",
         "opponent": "삼성",
         "innings": 6.0,
-        "win": 1,
+        "win": 0,
         "lose": 0,
         "save": 0,
+        "hold": 1,
         "er": 2,
         "bb": 3,
         "hbp": 0,
@@ -242,6 +246,7 @@
 | `wins` | `Integer` | 승리 |
 | `loses` | `Integer` | 패배 |
 | `saves` | `Integer` | 세이브 |
+| `holds` | `Integer` | 홀드 |
 | `era` | `Double` | 평균자책점 |
 | `whip` | `Double` | WHIP |
 | `stOut` | `Integer` | 삼진 |
@@ -265,7 +270,7 @@
 | `gameDate` | `String` | 경기 날짜 (`yyyyMMdd`) |
 | `opponent` | `String` | 상대 팀 |
 | `innings` | `Double` | 이닝 |
-| `win` / `lose` / `save` | `Integer` | 승/패/세이브 |
+| `win` / `lose` / `save` / `hold` | `Integer` | 승/패/세이브/홀드 |
 | `er` | `Integer` | 자책점 |
 | `bb` | `Integer` | 볼넷 |
 | `hbp` | `Integer` | 사구 |

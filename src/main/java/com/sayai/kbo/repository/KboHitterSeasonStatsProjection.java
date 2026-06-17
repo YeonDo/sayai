@@ -10,6 +10,7 @@ public interface KboHitterSeasonStatsProjection {
     String getAvg();
     Integer getHr();
     Integer getRbi();
+    Integer getRun();
     Integer getSo();
     Integer getSb();
     Integer getGames();

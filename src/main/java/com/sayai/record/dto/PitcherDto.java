@@ -19,6 +19,7 @@ public class PitcherDto {
     private Long wins;
     private Long loses;
     private Long saves;
+    private Long holds;
     private Long inn;
     private Double innings;
     private Long batter;
@@ -47,13 +48,14 @@ public class PitcherDto {
     private Integer games;
     private Double pRank;
     @Builder
-    public PitcherDto(Long id, Long backNo, String name, Long wins, Long loses, Long saves, Long inn, Long batter, Long hitter, Long pHit, Long pHomerun, Long sacrifice, Long sacFly, Long baseOnBall, Long hitByBall, Long stOut, Long fallingBall, Long balk, Long lossScore, Long selfLossScore) {
+    public PitcherDto(Long id, Long backNo, String name, Long wins, Long loses, Long saves, Long holds, Long inn, Long batter, Long hitter, Long pHit, Long pHomerun, Long sacrifice, Long sacFly, Long baseOnBall, Long hitByBall, Long stOut, Long fallingBall, Long balk, Long lossScore, Long selfLossScore) {
         this.id = id;
         this.backNo = backNo;
         this.name = name;
         this.wins = wins;
         this.loses = loses;
         this.saves = saves;
+        this.holds = holds;
         this.inn = inn;
         this.batter = batter;
         this.hitter = hitter;

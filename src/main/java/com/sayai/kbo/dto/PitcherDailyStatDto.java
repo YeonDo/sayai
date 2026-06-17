@@ -14,6 +14,7 @@ public class PitcherDailyStatDto {
     private Long win;
     private Long lose;
     private Long save;
+    private Long hold;
     private Long er;
     private Long bb;
     private Long hbp;

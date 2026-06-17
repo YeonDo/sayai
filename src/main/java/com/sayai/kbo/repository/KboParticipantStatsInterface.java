@@ -17,6 +17,7 @@ public interface KboParticipantStatsInterface {
     Long getWin();
     Long getLose();
     Long getSave();
+    Long getHold();
     Long getInning();
     Long getBatter();
     Long getPitchCnt();

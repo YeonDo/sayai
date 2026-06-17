@@ -24,7 +24,7 @@ public interface KboPitcherStatsRepository extends JpaRepository<KboPitcherStats
 
     @Query(value = "SELECT s.player_id as id, p.name as name, p.team as team, " +
             "s.outs as outs, s.er as er, s.era as era, s.win as win, " +
-            "s.so as so, s.save as save, s.bb as bb, s.phit as phit, s.whip as whip, " +
+            "s.so as so, s.save as save, s.hold as hold, s.bb as bb, s.phit as phit, s.whip as whip, " +
             "s.games as games, s.p_rank as pRank " +
             "FROM kbo_pitcher_stats s " +
             "JOIN ft_players p ON s.player_id = p.seq " +
@@ -40,7 +40,7 @@ public interface KboPitcherStatsRepository extends JpaRepository<KboPitcherStats
 
     @Query(value = "SELECT s.player_id as id, p.name as name, p.team as team, " +
             "s.outs as outs, s.er as er, s.era as era, s.win as win, " +
-            "s.so as so, s.save as save, s.bb as bb, s.phit as phit, s.whip as whip, " +
+            "s.so as so, s.save as save, s.hold as hold, s.bb as bb, s.phit as phit, s.whip as whip, " +
             "s.games as games, s.p_rank as pRank " +
             "FROM kbo_pitcher_stats s " +
             "JOIN ft_players p ON s.player_id = p.seq " +

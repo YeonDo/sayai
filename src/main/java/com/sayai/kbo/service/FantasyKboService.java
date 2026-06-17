@@ -121,6 +121,7 @@ public class FantasyKboService {
                 dto.setWin(dto.getWin() + safelyGet(ps.getWin()));
                 dto.setLose(dto.getLose() + safelyGet(ps.getLose()));
                 dto.setSave(dto.getSave() + safelyGet(ps.getSave()));
+                dto.setHold(dto.getHold() + safelyGet(ps.getHold()));
                 dto.setInning(dto.getInning() + safelyGet(ps.getInning()));
                 dto.setBatter(dto.getBatter() + safelyGet(ps.getBatter()));
                 dto.setPitchCnt(dto.getPitchCnt() + safelyGet(ps.getPitchCnt()));
@@ -280,6 +281,7 @@ public class FantasyKboService {
                     .win(s != null ? safelyGet(s.getWin()) : 0L)
                     .lose(s != null ? safelyGet(s.getLose()) : 0L)
                     .save(s != null ? safelyGet(s.getSave()) : 0L)
+                    .hold(s != null ? safelyGet(s.getHold()) : 0L)
                     .inning(inning)
                     .formattedInning(formatInning(inning))
                     .er(er)
@@ -331,6 +333,7 @@ public class FantasyKboService {
                 .win(pitchers.stream().mapToLong(MyRosterStatDto.PitcherStat::getWin).sum())
                 .lose(pitchers.stream().mapToLong(MyRosterStatDto.PitcherStat::getLose).sum())
                 .save(pitchers.stream().mapToLong(MyRosterStatDto.PitcherStat::getSave).sum())
+                .hold(pitchers.stream().mapToLong(MyRosterStatDto.PitcherStat::getHold).sum())
                 .inning(inning)
                 .formattedInning(formatInning(inning))
                 .er(er)

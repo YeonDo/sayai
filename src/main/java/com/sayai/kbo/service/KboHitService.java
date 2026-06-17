@@ -90,6 +90,7 @@ public class KboHitService {
                 .totalHits(stat.getHit() != null ? stat.getHit().longValue() : null)
                 .homeruns(stat.getHr() != null ? stat.getHr().longValue() : null)
                 .rbi(stat.getRbi())
+                .runs(stat.getRun())
                 .strikeOut(stat.getSo() != null ? stat.getSo().longValue() : null)
                 .sb(stat.getSb())
                 .build();

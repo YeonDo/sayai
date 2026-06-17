@@ -104,6 +104,7 @@ public interface KboHitRepository extends JpaRepository<KboHit, Long> {
             " IFNULL(SUM(h.ab), 0) as ab, " +
             " IFNULL(SUM(h.hit), 0) as hit, " +
             " IFNULL(SUM(h.rbi), 0) as rbi, " +
+            " IFNULL(SUM(h.run), 0) as run, " +
             " IFNULL(SUM(h.sb), 0) as sb, " +
             " IFNULL(SUM(h.so), 0) as so, " +
             " IFNULL(SUM(h.hr), 0) as hr, " +

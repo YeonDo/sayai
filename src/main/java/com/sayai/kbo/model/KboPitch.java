@@ -51,6 +51,9 @@ public class KboPitch {
     @Column(name = "save")
     private Long save; // 세이브
 
+    @Column(name = "hold")
+    private Long hold; // 홀드
+
     @Column(name = "pitch_cnt")
     private Long pitchCnt; // 투구수
 

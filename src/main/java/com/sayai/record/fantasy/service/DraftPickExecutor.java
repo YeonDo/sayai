@@ -6,6 +6,7 @@ import com.sayai.record.fantasy.entity.*;
 import com.sayai.record.fantasy.event.BotPickNeededEvent;
 import com.sayai.record.fantasy.event.DraftFinishedEvent;
 import com.sayai.record.fantasy.repository.*;
+import com.sayai.record.firebase.FcmService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -193,13 +194,19 @@ public class DraftPickExecutor {
             long rpCount = occupiedCounts.getOrDefault("RP", 0L);
             long clCount = occupiedCounts.getOrDefault("CL", 0L);
 
-            if (primaryPos.equals("SP")) return spCount < 4 ? "SP" : "BENCH";
-            if (primaryPos.equals("RP")) {
-                if (rpCount < 4) return "RP";
-                if (clCount < 1) return "CL";
-                return "BENCH";
+            // 멀티 포지션(예: "SP,RP") 선수는 보유한 모든 투수 포지션의 빈 슬롯을 나열 순서대로 탐색
+            boolean canRp = false;
+            for (String p : positions) {
+                String pos = p.trim();
+                if (pos.equals("SP") && spCount < 4) return "SP";
+                if (pos.equals("RP")) {
+                    if (rpCount < 4) return "RP";
+                    canRp = true;
+                }
+                if (pos.equals("CL") && clCount < 1) return "CL";
             }
-            if (primaryPos.equals("CL")) return clCount < 1 ? "CL" : "BENCH";
+            // RP 보유자는 RP 슬롯이 모두 차면 CL 슬롯으로 폴백 가능
+            if (canRp && clCount < 1) return "CL";
             return "BENCH";
         } else {
             for (String p : positions) {

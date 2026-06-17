@@ -39,6 +39,9 @@ public class KboHitterStats {
     @Column(name = "rbi")
     private Integer rbi;
 
+    @Column(name = "run")
+    private Integer run;
+
     @Column(name = "so")
     private Integer so;
 

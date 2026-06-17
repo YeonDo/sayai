@@ -27,7 +27,7 @@ public class WaiverScheduler {
     private final FantasyRosterService rosterService;
 
     // Runs every 30 minutes from 10:00 to 23:30 KST
-    @Scheduled(cron = "0 0,30 10-23 * * *", zone = "Asia/Seoul")
+    @Scheduled(cron = "0 0,30 09-23 * * *", zone = "Asia/Seoul")
     public void processAll() {
         processTrades();
         processWaivers();

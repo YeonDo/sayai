@@ -7,6 +7,7 @@ public interface KboPitcherSeasonStatInterface {
     Long getWin();
     Long getSo();
     Long getSave();
+    Long getHold();
     Long getBb();
     Long getPhit();
     Long getGames();
