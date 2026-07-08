@@ -47,6 +47,11 @@ public class PitcherDto {
     private Double ppa;
     private Integer games;
     private Double pRank;
+    // 레거시 record 모듈의 JPQL 생성자 표현식(PitchRepository.getStats / getStatsByPeriod)이 holds 없이 호출하므로 유지.
+    public PitcherDto(Long id, Long backNo, String name, Long wins, Long loses, Long saves, Long inn, Long batter, Long hitter, Long pHit, Long pHomerun, Long sacrifice, Long sacFly, Long baseOnBall, Long hitByBall, Long stOut, Long fallingBall, Long balk, Long lossScore, Long selfLossScore) {
+        this(id, backNo, name, wins, loses, saves, null, inn, batter, hitter, pHit, pHomerun, sacrifice, sacFly, baseOnBall, hitByBall, stOut, fallingBall, balk, lossScore, selfLossScore);
+    }
+
     @Builder
     public PitcherDto(Long id, Long backNo, String name, Long wins, Long loses, Long saves, Long holds, Long inn, Long batter, Long hitter, Long pHit, Long pHomerun, Long sacrifice, Long sacFly, Long baseOnBall, Long hitByBall, Long stOut, Long fallingBall, Long balk, Long lossScore, Long selfLossScore) {
         this.id = id;

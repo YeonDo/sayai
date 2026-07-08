@@ -86,8 +86,8 @@ public class FantasyRankingService {
             // Aggregate
             double totalPoints = 0;
             // Sum counting stats
-            long hr = 0, rbi = 0, sb = 0, soBat = 0;
-            long wins = 0, soPitch = 0, saves = 0;
+            long hr = 0, rbi = 0, sb = 0, soBat = 0, run = 0;
+            long wins = 0, soPitch = 0, saves = 0, holds = 0;
 
             // For ratios, we average them (not perfect but standard if raw data missing)
             // Or sum? Ratios shouldn't be summed. Weighted average needs denominator.
@@ -104,10 +104,12 @@ public class FantasyRankingService {
                 rbi += safeInt(s.getRbi());
                 sb += safeInt(s.getSb());
                 soBat += safeInt(s.getSoBatter());
+                run += safeInt(s.getRun());
 
                 wins += safeInt(s.getWins());
                 soPitch += safeInt(s.getSoPitcher());
                 saves += safeInt(s.getSaves());
+                holds += safeInt(s.getHold());
 
                 if (s.getAvg() != null) { sumAvg += s.getAvg(); countAvg++; }
                 if (s.getEra() != null) { sumEra += s.getEra(); countEra++; }
@@ -125,10 +127,12 @@ public class FantasyRankingService {
             dto.setRbi((int) rbi);
             dto.setStolenBases((int) sb);
             dto.setBatterStrikeOuts(soBat);
+            dto.setRuns((int) run);
 
             dto.setWins(wins);
             dto.setPitcherStrikeOuts(soPitch);
             dto.setSaves(saves);
+            dto.setHolds(holds);
 
             dto.setBattingAvg(countAvg > 0 ? sumAvg / countAvg : 0.0);
             dto.setEra(countEra > 0 ? sumEra / countEra : 0.0);
@@ -285,11 +289,13 @@ public class FantasyRankingService {
                 .hr(entity.getHr())
                 .soBatter(entity.getSoBatter())
                 .sb(entity.getSb())
+                .run(entity.getRun())
                 .wins(entity.getWins())
                 .era(entity.getEra())
                 .soPitcher(entity.getSoPitcher())
                 .whip(entity.getWhip())
                 .saves(entity.getSaves())
+                .hold(entity.getHold())
                 .totalPoints(entity.getTotalPoints())
                 .build();
     }

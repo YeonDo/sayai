@@ -49,11 +49,13 @@ public class FantasyScoringService {
             entity.setHr(dto.getHr());
             entity.setSoBatter(dto.getSoBatter());
             entity.setSb(dto.getSb());
+            entity.setRun(dto.getRun());
             entity.setWins(dto.getWins());
             entity.setEra(dto.getEra());
             entity.setSoPitcher(dto.getSoPitcher());
             entity.setWhip(dto.getWhip());
             entity.setSaves(dto.getSaves());
+            entity.setHold(dto.getHold());
 
             entities.add(entity);
         }
@@ -81,12 +83,14 @@ public class FantasyScoringService {
         assignPoints(scores, FantasyRotisserieScore::getHr, FantasyRotisserieScore::setRankHr, FantasyRotisserieScore::setPointsHr, false, n);
         assignPoints(scores, FantasyRotisserieScore::getSoBatter, FantasyRotisserieScore::setRankSoBatter, FantasyRotisserieScore::setPointsSoBatter, true, n); // Low is better
         assignPoints(scores, FantasyRotisserieScore::getSb, FantasyRotisserieScore::setRankSb, FantasyRotisserieScore::setPointsSb, false, n);
+        assignPoints(scores, FantasyRotisserieScore::getRun, FantasyRotisserieScore::setRankRun, FantasyRotisserieScore::setPointsRun, false, n); // 득점: High is better
 
         assignPoints(scores, FantasyRotisserieScore::getWins, FantasyRotisserieScore::setRankWins, FantasyRotisserieScore::setPointsWins, false, n);
         assignPoints(scores, FantasyRotisserieScore::getEra, FantasyRotisserieScore::setRankEra, FantasyRotisserieScore::setPointsEra, true, n); // Low is better
         assignPoints(scores, FantasyRotisserieScore::getSoPitcher, FantasyRotisserieScore::setRankSoPitcher, FantasyRotisserieScore::setPointsSoPitcher, false, n); // High is better (Pitcher K)
         assignPoints(scores, FantasyRotisserieScore::getWhip, FantasyRotisserieScore::setRankWhip, FantasyRotisserieScore::setPointsWhip, true, n); // Low is better
         assignPoints(scores, FantasyRotisserieScore::getSaves, FantasyRotisserieScore::setRankSaves, FantasyRotisserieScore::setPointsSaves, false, n);
+        assignPoints(scores, FantasyRotisserieScore::getHold, FantasyRotisserieScore::setRankHold, FantasyRotisserieScore::setPointsHold, false, n); // 홀드: High is better
 
         // Sum Total
         for (FantasyRotisserieScore s : scores) {
@@ -95,11 +99,13 @@ public class FantasyScoringService {
                            (s.getPointsHr() != null ? s.getPointsHr() : 0) +
                            (s.getPointsSoBatter() != null ? s.getPointsSoBatter() : 0) +
                            (s.getPointsSb() != null ? s.getPointsSb() : 0) +
+                           (s.getPointsRun() != null ? s.getPointsRun() : 0) +
                            (s.getPointsWins() != null ? s.getPointsWins() : 0) +
                            (s.getPointsEra() != null ? s.getPointsEra() : 0) +
                            (s.getPointsSoPitcher() != null ? s.getPointsSoPitcher() : 0) +
                            (s.getPointsWhip() != null ? s.getPointsWhip() : 0) +
-                           (s.getPointsSaves() != null ? s.getPointsSaves() : 0);
+                           (s.getPointsSaves() != null ? s.getPointsSaves() : 0) +
+                           (s.getPointsHold() != null ? s.getPointsHold() : 0);
             s.setTotalPoints(total);
         }
     }
@@ -182,11 +188,13 @@ public class FantasyScoringService {
                 .hr(entity.getHr())
                 .soBatter(entity.getSoBatter())
                 .sb(entity.getSb())
+                .run(entity.getRun())
                 .wins(entity.getWins())
                 .era(entity.getEra())
                 .soPitcher(entity.getSoPitcher())
                 .whip(entity.getWhip())
                 .saves(entity.getSaves())
+                .hold(entity.getHold())
                 .totalPoints(entity.getTotalPoints())
                 .build();
     }

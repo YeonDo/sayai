@@ -106,7 +106,7 @@ totalPoints = pointsAvg + pointsHr + pointsRbi + pointsSoBatter + pointsSb
 |------|------|
 | `seq` | PK |
 | `fantasyGameSeq` | 게임 식별자 |
-| `playerId` | 참가자 ID |
+| `memberId` | 참가자 ID (컬럼: `member_id`) |
 | `round` | 라운드 번호 |
 | `avg`, `hr`, `rbi`, `soBatter`, `sb` | 타자 성적 |
 | `wins`, `era`, `soPitcher`, `whip`, `saves` | 투수 성적 |

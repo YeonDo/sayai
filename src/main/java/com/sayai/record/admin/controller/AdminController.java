@@ -206,7 +206,7 @@ public class AdminController {
                             .round(round)
                             .build();
 
-                    // AVG, HR, RBI, SO (Bat), SB, W, ERA, K (Pitch), SV, WHIP
+                    // AVG, HR, RBI, SO (Bat), SB, W, ERA, K (Pitch), SV, WHIP, R (득점), HLD (홀드)
                     if (row.getCell(1) != null) dto.setAvg(row.getCell(1).getNumericCellValue());
                     if (row.getCell(2) != null) dto.setHr((int) row.getCell(2).getNumericCellValue());
                     if (row.getCell(3) != null) dto.setRbi((int) row.getCell(3).getNumericCellValue());
@@ -217,6 +217,8 @@ public class AdminController {
                     if (row.getCell(8) != null) dto.setSoPitcher((int) row.getCell(8).getNumericCellValue());
                     if (row.getCell(9) != null) dto.setSaves((int) row.getCell(9).getNumericCellValue());
                     if (row.getCell(10) != null) dto.setWhip(row.getCell(10).getNumericCellValue());
+                    if (row.getCell(11) != null) dto.setRun((int) row.getCell(11).getNumericCellValue());
+                    if (row.getCell(12) != null) dto.setHold((int) row.getCell(12).getNumericCellValue());
 
                     parsedScores.add(dto);
                 }
@@ -251,11 +253,13 @@ public class AdminController {
                     .rbi((int) stat.getRbi())
                     .sb((int) stat.getSb())
                     .soBatter((int) stat.getSo())
+                    .run((int) stat.getRun())
                     .era(era)
                     .wins((int) stat.getWin())
                     .soPitcher((int) stat.getPSo())
                     .whip(whip)
                     .saves((int) stat.getSave())
+                    .hold((int) stat.getHold())
                     .build();
         }).collect(Collectors.toList());
 

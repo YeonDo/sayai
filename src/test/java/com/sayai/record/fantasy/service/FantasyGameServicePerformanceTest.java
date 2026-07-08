@@ -58,7 +58,10 @@ class FantasyGameServicePerformanceTest {
             org.mockito.Mockito.mock(com.sayai.record.fantasy.repository.FantasyWaiverOrderRepository.class),
                 messagingTemplate,
                 fantasyDraftService,
-                draftScheduler
+                org.mockito.Mockito.mock(com.sayai.record.fantasy.service.DraftPickExecutor.class),
+                draftScheduler,
+                org.mockito.Mockito.mock(com.sayai.record.auth.repository.MemberRepository.class),
+                org.mockito.Mockito.mock(org.springframework.context.ApplicationEventPublisher.class)
         );
     }
 

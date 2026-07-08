@@ -22,6 +22,7 @@ public class ParticipantStatsDto {
     private Integer rbi;
     private Long batterStrikeOuts;
     private Integer stolenBases;
+    private Integer runs; // 득점
 
     // Pitching
     private Long wins;
@@ -29,6 +30,7 @@ public class ParticipantStatsDto {
     private Double era;
     private Double whip;
     private Long saves;
+    private Long holds; // 홀드
 
     // Total
     private Double totalPoints;

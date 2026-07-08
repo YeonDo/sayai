@@ -43,7 +43,7 @@ class AdminControllerTest {
         req.setScoringType(FantasyGame.ScoringType.POINTS);
 
         when(fantasyGameService.createGame(
-                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()
         )).thenReturn(FantasyGame.builder()
                 .title("New League")
                 .scoringType(FantasyGame.ScoringType.POINTS)

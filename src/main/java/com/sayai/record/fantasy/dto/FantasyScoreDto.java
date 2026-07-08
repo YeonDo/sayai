@@ -19,6 +19,7 @@ public class FantasyScoreDto {
     private Integer hr;
     private Integer soBatter; // K_batter
     private Integer sb;
+    private Integer run; // 득점
 
     // Pitcher Stats
     private Integer wins;
@@ -26,6 +27,7 @@ public class FantasyScoreDto {
     private Integer soPitcher; // K_pitcher
     private Double whip;
     private Integer saves;
+    private Integer hold; // 홀드
 
     // Points
     private Double totalPoints;

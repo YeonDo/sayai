@@ -108,9 +108,11 @@ SUGGESTED → REQUESTED → APPROVED
 **FCM**: 없음  
 **RosterLog**: 없음
 
-**임계치 계산** (총 참가자 n명, 당사자 2명 제외)
+**임계치 계산** (n = 봇 제외 실유저 참가자 수, 당사자 2명 제외)
 - 승인: `(n-2)/2 + 1` 표 이상 찬성 → `processTrade("APPROVE")`
 - 기각: `ceil((n-2)/2)` 표 이상 반대 → `processTrade("REJECT")`
+
+> **봇 제외**: `n`은 `is_bot=false`인 실유저만 카운트한다 (`allParticipants.stream().filter(p -> !isBot)`). 봇은 투표 주체가 없어 표를 던지지 못하므로 정족수에 포함하면 승인이 불가능해진다. `n-2`는 당사자 2명을 뺀 실제 투표 가능 인원.
 
 ---
 
@@ -158,7 +160,7 @@ SUGGESTED → REQUESTED → APPROVED
 
 ## 스케줄러 자동 처리 (`WaiverScheduler.processTrades`)
 
-30분마다 실행 (10:00~23:30 KST)
+30분마다 실행 (09:00~23:30 KST, cron `0 0,30 09-23 * * *`)
 
 | 조건 | 처리 |
 |------|------|

@@ -8,6 +8,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,8 +33,9 @@ class AuthControllerTest {
         when(authService.login("user", "pass")).thenReturn("mock-token");
         when(authService.getUserName("user")).thenReturn("User Name");
 
+        HttpServletRequest httpRequest = mock(HttpServletRequest.class);
         HttpServletResponse response = mock(HttpServletResponse.class);
-        ResponseEntity<AuthController.LoginResponse> result = authController.login(request, response);
+        ResponseEntity<AuthController.LoginResponse> result = authController.login(request, httpRequest, response);
 
         assertThat(result.getBody().getName()).isEqualTo("User Name");
         // Cookie verification in unit test requires inspecting the mock response calls, which is complex here.

@@ -609,7 +609,8 @@ public class FantasyRosterService {
         }
 
         List<FantasyParticipant> allParticipants = fantasyParticipantRepository.findByFantasyGameSeq(gameSeq);
-        int n = allParticipants.size();
+        // 봇은 투표 주체가 없어 표를 던지지 못하므로 정족수 계산에서 제외 (n-2 = 당사자 제외 실제 투표자 수)
+        int n = (int) allParticipants.stream().filter(p -> !Boolean.TRUE.equals(p.getIsBot())).count();
         List<TradeBoard> votes = tradeBoardRepository.findByTradeSeq(transactionSeq);
         long agreeCnt = votes.stream().filter(TradeBoard::getVoteAgree).count();
         long disagreeCnt = votes.stream().filter(v -> !v.getVoteAgree()).count();

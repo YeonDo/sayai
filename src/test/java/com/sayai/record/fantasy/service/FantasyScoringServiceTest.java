@@ -98,18 +98,18 @@ public class FantasyScoringServiceTest {
         List<FantasyScoreDto> inputScores = new ArrayList<>();
 
         inputScores.add(FantasyScoreDto.builder().fantasyGameSeq(gameSeq).memberId(1L).round(round)
-                .avg(0.350).rbi(10).hr(5).soBatter(10).sb(5)
-                .wins(1).era(2.00).soPitcher(10).whip(1.00).saves(1)
+                .avg(0.350).rbi(10).hr(5).soBatter(10).sb(5).run(20)
+                .wins(1).era(2.00).soPitcher(10).whip(1.00).saves(1).hold(8)
                 .build());
 
         inputScores.add(FantasyScoreDto.builder().fantasyGameSeq(gameSeq).memberId(2L).round(round)
-                .avg(0.250).rbi(5).hr(2).soBatter(20).sb(2) // soBatter higher (worse)
-                .wins(0).era(4.00).soPitcher(5).whip(1.50).saves(0)
+                .avg(0.250).rbi(5).hr(2).soBatter(20).sb(2).run(10) // soBatter higher (worse)
+                .wins(0).era(4.00).soPitcher(5).whip(1.50).saves(0).hold(3)
                 .build());
 
         inputScores.add(FantasyScoreDto.builder().fantasyGameSeq(gameSeq).memberId(3L).round(round)
-                .avg(null).rbi(null).hr(null).soBatter(null).sb(null)
-                .wins(null).era(null).soPitcher(null).whip(null).saves(null)
+                .avg(null).rbi(null).hr(null).soBatter(null).sb(null).run(null)
+                .wins(null).era(null).soPitcher(null).whip(null).saves(null).hold(null)
                 .build());
 
         // 3. Execute
@@ -135,5 +135,21 @@ public class FantasyScoringServiceTest {
         // P3: Rank 3, Points 0 (As per requirement)
         assertEquals(3, p3.getRankAvg(), "Null score should get last rank");
         assertEquals(0.0, p3.getPointsAvg(), 0.01, "Null score should get 0 points");
+
+        // 득점(run) — 높을수록 좋음: P1(20) > P2(10) > P3(null)
+        assertEquals(1, p1.getRankRun());
+        assertEquals(30.0, p1.getPointsRun(), 0.01);
+        assertEquals(2, p2.getRankRun());
+        assertEquals(20.0, p2.getPointsRun(), 0.01);
+        assertEquals(3, p3.getRankRun(), "Null run should get last rank");
+        assertEquals(0.0, p3.getPointsRun(), 0.01);
+
+        // 홀드(hold) — 높을수록 좋음: P1(8) > P2(3) > P3(null)
+        assertEquals(1, p1.getRankHold());
+        assertEquals(30.0, p1.getPointsHold(), 0.01);
+        assertEquals(2, p2.getRankHold());
+        assertEquals(20.0, p2.getPointsHold(), 0.01);
+        assertEquals(3, p3.getRankHold(), "Null hold should get last rank");
+        assertEquals(0.0, p3.getPointsHold(), 0.01);
     }
 }

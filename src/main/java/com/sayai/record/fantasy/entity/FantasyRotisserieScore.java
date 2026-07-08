@@ -35,6 +35,9 @@ public class FantasyRotisserieScore {
     private Integer soBatter; // K_batter
     private Integer sb;
 
+    @Column(name = "run")
+    private Integer run; // 득점
+
     // Pitcher Stats
     private Integer wins;
     private Double era;
@@ -42,18 +45,23 @@ public class FantasyRotisserieScore {
     private Double whip;
     private Integer saves;
 
+    @Column(name = "hold")
+    private Integer hold; // 홀드
+
     // Ranks (1 is best)
     private Integer rankAvg;
     private Integer rankRbi;
     private Integer rankHr;
     private Integer rankSoBatter;
     private Integer rankSb;
+    private Integer rankRun;
 
     private Integer rankWins;
     private Integer rankEra;
     private Integer rankSoPitcher;
     private Integer rankWhip;
     private Integer rankSaves;
+    private Integer rankHold;
 
     // Points (Calculated from Ranks)
     private Double pointsAvg;
@@ -61,12 +69,14 @@ public class FantasyRotisserieScore {
     private Double pointsHr;
     private Double pointsSoBatter;
     private Double pointsSb;
+    private Double pointsRun;
 
     private Double pointsWins;
     private Double pointsEra;
     private Double pointsSoPitcher;
     private Double pointsWhip;
     private Double pointsSaves;
+    private Double pointsHold;
 
     private Double totalPoints;
 }

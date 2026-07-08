@@ -57,7 +57,7 @@ REQUESTED → APPROVED  (타 팀이 클레임)
 
 ### 3. 스케줄러 처리 (`WaiverScheduler.processWaivers`)
 
-**실행 주기**: 30분마다 (10:00~23:30 KST)  
+**실행 주기**: 30분마다 (09:00~23:30 KST, cron `0 0,30 09-23 * * *`)  
 **대상**: status=REQUESTED이고 createdAt 기준 30분 이상 경과한 웨이버
 
 
