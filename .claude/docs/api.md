@@ -422,11 +422,13 @@ KBO 로스터 스냅샷의 조회하여 해당 선수들의 판타지 라운드 
 | `rbi` | `rbi` | |
 | `sb` | `sb` | |
 | `soBatter` | `so` | 타자 삼진 |
+| `run` | `run` | 득점 |
 | `era` | `er / inning * 27` | inning은 아웃카운트. inning = 0이면 0.0 |
 | `wins` | `win` | |
 | `soPitcher` | `pSo` | 투수 삼진 |
 | `whip` | `(pHit + bb) / inning * 3` | inning은 아웃카운트. inning = 0이면 0.0 |
 | `saves` | `save` | |
+| `hold` | `hold` | 홀드 |
 
 **Response** `200` — `List<FantasyScoreDto>` (저장 후 해당 라운드 성적 전체 반환)
 ```json
@@ -441,15 +443,121 @@ KBO 로스터 스냅샷의 조회하여 해당 선수들의 판타지 라운드 
     "rbi": 20,
     "soBatter": 30,
     "sb": 3,
+    "run": 18,
     "wins": 4,
     "era": 3.45,
     "soPitcher": 40,
     "whip": 1.12,
     "saves": 2,
+    "hold": 5,
     "totalPoints": 85.0
   }
 ]
 ```
+
+---
+
+### GET `/apis/v1/admin/users` 🔒 (Admin only)
+전체 회원 목록 조회. **페이징 지원**.
+
+**Query Parameters**
+| 파라미터 | 필수 | 설명 |
+|---------|------|------|
+| `page` | 선택 | 페이지 번호 (0부터 시작, 기본값 `0`) |
+| `size` | 선택 | 페이지 크기 (기본값 `20`) |
+
+**Response** `200` — `Page<MemberDto>` (회원은 `content` 배열, Spring `Page` 표준 필드 동반)
+```json
+{
+  "content": [
+    { "memberId": 1, "userId": "user123", "name": "홍길동", "role": "USER" }
+  ],
+  "totalElements": 42,
+  "totalPages": 3,
+  "number": 0,
+  "size": 20
+}
+```
+
+---
+
+### GET `/apis/v1/admin/fantasy/players` 🔒 (Admin only)
+`ft_players` 전체 선수 조회 (active/inactive 모두 포함). 어드민 선수 데이터 관리 화면용. **페이징 지원**.
+
+**Query Parameters**
+| 파라미터 | 필수 | 설명 |
+|---------|------|------|
+| `page` | 선택 | 페이지 번호 (0부터 시작, 기본값 `0`) |
+| `size` | 선택 | 페이지 크기 (기본값 `20`) |
+
+**Response** `200` — `Page<FantasyPlayerDto>` (선수는 `content` 배열, Spring `Page` 표준 필드 동반)
+```json
+{
+  "content": [
+    {
+      "seq": 100,
+      "name": "홍길동",
+      "position": "SS",
+      "team": "KIA",
+      "stats": "{}",
+      "cost": 10,
+      "foreignerType": "NONE",
+      "isActive": 0
+    }
+  ],
+  "totalElements": 512,
+  "totalPages": 26,
+  "number": 0,
+  "size": 20
+}
+```
+> `isActive`: `0`=활성, 그 외=비활성. `foreignerType`: `TYPE_1`(외국인), `TYPE_2`(아시아쿼터), `NONE`(국내).
+
+---
+
+### POST `/apis/v1/admin/fantasy/players` 🔒 (Admin only)
+`ft_players` 신규 선수 등록. `seq`는 현재 최대 `seq + 1`로 자동 채번, `isActive`는 항상 `0`(활성).
+
+**Request Body** — `name`/`position`/`team` 필수, `cost`(기본 `0`)/`foreignerType`(기본 `NONE`) 선택
+```json
+{ "name": "홍길동", "position": "SS", "team": "KIA", "cost": 10, "foreignerType": "NONE" }
+```
+
+**Response** `200` — 등록된 `FantasyPlayerDto` (위 조회 API와 동일 구조)
+
+**Error Cases**
+| 상황 | 상태코드 | 메시지 |
+|------|---------|--------|
+| `name`/`position`/`team` 누락 | 400 | `"name, position, team are required"` |
+| `cost` 음수 | 400 | `"Cost must be non-negative"` |
+
+---
+
+### PUT `/apis/v1/admin/fantasy/players/{seq}` 🔒 (Admin only)
+`ft_players` 선수 정보 수정. **전달한 필드만 반영**되는 부분 업데이트 (`null` 필드는 기존 값 유지).
+
+**Path Parameters**: `seq` — 수정할 선수 seq
+
+**Request Body** (모든 필드 선택)
+```json
+{
+  "name": "홍길동",
+  "position": "SS,2B",
+  "team": "삼성",
+  "stats": "{}",
+  "cost": 25,
+  "foreignerType": "NONE",
+  "isActive": 0
+}
+```
+
+**Response** `200` — 수정된 `FantasyPlayerDto` (위 조회 API와 동일 구조)
+
+**Error Cases**
+| 상황 | 상태코드 | 메시지 |
+|------|---------|--------|
+| 존재하지 않는 선수 | 400 | `"Player not found"` |
+| `cost` 음수 | 400 | `"Cost must be non-negative"` |
 
 ---
 

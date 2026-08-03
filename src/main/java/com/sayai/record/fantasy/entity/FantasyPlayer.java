@@ -53,6 +53,18 @@ public class FantasyPlayer {
         this.cost = cost;
     }
 
+    /** 어드민 선수 정보 수정 — null이 아닌 필드만 반영(부분 업데이트). cost는 setCost로 검증. */
+    public void update(String name, String position, String team, String stats,
+                       Integer cost, ForeignerType foreignerType, Integer isActive) {
+        if (name != null) this.name = name;
+        if (position != null) this.position = position;
+        if (team != null) this.team = team;
+        if (stats != null) this.stats = stats;
+        if (cost != null) setCost(cost);
+        if (foreignerType != null) this.foreignerType = foreignerType;
+        if (isActive != null) this.isActive = isActive;
+    }
+
     public enum ForeignerType {
         TYPE_1, // Foreigner
         TYPE_2, // Asian Quarter

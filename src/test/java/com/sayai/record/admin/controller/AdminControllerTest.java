@@ -32,6 +32,9 @@ class AdminControllerTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private com.sayai.record.fantasy.repository.FantasyPlayerRepository fantasyPlayerRepository;
+
     @InjectMocks
     private AdminController adminController;
 
@@ -65,12 +68,14 @@ class AdminControllerTest {
                 .password("encodedPwd")
                 .build();
 
-        when(memberRepository.findAll()).thenReturn(List.of(member));
+        when(memberRepository.findAll(any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(member)));
 
-        ResponseEntity<List<AdminController.MemberDto>> response = adminController.listUsers();
+        ResponseEntity<org.springframework.data.domain.Page<AdminController.MemberDto>> response =
+                adminController.listUsers(0, 20);
 
-        assertThat(response.getBody()).hasSize(1);
-        AdminController.MemberDto dto = response.getBody().get(0);
+        assertThat(response.getBody().getContent()).hasSize(1);
+        AdminController.MemberDto dto = response.getBody().getContent().get(0);
         assertThat(dto.getMemberId()).isEqualTo(1L);
         assertThat(dto.getUserId()).isEqualTo("testuser");
         assertThat(dto.getName()).isEqualTo("Test User");
@@ -113,5 +118,39 @@ class AdminControllerTest {
         assertThat(response.getStatusCodeValue()).isEqualTo(200);
         assertThat(response.getBody()).isEqualTo("User created");
         verify(memberRepository).save(any(Member.class));
+    }
+
+    @Test
+    void createFantasyPlayer_shouldRejectMissingRequiredFields() {
+        AdminController.FantasyPlayerCreateRequest req = new AdminController.FantasyPlayerCreateRequest();
+        req.setName("홍길동"); // position, team 누락
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> adminController.createFantasyPlayer(req))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("required");
+        verify(fantasyPlayerRepository, never()).save(any());
+    }
+
+    @Test
+    void createFantasyPlayer_shouldCreateWithMaxSeqPlusOneAndDefaults() {
+        AdminController.FantasyPlayerCreateRequest req = new AdminController.FantasyPlayerCreateRequest();
+        req.setName("홍길동");
+        req.setPosition("SS");
+        req.setTeam("KIA");
+        // cost, foreignerType 미지정 → 0 / NONE
+
+        when(fantasyPlayerRepository.findMaxSeq()).thenReturn(100L);
+
+        ResponseEntity<AdminController.FantasyPlayerDto> response = adminController.createFantasyPlayer(req);
+
+        AdminController.FantasyPlayerDto dto = response.getBody();
+        assertThat(dto.getSeq()).isEqualTo(101L);
+        assertThat(dto.getName()).isEqualTo("홍길동");
+        assertThat(dto.getPosition()).isEqualTo("SS");
+        assertThat(dto.getTeam()).isEqualTo("KIA");
+        assertThat(dto.getCost()).isEqualTo(0);
+        assertThat(dto.getForeignerType()).isEqualTo(com.sayai.record.fantasy.entity.FantasyPlayer.ForeignerType.NONE);
+        assertThat(dto.getIsActive()).isEqualTo(0);
+        verify(fantasyPlayerRepository).save(any(com.sayai.record.fantasy.entity.FantasyPlayer.class));
     }
 }

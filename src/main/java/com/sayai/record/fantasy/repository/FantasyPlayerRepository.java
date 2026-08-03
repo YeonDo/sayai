@@ -31,4 +31,7 @@ public interface FantasyPlayerRepository extends JpaRepository<FantasyPlayer, Lo
     List<FantasyPlayer> findAllActivePlayers();
 
     List<FantasyPlayer> findByName(String name);
+
+    @Query("SELECT COALESCE(MAX(p.seq), 0) FROM FantasyPlayer p")
+    Long findMaxSeq();
 }

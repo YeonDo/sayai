@@ -223,11 +223,13 @@ KBO 로스터 스냅샷을 조회하여 해당 선수들의 판타지 라운드 
 | `rbi` | `rbi` | |
 | `sb` | `sb` | |
 | `soBatter` | `so` | 타자 삼진 |
+| `run` | `run` | 득점 |
 | `era` | `er / inning * 27` | inning은 아웃카운트. inning=0이면 0.0 |
 | `wins` | `win` | |
 | `soPitcher` | `pSo` | 투수 삼진 |
 | `whip` | `(pHit + bb) / inning * 3` | inning은 아웃카운트. inning=0이면 0.0 |
 | `saves` | `save` | |
+| `hold` | `hold` | 홀드 |
 
 **Response** `200` — `List<FantasyScoreDto>`
 
@@ -242,9 +244,115 @@ KBO 로스터 스냅샷을 조회하여 해당 선수들의 판타지 라운드 
 | `rbi` | `Integer` | 타점 |
 | `soBatter` | `Integer` | 타자 삼진 |
 | `sb` | `Integer` | 도루 |
+| `run` | `Integer` | 득점 |
 | `wins` | `Integer` | 승리 |
 | `era` | `Double` | 평균자책점 |
 | `soPitcher` | `Integer` | 투수 삼진 |
 | `whip` | `Double` | WHIP |
 | `saves` | `Integer` | 세이브 |
+| `hold` | `Integer` | 홀드 |
 | `totalPoints` | `Double` | 라운드 총점 |
+
+---
+
+### GET `/apis/v1/admin/fantasy/players` 🔒 (Admin only)
+`ft_players` 전체 선수 조회 (active/inactive 모두 포함). 어드민 선수 데이터 관리 화면용. **페이징 지원**.
+
+**Query Parameters**
+| 파라미터 | 필수 | 설명 |
+|---------|------|------|
+| `page` | 선택 | 페이지 번호 (0부터 시작, 기본값 `0`) |
+| `size` | 선택 | 페이지 크기 (기본값 `20`) |
+
+**Response** `200` — `Page<FantasyPlayerDto>`
+
+선수 목록은 `content` 배열에 담기며, Spring `Page` 표준 필드(`totalElements`, `totalPages`, `number`, `size` 등)가 함께 반환된다.
+
+```json
+{
+  "content": [
+    {
+      "seq": 100,
+      "name": "홍길동",
+      "position": "SS",
+      "team": "KIA",
+      "stats": "{}",
+      "cost": 10,
+      "foreignerType": "NONE",
+      "isActive": 0
+    }
+  ],
+  "totalElements": 512,
+  "totalPages": 26,
+  "number": 0,
+  "size": 20
+}
+```
+
+**`content[]` (FantasyPlayerDto) 필드**
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| `seq` | `Long` | 선수 seq (`ft_players.seq`) |
+| `name` | `String` | 선수 이름 |
+| `position` | `String` | 포지션 (예: `SS`, `SP`, 멀티 `SS,2B`) |
+| `team` | `String` | KBO 소속 팀 |
+| `stats` | `String` | 성적 정보 (JSON 문자열) |
+| `cost` | `Integer` | 샐러리캡 비용 (0 이상) |
+| `foreignerType` | `String` | 외국인 구분 (`TYPE_1`, `TYPE_2`, `NONE`) |
+| `isActive` | `Integer` | 활성 여부 (`0`=활성, 그 외=비활성) |
+
+---
+
+### POST `/apis/v1/admin/fantasy/players` 🔒 (Admin only)
+`ft_players` 신규 선수 등록. `seq`는 현재 최대 `seq + 1`로 자동 채번되며, `isActive`는 항상 `0`(활성)으로 등록된다.
+
+**Request Body** (`FantasyPlayerCreateRequest`)
+| 필드 | 타입 | 필수 | 설명 |
+|------|------|------|------|
+| `name` | `String` | 필수 | 선수 이름 |
+| `position` | `String` | 필수 | 포지션 (예: `SS`, `SP`, 멀티 `SS,2B`) |
+| `team` | `String` | 필수 | KBO 소속 팀 |
+| `cost` | `Integer` | 선택 | 샐러리캡 비용 (기본값 `0`, 음수 불가) |
+| `foreignerType` | `String` | 선택 | 외국인 구분 `TYPE_1`, `TYPE_2`, `NONE` (기본값 `NONE`) |
+
+```json
+{ "name": "홍길동", "position": "SS", "team": "KIA", "cost": 10, "foreignerType": "NONE" }
+```
+
+**Response** `200` — 등록된 `FantasyPlayerDto` (필드 구조는 위 조회 API와 동일)
+
+**Error Cases**
+| 상황 | 상태코드 | 메시지 |
+|------|---------|--------|
+| `name`/`position`/`team` 누락 | 400 | `"name, position, team are required"` |
+| `cost` 음수 | 400 | `"Cost must be non-negative"` |
+
+---
+
+### PUT `/apis/v1/admin/fantasy/players/{seq}` 🔒 (Admin only)
+`ft_players` 선수 정보 수정. **전달한 필드만 반영**되는 부분 업데이트 (`null` 필드는 기존 값 유지).
+
+**Path Parameters**: `seq` — 수정할 선수 seq
+
+**Request Body** (`FantasyPlayerUpdateRequest`, 모든 필드 선택)
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| `name` | `String` | 선수 이름 |
+| `position` | `String` | 포지션 |
+| `team` | `String` | KBO 소속 팀 |
+| `stats` | `String` | 성적 정보 (JSON 문자열) |
+| `cost` | `Integer` | 샐러리캡 비용 (0 이상, 음수 불가) |
+| `foreignerType` | `String` | 외국인 구분 (`TYPE_1`, `TYPE_2`, `NONE`) |
+| `isActive` | `Integer` | 활성 여부 (`0`=활성) |
+
+```json
+{ "team": "삼성", "cost": 25, "isActive": 0 }
+```
+
+**Response** `200` — 수정된 `FantasyPlayerDto` (필드 구조는 위 조회 API와 동일)
+
+**Error Cases**
+| 상황 | 상태코드 | 메시지 |
+|------|---------|--------|
+| 존재하지 않는 선수 | 400 | `"Player not found"` |
+| `cost` 음수 | 400 | `"Cost must be non-negative"` |

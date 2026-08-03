@@ -8,7 +8,9 @@ import com.sayai.record.auth.service.AuthService;
 import com.sayai.record.fantasy.dto.FantasyScoreDto;
 import com.sayai.record.fantasy.entity.FantasyGame;
 import com.sayai.record.fantasy.entity.FantasyParticipant;
+import com.sayai.record.fantasy.entity.FantasyPlayer;
 import com.sayai.record.fantasy.repository.FantasyParticipantRepository;
+import com.sayai.record.fantasy.repository.FantasyPlayerRepository;
 import com.sayai.record.fantasy.service.FantasyGameService;
 import com.sayai.record.fantasy.service.FantasyScoringService;
 import com.sayai.record.fantasy.service.PostService;
@@ -19,6 +21,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -52,6 +56,7 @@ public class AdminController {
     private final FantasyScoringService fantasyScoringService;
     private final PostService postService;
     private final FantasyKboService fantasyKboService;
+    private final FantasyPlayerRepository fantasyPlayerRepository;
 
     // --- Post Management ---
 
@@ -267,14 +272,58 @@ public class AdminController {
         return ResponseEntity.ok(fantasyScoringService.getScores(gameSeq, round));
     }
 
+    // --- Fantasy Player (ft_players) Management ---
+
+    @GetMapping("/fantasy/players")
+    public ResponseEntity<Page<FantasyPlayerDto>> listFantasyPlayers(
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "20") int size) {
+        Page<FantasyPlayerDto> players = fantasyPlayerRepository.findAll(PageRequest.of(page, size))
+                .map(FantasyPlayerDto::new);
+        return ResponseEntity.ok(players);
+    }
+
+    @PostMapping("/fantasy/players")
+    public ResponseEntity<FantasyPlayerDto> createFantasyPlayer(@RequestBody FantasyPlayerCreateRequest request) {
+        if (request.getName() == null || request.getName().isBlank()
+                || request.getPosition() == null || request.getPosition().isBlank()
+                || request.getTeam() == null || request.getTeam().isBlank()) {
+            throw new IllegalArgumentException("name, position, team are required");
+        }
+
+        // ponytail: max+1 채번 — 어드민 단일 사용 전제. 동시 등록이 필요해지면 DB 시퀀스/락으로 전환
+        FantasyPlayer player = FantasyPlayer.builder()
+                .seq(fantasyPlayerRepository.findMaxSeq() + 1)
+                .name(request.getName())
+                .position(request.getPosition())
+                .team(request.getTeam())
+                .cost(request.getCost() != null ? request.getCost() : 0)
+                .foreignerType(request.getForeignerType() != null ? request.getForeignerType() : FantasyPlayer.ForeignerType.NONE)
+                .isActive(0)
+                .build();
+        fantasyPlayerRepository.save(player);
+        return ResponseEntity.ok(new FantasyPlayerDto(player));
+    }
+
+    @PutMapping("/fantasy/players/{seq}")
+    public ResponseEntity<FantasyPlayerDto> updateFantasyPlayer(@PathVariable(name = "seq") Long seq,
+                                                                @RequestBody FantasyPlayerUpdateRequest request) {
+        FantasyPlayer player = fantasyPlayerRepository.findById(seq)
+                .orElseThrow(() -> new IllegalArgumentException("Player not found"));
+        player.update(request.getName(), request.getPosition(), request.getTeam(), request.getStats(),
+                request.getCost(), request.getForeignerType(), request.getIsActive());
+        fantasyPlayerRepository.save(player);
+        return ResponseEntity.ok(new FantasyPlayerDto(player));
+    }
+
     // --- User Management ---
 
     @GetMapping("/users")
-    public ResponseEntity<List<MemberDto>> listUsers() {
-        List<Member> members = memberRepository.findAll();
-        List<MemberDto> dtos = members.stream()
-                .map(MemberDto::new)
-                .collect(Collectors.toList());
+    public ResponseEntity<Page<MemberDto>> listUsers(
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "20") int size) {
+        Page<MemberDto> dtos = memberRepository.findAll(PageRequest.of(page, size))
+                .map(MemberDto::new);
         return ResponseEntity.ok(dtos);
     }
 
@@ -421,5 +470,48 @@ public class AdminController {
             this.name = member.getName();
             this.role = member.getRole();
         }
+    }
+
+    @Data
+    public static class FantasyPlayerDto {
+        private Long seq;
+        private String name;
+        private String position;
+        private String team;
+        private String stats;
+        private Integer cost;
+        private FantasyPlayer.ForeignerType foreignerType;
+        private Integer isActive;
+
+        public FantasyPlayerDto(FantasyPlayer p) {
+            this.seq = p.getSeq();
+            this.name = p.getName();
+            this.position = p.getPosition();
+            this.team = p.getTeam();
+            this.stats = p.getStats();
+            this.cost = p.getCost();
+            this.foreignerType = p.getForeignerType();
+            this.isActive = p.getIsActive();
+        }
+    }
+
+    @Data
+    public static class FantasyPlayerCreateRequest {
+        private String name;
+        private String position;
+        private String team;
+        private Integer cost;                              // 선택, 기본 0
+        private FantasyPlayer.ForeignerType foreignerType; // 선택, 기본 NONE
+    }
+
+    @Data
+    public static class FantasyPlayerUpdateRequest {
+        private String name;
+        private String position;
+        private String team;
+        private String stats;
+        private Integer cost;
+        private FantasyPlayer.ForeignerType foreignerType;
+        private Integer isActive;
     }
 }

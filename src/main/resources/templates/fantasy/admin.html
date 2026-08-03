@@ -253,11 +253,13 @@
                             <th>HR (홈런)</th>
                             <th>K (삼진-타)</th>
                             <th>SB (도루)</th>
+                            <th>R (득점)</th>
                             <th style="border-left: 2px solid #ddd;">W (다승)</th>
                             <th>ERA (방어율)</th>
                             <th>K (탈삼진-투)</th>
                             <th>WHIP</th>
                             <th>SV (세이브)</th>
+                            <th>HLD (홀드)</th>
                         </tr>
                     </thead>
                     <tbody id="scoringTableBody">
@@ -588,12 +590,14 @@
                         <td><input type="number" class="score-input" name="hr" value="${s.hr ?? ''}" style="width:50px;"></td>
                         <td><input type="number" class="score-input" name="soBatter" value="${s.soBatter ?? ''}" style="width:50px;"></td>
                         <td><input type="number" class="score-input" name="sb" value="${s.sb ?? ''}" style="width:50px;"></td>
+                        <td><input type="number" class="score-input" name="run" value="${s.run ?? ''}" style="width:50px;"></td>
 
                         <td style="border-left: 2px solid #ddd;"><input type="number" class="score-input" name="wins" value="${s.wins ?? ''}" style="width:50px;"></td>
                         <td><input type="number" step="0.01" class="score-input" name="era" value="${s.era ?? ''}" style="width:60px;"></td>
                         <td><input type="number" class="score-input" name="soPitcher" value="${s.soPitcher ?? ''}" style="width:50px;"></td>
                         <td><input type="number" step="0.01" class="score-input" name="whip" value="${s.whip ?? ''}" style="width:60px;"></td>
                         <td><input type="number" class="score-input" name="saves" value="${s.saves ?? ''}" style="width:50px;"></td>
+                        <td><input type="number" class="score-input" name="hold" value="${s.hold ?? ''}" style="width:50px;"></td>
                     </tr>
                 `;
                 tbody.append(row);
@@ -663,11 +667,13 @@
                     hr: $(this).find('input[name="hr"]').val(),
                     soBatter: $(this).find('input[name="soBatter"]').val(),
                     sb: $(this).find('input[name="sb"]').val(),
+                    run: $(this).find('input[name="run"]').val(),
                     wins: $(this).find('input[name="wins"]').val(),
                     era: $(this).find('input[name="era"]').val(),
                     soPitcher: $(this).find('input[name="soPitcher"]').val(),
                     whip: $(this).find('input[name="whip"]').val(),
-                    saves: $(this).find('input[name="saves"]').val()
+                    saves: $(this).find('input[name="saves"]').val(),
+                    hold: $(this).find('input[name="hold"]').val()
                 };
                 entries.push(entry);
             });
@@ -739,7 +745,10 @@
         // --- User Management JS ---
 
         function loadUsers() {
-            $.get('/apis/v1/admin/users', function(users) {
+            // API는 페이징(Page) 응답. 이 내부 관리 화면은 페이징 UI가 없으므로 큰 size로 전체를 한 번에 가져온다.
+            // ponytail: size=1000 로 전량 로드. 사용자가 수천 명 넘어가면 페이징 UI 추가 필요.
+            $.get('/apis/v1/admin/users?size=1000', function(res) {
+                 const users = res.content || [];
                  const tbody = $('#userListBody');
                  tbody.empty();
                  users.forEach(u => {
