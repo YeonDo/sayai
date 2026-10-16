@@ -15,6 +15,7 @@ import com.sayai.record.fantasy.service.FantasyGameService;
 import com.sayai.record.fantasy.service.FantasyScoringService;
 import com.sayai.record.fantasy.service.PostService;
 import com.sayai.record.fantasy.dto.PostDto;
+import com.sayai.record.point.PointService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -57,6 +58,7 @@ public class AdminController {
     private final PostService postService;
     private final FantasyKboService fantasyKboService;
     private final FantasyPlayerRepository fantasyPlayerRepository;
+    private final PointService pointService;
 
     // --- Post Management ---
 
@@ -322,9 +324,25 @@ public class AdminController {
     public ResponseEntity<Page<MemberDto>> listUsers(
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "20") int size) {
-        Page<MemberDto> dtos = memberRepository.findAll(PageRequest.of(page, size))
-                .map(MemberDto::new);
+        Page<Member> members = memberRepository.findAll(PageRequest.of(page, size));
+        Map<Long, Long> balances = pointService.getBalances(
+                members.map(Member::getMemberId).getContent());
+        Page<MemberDto> dtos = members.map(m -> new MemberDto(m, balances.getOrDefault(m.getMemberId(), 0L)));
         return ResponseEntity.ok(dtos);
+    }
+
+    /** 어드민 포인트 증감. delta 양수=지급, 음수=차감(잔액 부족 시 400). */
+    @PostMapping("/users/{memberId}/point")
+    public ResponseEntity<Map<String, Object>> adjustPoint(@PathVariable(name = "memberId") Long memberId,
+                                                           @RequestBody PointAdjustRequest request) {
+        if (!memberRepository.existsById(memberId)) {
+            throw new IllegalArgumentException("User not found");
+        }
+        if (request.getDelta() == null || request.getDelta() == 0) {
+            throw new IllegalArgumentException("delta는 0이 아닌 정수여야 합니다.");
+        }
+        long balance = pointService.adjust(memberId, request.getDelta());
+        return ResponseEntity.ok(Map.of("memberId", memberId, "balance", balance));
     }
 
     @PostMapping("/users")
@@ -458,17 +476,24 @@ public class AdminController {
     }
 
     @Data
+    public static class PointAdjustRequest {
+        private Long delta;
+    }
+
+    @Data
     public static class MemberDto {
         private Long memberId;
         private String userId;
         private String name;
         private Member.Role role;
+        private long balance;
 
-        public MemberDto(Member member) {
+        public MemberDto(Member member, long balance) {
             this.memberId = member.getMemberId();
             this.userId = member.getUserId();
             this.name = member.getName();
             this.role = member.getRole();
+            this.balance = balance;
         }
     }
 

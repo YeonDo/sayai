@@ -35,6 +35,9 @@ class AdminControllerTest {
     @Mock
     private com.sayai.record.fantasy.repository.FantasyPlayerRepository fantasyPlayerRepository;
 
+    @Mock
+    private com.sayai.record.point.PointService pointService;
+
     @InjectMocks
     private AdminController adminController;
 

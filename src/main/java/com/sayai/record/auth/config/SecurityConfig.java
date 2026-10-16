@@ -50,6 +50,7 @@ public class SecurityConfig {
                         // Require auth for Fantasy APIs and Views
                         .requestMatchers("/apis/v1/fantasy/**", "/fantasy/**").authenticated()
                         .requestMatchers("/apis/v1/auth/password").authenticated()
+                        .requestMatchers("/apis/v1/point/**", "/apis/v1/bet/**").authenticated()
                         .anyRequest().permitAll()
                 )
                 .exceptionHandling(e -> e
