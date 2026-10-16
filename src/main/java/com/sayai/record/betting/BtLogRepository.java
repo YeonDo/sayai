@@ -8,4 +8,5 @@ import java.util.List;
 public interface BtLogRepository extends JpaRepository<BtLog, Long> {
     List<BtLog> findByBtGameId(Long btGameId);
     List<BtLog> findByBtGameIdIn(Collection<Long> btGameIds);
+    List<BtLog> findByMemberIdOrderByIdDesc(Long memberId);
 }

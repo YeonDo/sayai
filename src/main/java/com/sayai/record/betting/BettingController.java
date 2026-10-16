@@ -20,10 +20,20 @@ public class BettingController {
 
     public record BetRequest(String answer, Long amount) {}
 
-    /** 현재 열린 베팅 항목 (객관식은 문항별 풀·배당률 포함) */
+    /** 베팅 항목 목록. status 기본 OPEN. CLOSED면 정답·최종 배당(finalOdds) 포함 */
     @GetMapping("/games")
-    public ResponseEntity<List<BettingService.BtGameDto>> openGames() {
-        return ResponseEntity.ok(bettingService.openGames());
+    public ResponseEntity<List<BettingService.BtGameDto>> games(
+            @RequestParam(name = "status", defaultValue = "OPEN") BtGame.Status status) {
+        return ResponseEntity.ok(bettingService.games(status));
+    }
+
+    /** 내 베팅 내역 (최신순) */
+    @GetMapping("/my")
+    public ResponseEntity<List<BettingService.MyBetDto>> myBets(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
+        return ResponseEntity.ok(bettingService.myBets(userDetails.getMemberId()));
     }
 
     /** 베팅. answer: 객관식=문항 index, 주관식=숫자. 마감 후 409, 잔액 부족 400. */

@@ -6,8 +6,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -25,5 +27,12 @@ public class PointController {
         return ResponseEntity.ok(Map.of(
                 "memberId", userDetails.getMemberId(),
                 "balance", pointService.getBalance(userDetails.getMemberId())));
+    }
+
+    /** 잔액 순 리더보드 */
+    @GetMapping("/ranking")
+    public ResponseEntity<List<PointService.RankingDto>> ranking(
+            @RequestParam(name = "limit", defaultValue = "50") int limit) {
+        return ResponseEntity.ok(pointService.ranking(Math.min(Math.max(limit, 1), 200)));
     }
 }

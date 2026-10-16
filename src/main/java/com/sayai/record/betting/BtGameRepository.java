@@ -11,6 +11,7 @@ import java.util.Optional;
 
 public interface BtGameRepository extends JpaRepository<BtGame, Long> {
     List<BtGame> findByStatusOrderByDeadlineAsc(BtGame.Status status);
+    List<BtGame> findByStatusOrderByIdDesc(BtGame.Status status);
     List<BtGame> findAllByOrderByIdDesc();
 
     /** 종료/취소 정산용: 동시 호출 시 이중 지급 방지 */

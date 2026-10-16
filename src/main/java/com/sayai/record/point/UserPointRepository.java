@@ -6,9 +6,12 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface UserPointRepository extends JpaRepository<UserPoint, Long> {
+
+    List<UserPoint> findAllByOrderByBalanceDescMemberIdAsc(org.springframework.data.domain.Pageable pageable);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select p from UserPoint p where p.memberId = :memberId")

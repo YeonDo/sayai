@@ -31,7 +31,11 @@ public class BettingService {
 
     public record BtGameDto(Long id, String title, String content, BtGame.Type type, Instant deadline,
                             BtGame.Status status, String answer, boolean bettable, long totalPool,
-                            List<ChoiceDto> choices) {}
+                            Double finalOdds, List<ChoiceDto> choices) {}
+
+    public record MyBetDto(Long logId, Long gameId, String title, BtGame.Type type, BtGame.Status status,
+                           Instant deadline, String correctAnswer, String answer, String answerLabel,
+                           long amount, Long payout, Instant createdAt) {}
 
     public record BtLogDto(Long id, Long memberId, String memberName, String answer, long amount, Long payout, Instant createdAt) {}
 
@@ -141,13 +145,36 @@ public class BettingService {
 
     // --- 멤버 ---
 
+    /** 상태별 항목. OPEN은 마감 임박순, 그 외는 최신순 */
     @Transactional(readOnly = true)
-    public List<BtGameDto> openGames() {
-        List<BtGame> games = btGameRepository.findByStatusOrderByDeadlineAsc(BtGame.Status.OPEN);
+    public List<BtGameDto> games(BtGame.Status status) {
+        List<BtGame> games = status == BtGame.Status.OPEN
+                ? btGameRepository.findByStatusOrderByDeadlineAsc(status)
+                : btGameRepository.findByStatusOrderByIdDesc(status);
         Map<Long, List<BtLog>> logsByGame = btLogRepository
                 .findByBtGameIdIn(games.stream().map(BtGame::getId).toList())
                 .stream().collect(Collectors.groupingBy(BtLog::getBtGameId));
         return games.stream().map(g -> toDto(g, logsByGame.getOrDefault(g.getId(), List.of()))).toList();
+    }
+
+    /** 내 베팅 내역 (최신순). 항목 제목·상태·정답 포함 */
+    @Transactional(readOnly = true)
+    public List<MyBetDto> myBets(Long memberId) {
+        List<BtLog> logs = btLogRepository.findByMemberIdOrderByIdDesc(memberId);
+        Map<Long, BtGame> games = btGameRepository.findAllById(logs.stream().map(BtLog::getBtGameId).distinct().toList())
+                .stream().collect(Collectors.toMap(BtGame::getId, g -> g));
+        Map<Long, List<String>> labels = new HashMap<>();
+        return logs.stream().map(l -> {
+            BtGame g = games.get(l.getBtGameId());
+            String label = l.getAnswer();
+            if (g.getType() == BtGame.Type.CHOICE) {
+                List<String> ls = labels.computeIfAbsent(g.getId(), id -> choicesOf(g));
+                int idx = Integer.parseInt(l.getAnswer());
+                if (idx < ls.size()) label = ls.get(idx);
+            }
+            return new MyBetDto(l.getId(), g.getId(), g.getTitle(), g.getType(), g.getStatus(), g.getDeadline(),
+                    g.getAnswer(), l.getAnswer(), label, l.getAmount(), l.getPayout(), l.getCreatedAt());
+        }).toList();
     }
 
     @Transactional
@@ -196,8 +223,14 @@ public class BettingService {
                 choices.add(new ChoiceDto(i, labels.get(i), pool, odds));
             }
         }
+        // 종료 후 최종 배당 = 전체 풀 / 적중 풀 (환불이면 1.0). 종료 전·취소·베팅 없음이면 null
+        Double finalOdds = null;
+        if (g.getStatus() == BtGame.Status.CLOSED) {
+            long winPool = logs.stream().filter(l -> l.getPayout() != null && l.getPayout() > 0).mapToLong(BtLog::getAmount).sum();
+            if (winPool > 0) finalOdds = Math.round((double) total / winPool * 100) / 100.0;
+        }
         return new BtGameDto(g.getId(), g.getTitle(), g.getContent(), g.getType(), g.getDeadline(),
-                g.getStatus(), g.getAnswer(), g.isBettable(Instant.now()), total, choices);
+                g.getStatus(), g.getAnswer(), g.isBettable(Instant.now()), total, finalOdds, choices);
     }
 
     private List<String> choicesOf(BtGame g) {
