@@ -10,8 +10,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -115,24 +117,22 @@ public class BettingService {
         return toDto(game, logs);
     }
 
+    /** NUMBER 당첨 구간: 오차순 누적 베팅액 기준 상위 비율. 이 지점에서 가중치가 0이 된다 */
+    static final double NUMBER_CUTOFF = 0.5;
+    /** NUMBER 가중치 감소 지수. 1은 선형, 클수록 정답 근처에 집중 */
+    static final int NUMBER_SHARPNESS = 2;
+
     /**
-     * 정산. 배당 = 베팅액 × (전체 풀 / 적중 풀), 소수점 버림.
-     * CHOICE: 정답 index와 같은 베팅이 적중. NUMBER: 정답에 가장 근접한 값(동률 전원)이 적중.
-     * 적중자가 없으면 전액 환불. 반환: logId → 지급 포인트 (미포함 = 0).
+     * 정산. 반환: logId → 지급 포인트 (미포함 = 0). 지급 합계 = 전체 풀 (수수료 0).
+     * CHOICE: 지급액 = 베팅액 × (전체 풀 / 적중 풀), 소수점 버림. 적중자가 없으면 전액 환불.
+     * NUMBER: {@link #numberPayouts} 참고.
      */
     static Map<Long, Long> computePayouts(BtGame.Type type, String answer, List<BtLog> logs) {
         Map<Long, Long> result = new HashMap<>();
         if (logs.isEmpty()) return result;
+        if (type == BtGame.Type.NUMBER) return numberPayouts(new BigDecimal(answer), logs);
 
-        List<BtLog> winners;
-        if (type == BtGame.Type.CHOICE) {
-            winners = logs.stream().filter(l -> l.getAnswer().equals(answer)).toList();
-        } else {
-            double target = Double.parseDouble(answer);
-            double min = logs.stream().mapToDouble(l -> Math.abs(Double.parseDouble(l.getAnswer()) - target)).min().orElse(0);
-            winners = logs.stream().filter(l -> Math.abs(Double.parseDouble(l.getAnswer()) - target) == min).toList();
-        }
-
+        List<BtLog> winners = logs.stream().filter(l -> l.getAnswer().equals(answer)).toList();
         if (winners.isEmpty()) {
             logs.forEach(l -> result.put(l.getId(), l.getAmount()));
             return result;
@@ -140,6 +140,57 @@ public class BettingService {
         long total = logs.stream().mapToLong(BtLog::getAmount).sum();
         long winPool = winners.stream().mapToLong(BtLog::getAmount).sum();
         winners.forEach(l -> result.put(l.getId(), l.getAmount() * total / winPool));
+        return result;
+    }
+
+    /**
+     * NUMBER 정산 (베팅 단위).
+     * 1. 오차 |값 - 정답| 오름차순 정렬. 같은 오차는 한 그룹.
+     * 2. 그룹 위치 p = (앞 그룹 누적 베팅액 + 그룹 베팅액/2) / 풀.
+     * 3. 가중치 w = max(0, 1 - p/CUTOFF)^SHARPNESS, 점수 = 베팅액 × w.
+     * 4. 지급액 = floor(풀 × 점수 / 점수합). 자투리는 점수 최대 베팅(동률이면 오차 작은 것, 그다음 먼저 건 것)에.
+     * 점수합이 0이면(전원 같은 오차) 전액 환불.
+     */
+    private static Map<Long, Long> numberPayouts(BigDecimal target, List<BtLog> logs) {
+        Map<Long, BigDecimal> err = new HashMap<>();
+        logs.forEach(l -> err.put(l.getId(), new BigDecimal(l.getAnswer()).subtract(target).abs()));
+        // 오차는 BigDecimal로 비교해 부동소수점 동률 오판을 막는다. id는 자투리 수령자를 입력 순서와 무관하게 고정
+        List<BtLog> rows = logs.stream()
+                .sorted(Comparator.comparing((BtLog l) -> err.get(l.getId())).thenComparing(BtLog::getId))
+                .toList();
+        long pool = rows.stream().mapToLong(BtLog::getAmount).sum();
+
+        Map<Long, Double> scores = new HashMap<>();
+        long cum = 0;
+        for (int i = 0; i < rows.size(); ) {
+            BigDecimal e = err.get(rows.get(i).getId());
+            int j = i;
+            long group = 0;
+            while (j < rows.size() && err.get(rows.get(j).getId()).compareTo(e) == 0) group += rows.get(j++).getAmount();
+            double p = (cum + group / 2.0) / pool;
+            double w = Math.pow(Math.max(0, 1 - p / NUMBER_CUTOFF), NUMBER_SHARPNESS);
+            for (int x = i; x < j; x++) scores.put(rows.get(x).getId(), rows.get(x).getAmount() * w);
+            cum += group;
+            i = j;
+        }
+
+        Map<Long, Long> result = new HashMap<>();
+        double totalScore = scores.values().stream().mapToDouble(Double::doubleValue).sum();
+        if (totalScore == 0) {
+            rows.forEach(l -> result.put(l.getId(), l.getAmount()));
+            return result;
+        }
+        long paid = 0;
+        BtLog top = rows.get(0);
+        for (BtLog l : rows) {
+            double s = scores.get(l.getId());
+            if (s == 0) continue;
+            long payout = (long) Math.floor(pool * s / totalScore);
+            result.put(l.getId(), payout);
+            paid += payout;
+            if (s > scores.get(top.getId())) top = l;
+        }
+        result.merge(top.getId(), pool - paid, Long::sum);
         return result;
     }
 
@@ -203,7 +254,10 @@ public class BettingService {
                 if (idx < 0 || idx >= size) throw new IllegalArgumentException("문항 index 범위 밖: " + idx);
                 return String.valueOf(idx);
             }
-            return String.valueOf(Double.parseDouble(a));
+            double v = Double.parseDouble(a);
+            // NaN·Infinity는 파싱은 되지만 정산 시 오차 계산이 깨진다
+            if (!Double.isFinite(v)) throw new IllegalArgumentException("answer 형식이 올바르지 않습니다: " + a);
+            return String.valueOf(v);
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("answer 형식이 올바르지 않습니다: " + a);
         }
@@ -224,8 +278,9 @@ public class BettingService {
             }
         }
         // 종료 후 최종 배당 = 전체 풀 / 적중 풀 (환불이면 1.0). 종료 전·취소·베팅 없음이면 null
+        // NUMBER는 베팅마다 배당이 달라 단일 배당이 없으므로 null
         Double finalOdds = null;
-        if (g.getStatus() == BtGame.Status.CLOSED) {
+        if (g.getStatus() == BtGame.Status.CLOSED && g.getType() == BtGame.Type.CHOICE) {
             long winPool = logs.stream().filter(l -> l.getPayout() != null && l.getPayout() > 0).mapToLong(BtLog::getAmount).sum();
             if (winPool > 0) finalOdds = Math.round((double) total / winPool * 100) / 100.0;
         }
